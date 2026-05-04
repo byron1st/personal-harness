@@ -1,11 +1,6 @@
 ---
 name: plan-task
-description: |
-  Collaboratively create an implementation plan inside the host agent's built-in plan mode (Claude Code's ExitPlanMode flow, Codex's plan mode, Opencode's Plan/Build mode toggle, etc.), then persist the result to Obsidian as markdown the moment plan mode is exited. Default mode is single-step (one plan file). Switches to multi-steps (main + sub-plans connected via Obsidian wikilinks) when the user explicitly asks for incremental breakdown — e.g. "여러 단계로 나눠서", "단계별로", "단계별 플랜", "multi-step", "증분 개발", "릴리스 가능한 단위로 chunk".
-
-  Trigger this skill whenever the user wants to PLAN an implementation before writing code — features, refactors, bug fixes, or new projects (with or without SPEC.md). Strong signals include "plan 좀", "plan this out", "plan it out properly", "plan out the migration", "let's think through how to do this", "어떻게 고칠지 정리해줘", "어떤 순서로 풀까", "어떤 순서로 풀어야 할지", "what's the approach for", "일단 plan 으로 정리하고", or when a Jira ticket / branch name / Obsidian note is referenced as the source of requirements for a planned change. Prefer this skill over plan-dev whenever the host agent's plan mode is active.
-
-  Do NOT trigger when: (1) the user asks to execute or implement an already-existing plan ("그대로 실행해줘", "implement-dev 으로 plan 실행", "just write the code, no need to plan") — that is implement-dev's job; (2) the user wants to understand current code without intent to change it ("how does this currently work", "nothing to implement yet"); (3) the request belongs to a sibling skill — review-code (PR/code review), commit-code (commit messages), generate-claude-md (CLAUDE.md generation), request-merge (merge request creation), summarize-week (weekly digest from daily notes), application-research-sync (syncing RESEARCH files to Obsidian); (4) the user explicitly waives planning for a trivial fix ("그냥 바로 고쳐줘", "5분 안에 끝낼 작업").
+description: Plan-mode counterpart of plan-dev — collaboratively create an implementation plan inside the host's built-in plan mode (Claude Code ExitPlanMode, Codex plan mode, Opencode Plan/Build toggle), then persist to Obsidian as plan mode exits. Single-step by default; switches to multi-steps (main + sub-plans via Obsidian wikilinks) when the user explicitly asks — e.g. "여러 단계로 나눠서", "multi-step", "단계별 플랜", "증분 개발". Prefer over plan-dev whenever plan mode is active. Use when the user wants to plan before coding — features, refactors, bug fixes, or new projects. Also trigger on "plan this out", "어떻게 고칠지 정리해줘", or a referenced Jira ticket / Obsidian note.
 ---
 
 # Plan Task
