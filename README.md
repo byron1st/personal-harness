@@ -10,19 +10,24 @@
 
 ## Skills
 
-- `application-research-sync`: 코드 변경 사항을 분석해 Obsidian Vault의 Research 파일을 일괄 업데이트한다.
-- `commit-code`: 현재 수정된 파일을 기반으로 커밋을 생성한다.
-- `generate-claude-md`: SPEC.md 문서를 읽어 프로젝트 초기 설정용 CLAUDE.md 파일을 생성한다.
-- `implement-dev`: `plan-dev`가 생성한 구현 플랜을 실행해 코드를 작성하고 Obsidian에 완료 보고서를 저장한다.
-- `plan-task`: Claude Code의 내장 Plan 모드를 활용해 구현 플랜을 수립하고 즉시 Obsidian에 저장한다.
-- `request-merge`: `gh` 또는 `glab` CLI를 사용해 Pull Request / Merge Request를 생성하거나 업데이트한다.
+### Core Development Process
+
+- `plan-dev`: 호스트 에이전트(Claude Code, Codex, OpenCode 등)의 내장 Plan 모드를 활용해 구현 플랜을 수립하고 Obsidian에 저장한다. 필요 시 다단계(main + sub-plans) 플랜으로 분할한다. 
+- `implement-dev`: `plan-dev`가 생성한 구현 플랜을 실행(TDD Red-Green-Refactor)해 코드를 작성하고 Obsidian에 완료 보고서를 저장한다. 단일 단계/다단계 플랜을 자동 인식한다.
+- `test-dev`: `implement-dev` 이후(혹은 코드베이스 전체)의 테스트 스위트를 보강한다. 유닛/E2E 테스트 갭 채우기와 mutation testing의 LIVED mutant 제거를 순차적으로 수행한다.
 - `review-code`: 보안·신뢰성·유지보수성 관점에서 코드 변경(diff, PR, 브랜치 등)을 리뷰한다.
+- `commit-code`: 현재 수정된 파일을 기반으로 커밋을 생성한다.
+- `request-merge`: `gh` 또는 `glab` CLI를 사용해 Pull Request / Merge Request를 생성하거나 업데이트한다.
+
+### Misc
+
+- `setup-initial-repo`: SPEC.md 문서를 기반으로 신규 프로젝트 저장소를 부트스트랩한다. CLAUDE.md/AGENTS.md, 언어별 컨벤션 docs, Makefile, .gitignore 생성 및 적절한 Git identity로 `git init`과 remote origin 연결까지 수행한다.
+- `application-research-sync`: 코드 변경 사항을 분석해 Obsidian Vault의 Research 파일을 일괄 업데이트한다.
 - `summarize-week`: Obsidian의 Daily note와 플랜·Research 문서를 읽어 주간 코딩 요약을 작성한다.
-- `plan-dev`: 기능·리팩터·버그픽스 등 개발 작업의 구현 플랜을 협업으로 수립하고 Obsidian에 저장한다. (Deprecated 예정 - `plan-task` 로 대체)
 
 ## 환경변수
 
-Skills 실행에 필요한 환경변수 목록. ~/.zshrc 나 ~/.bashrc 등에 전역으로 설정되어 있어야 한다.
+Skills 실행에 필요한 환경변수 목록. 각 Agent 의 환경변수 설정에 등록되어 있어야 한다 (예: Claude Code 의 settings.json 파일 내 `env` 설정 또는 Codex 의 config.toml 파일 내 `shell_environment_policy` 항목의 `set` 설정)
 
 - `OBSIDIAN_HOME`: Obsidian Vault의 루트 디렉토리 경로
 - `PERSONAL_GIT_EMAIL`: 개인 저장소 커밋 시 사용할 Git 이메일
