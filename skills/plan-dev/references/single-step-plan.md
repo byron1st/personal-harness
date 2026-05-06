@@ -4,16 +4,18 @@ A single-step plan is one markdown file describing the full implementation of a 
 
 ## What is enforced vs. flexible
 
-**Enforced** (these are structural metadata, not content format):
+**Enforced** (structural metadata + tracking hooks, not content shape):
 
 - File name pattern (section 1)
 - Storage location (section 2)
 - Frontmatter fields (section 3)
 - Body language: Korean
+- Research file links at the top of the body — when research files were created or consulted (section 4)
+- A `## TODOs` checkbox list at the end of the body — for progress tracking (section 5)
 
 **Flexible**:
 
-- Section structure inside the body. The template in section 4 is a *suggested* default — drop sections that do not apply, add ones that do, reorder freely.
+- Everything else inside the body. Do NOT force the plan into a fixed section template (Goal / Technical Approach / Affected Files / Risks / Tradeoffs / Verification / …). When the plan was produced by a planning agent (e.g., Claude Code's `Plan` subagent), copy its output **verbatim** into the body between the research links and the TODO checklist. Squeezing a rich agent-generated plan into a normalized template loses fidelity — preserve it as-is.
 
 ## 1. File name
 
@@ -40,11 +42,29 @@ PlanType: single-step
 
 These three keys are required. Add other keys (e.g., `Tags`, `Status`) when useful.
 
-## 4. Suggested body structure
+## 4. Research file links
 
-Use this as a starting point. Adapt freely to the task — for a small bug fix you might collapse "Technical Approach" and "Affected Files" into one section; for a refactor with many tradeoffs you might add a "Migration" section. The point is to communicate the plan clearly, not to fill every heading.
+When research files were created or consulted during planning, list them at the top of the body, immediately after the H1 heading. Use plain markdown links or Obsidian wikilinks — DO NOT wrap them in backticks. If no research files exist, omit this block entirely.
 
-If research files were created or consulted, link them somewhere near the top.
+```markdown
+Please refer to the research documents for detailed information about the related code and execution flow.
+- {Link to RESEARCH file}
+- {Link to RESEARCH file}
+```
+
+## 5. TODO checklist
+
+Every plan ends with a `## TODOs` section: a checkbox list of concrete, executable tasks. Each item should be specific enough that another agent can execute it without re-investigating the codebase. This pairs with `implement-dev`, which ticks each box as it completes a task.
+
+```markdown
+## TODOs
+- [ ] Task 1
+- [ ] Task 2
+```
+
+If the agent-generated plan already contains its own task list, normalize it into this section's checkbox format and place it at the end. The rest of its content stays where it was.
+
+## 6. File skeleton
 
 ```markdown
 ---
@@ -55,36 +75,11 @@ PlanType: single-step
 
 # [Feature / Change Name]
 
-Please refer to the research documents for detailed information about the related code and execution flow.
-- {Link to RESEARCH file} (DO NOT wrap in backticks)
-- {Link to RESEARCH file}
+<!-- Section 4: research file links — when applicable -->
 
-## Goal
-Brief description of what this change accomplishes and why.
-
-## Technical Approach
-High-level overview, then detailed implementation notes including key code snippets where useful.
-
-## Affected Files
-- `path/to/file.go` — description of changes
-- `path/to/new_file.go` — (new) description
-
-## Risks and Assumptions
-- Risk or assumption 1
-- Risk or assumption 2
-
-## Tradeoffs
-- Tradeoff 1
-- Tradeoff 2
-
-## Verification
-- [ ] Tests: specific test commands or new tests to write
-- [ ] Lint: linting checks to pass
-- [ ] Compile: check compilation errors
+<!-- Agent-generated plan body, copied verbatim. Keep whatever sections / ordering the agent produced. -->
 
 ## TODOs
 - [ ] Task 1
 - [ ] Task 2
 ```
-
-The `## TODOs` checkbox list pairs well with `implement-dev`, which ticks each box as it completes a task. If you keep that pattern, the items should be concrete enough that another agent can execute them without re-investigating the codebase.

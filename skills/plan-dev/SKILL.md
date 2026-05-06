@@ -31,19 +31,19 @@ Plan and research file content is **always written in Korean**, regardless of th
 
 ## Content format
 
-Inside plan and research files, only two things are enforced:
+Inside plan and research files, the **frontmatter** and **language** (Korean) are always enforced. Each reference document specifies any additional enforced elements.
 
-1. The **frontmatter** specified in the relevant reference document.
-2. The **language** (Korean for body content).
+Body shape differs by mode:
 
-Beyond those, choose whatever section structure best fits the work. Each reference document includes a *suggested* default structure as a starting point — drop sections that do not apply, add ones that do, reorder freely. The suggestion exists so you do not start from a blank page; it is not a contract.
+- **single-step** — only the research file links (when applicable) and a final `## TODOs` checklist are enforced. The rest of the body is free-form: when the plan was produced by a planning agent (e.g., Claude Code's `Plan` subagent), copy its output **verbatim** between those two anchors instead of normalizing it into a fixed template. See [references/single-step-plan.md](references/single-step-plan.md).
+- **multi-steps** — choose whatever section structure best fits the work. Each reference document includes a *suggested* default structure as a starting point — drop sections that do not apply, add ones that do, reorder freely. The suggestion exists so you do not start from a blank page; it is not a contract.
 
 File naming, storage location, and (for multi-steps) wikilink conventions in the references *are* enforced — those are structural metadata, not content format.
 
 ## Modes
 
 - **single-step** (default) — a single plan file in Obsidian. Use this for most tasks: features, refactors, bug fixes, small-to-medium work.
-  - Frontmatter, naming, suggested structure: [references/single-step-plan.md](references/single-step-plan.md)
+  - Frontmatter, naming, required anchors (research links + TODOs): [references/single-step-plan.md](references/single-step-plan.md)
 - **multi-steps** (explicit opt-in) — one main plan file + multiple `-STEP-N` sub-plan files, connected via Obsidian wikilinks (`[[...]]`). Use when the user explicitly asks for a multi-step breakdown (e.g. "여러 단계로 나눠서 플래닝 해줘", "multi-step plan", "단계별로", "PLAN-STEP", "증분 개발"). Typical for new projects or large initiatives that should be delivered as incremental build-test cycles.
   - Frontmatter, naming, wikilink rules, suggested structure: [references/multi-steps-plan.md](references/multi-steps-plan.md)
 
@@ -112,10 +112,8 @@ Every technical decision must be consistent with the key requirements in `AGENTS
 
 Compose plan file content in memory according to the chosen mode's reference:
 
-- single-step → [references/single-step-plan.md](references/single-step-plan.md)
-- multi-steps → [references/multi-steps-plan.md](references/multi-steps-plan.md)
-
-Frontmatter and language must follow the reference. Section structure is your call — the reference's suggested structure is a starting point, not a contract. For multi-steps, draft the main plan and every sub-plan in memory; verify wikilink targets match the sub-plan filenames you intend to use.
+- single-step → [references/single-step-plan.md](references/single-step-plan.md). Frontmatter, research file links (when applicable), and the final `## TODOs` checklist are enforced. The body in between is free-form — when the plan came from a planning agent, copy its output verbatim instead of reshaping it.
+- multi-steps → [references/multi-steps-plan.md](references/multi-steps-plan.md). Frontmatter and language must follow the reference. Section structure is your call — the reference's suggested structure is a starting point, not a contract. Draft the main plan and every sub-plan in memory; verify wikilink targets match the sub-plan filenames you intend to use.
 
 ### 8. Review
 
