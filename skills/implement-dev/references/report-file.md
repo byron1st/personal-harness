@@ -58,11 +58,16 @@ One-paragraph summary of what was implemented.
 - `path/to/test1` — what it tests, key scenarios
 - `path/to/test2` — ...
 
+## Manual Verification
+(Required for multi-steps-step reports. Lists checks the user must perform before approving the merge to `develop`. Write `None` if there is nothing to verify manually.)
+- [ ] What to check, where to check it, and the expected outcome
+- [ ] ...
+
 ## Coverage
 (Optional) Coverage summary if tooling is available.
 ```
 
-Omit `## Key Decisions` and `## Deviations from Plan` when there are none. Omit `## Coverage` when not measured.
+Omit `## Key Decisions` and `## Deviations from Plan` when there are none. Omit `## Coverage` when not measured. `## Manual Verification` is **required** for `multi-steps-step` reports (write `None` if empty) and **optional** for `single-step` reports.
 
 ## 5. Final summary report (multi-steps only, optional)
 
