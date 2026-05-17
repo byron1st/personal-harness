@@ -1,18 +1,20 @@
 # Multi-steps implementation
 
-Use this reference when `implement-dev` is operating in **multi-steps** mode — a main plan file linking to `-STEP-N` sub-plans, each a complete build-test cycle. Steps are implemented **sequentially**, one at a time, on a `feature/step-N` branch off `develop` using TDD. After each step, the user reviews the completion report (including any manual verification items) and explicitly approves before the agent merges to `develop` and moves on to the next step.
+Use this reference when `implement-dev` is operating in **multi-steps** mode — a main plan file linking to `-STEP-N` sub-plans, each a complete build-test cycle. The **main session** orchestrates: it reads the main plan, dispatches each step to a **fresh sub-agent** (`Agent` tool, subagent_type `general-purpose`) that runs the actual TDD work on a `feature/step-N` branch off `develop`, then handles the per-step review gate and the merge back to `develop`. The sub-agent returns only a concise summary, so the main session's context never accumulates per-step implementation noise.
 
-## 1. Read the main plan
+Throughout this document each section is labelled with the actor that runs it: **[main session]** or **[sub-agent]**.
+
+## 1. Read the main plan [main session]
 
 Read the main plan file end-to-end. Collect:
 
 - `## Steps Overview` — the full list of steps, titles, and dependencies.
 - `## Execution Flow` — the order steps must be implemented in (dependencies dictate sequence).
 - `## Sub-plans` — wikilinks to each `-STEP-N` file; resolve each wikilink to its absolute path in `${OBSIDIAN_HOME}/00. Plans/`.
-- `## Conventions` / `## Tech Stack` / `## Architecture Overview` — context every step must respect.
+- `## Conventions` / `## Tech Stack` / `## Architecture Overview` — context every step must respect; these are passed to every sub-agent.
 - `## Requirements Coverage` (if SPEC.md was input) — FR → step mapping.
 
-## 2. Branch setup
+## 2. Branch setup [main session]
 
 Ensure a `develop` branch exists and is up to date:
 
@@ -21,31 +23,76 @@ git checkout develop 2>/dev/null || git checkout -b develop
 git pull --ff-only || true
 ```
 
-## 3. Step execution order
+## 3. Orchestration loop [main session]
 
 Walk the steps in dependency order from `## Execution Flow`. **Execute one step at a time, sequentially.** For each step:
 
-1. Implement the step on a `feature/step-N` branch off `develop` (sections 4.1–4.5).
-2. Pause and present the step's completion report — including the `## Manual Verification` checklist — to the user.
-3. Wait for explicit user approval. Address any requested changes on the same `feature/step-N` branch and re-request approval; do not merge until approved.
-4. Only after approval, merge to `develop`, delete the feature branch, and run post-merge validation (section 4.6).
+1. **Dispatch** a sub-agent to implement step N (section 4). Wait for it to return.
+2. **Present** the sub-agent's returned summary — especially the `## Manual Verification` items — to the user.
+3. **Wait** for explicit user approval. If the user requests changes, dispatch a follow-up sub-agent on the same `feature/step-N` branch (section 4.3) and re-request approval; do not merge until approved.
+4. **Merge** `feature/step-N` into `develop` (section 6), delete the feature branch, run post-merge validation.
 5. Move on to step N+1.
 
-Do not start step N+1 until step N has been approved and merged.
+Do not dispatch step N+1's sub-agent until step N has been approved and merged. The main session never reads the per-step report file or pulls implementation details into its own context — everything it needs is in the sub-agent's returned summary.
 
-## 4. Per-step execution
+## 4. Dispatch the step sub-agent [main session]
 
-Each step is implemented on its own `feature/step-N` branch off `develop`.
+Invoke the `Agent` tool with `subagent_type: general-purpose` and a self-contained prompt. The sub-agent has no access to the main session's conversation, so the prompt must include every input it needs.
 
-### 4.1 Create the step branch
+### 4.1 What to pass in the sub-agent's prompt
+
+- The step number `N` and the step title.
+- Absolute paths to:
+  - the main plan file,
+  - the sub-plan file (`-STEP-N.md`),
+  - this skill's `SKILL.md` and `references/report-file.md` (so the sub-agent can follow the global rules and the report format).
+- The project root, `${OBSIDIAN_HOME}`.
+- The verification commands the main session extracted in Prepare (lint, format, test, build).
+- A directive to read `AGENTS.md` / `CLAUDE.md` before coding so it inherits project conventions.
+- The branch contract: create `feature/step-N` off `develop`, commit when done, **do not merge** — the main session owns the merge.
+- The TDD contract: Red → Green → Refactor per task, edge-case tests after, test public/exported methods only.
+- The plan-update contract: tick each `- [ ]` → `- [x]` in the sub-plan file immediately as the task is completed (do not batch).
+- The reporting contract: write the per-step completion report to `${OBSIDIAN_HOME}/02. Implementation Reports/{base}-STEP-N.md` per `references/report-file.md`, with a `## Manual Verification` section, and add a bidirectional wikilink from the sub-plan.
+- The return contract (section 4.2).
+- The error-recovery contract: stop after 3 failed attempts on the same error and return `blocked` with what was tried.
+
+### 4.2 What the sub-agent must return
+
+The sub-agent's single return message is the only thing that enters the main session's context, so it must carry everything the main session needs to drive the review gate. Required fields:
+
+- **Status**: `success` | `blocked` | `failed`.
+- **Report path**: absolute path to the completion report in Obsidian (so the user can open it if they want detail).
+- **Branch**: feature branch name and the latest commit SHA.
+- **Manual Verification items**: the bullet list copied verbatim from the report's `## Manual Verification` section. Write `None` if there is nothing to verify manually. The main session presents these directly to the user — it does not re-read the report file.
+- **Files changed**: short bullet list of changed paths (no diffs).
+- **Deviations**: any deviations from the sub-plan and the reason. Omit the field if none.
+- **Notes**: anything else the user should see before approving (e.g., flaky test investigation, follow-ups suggested).
+
+The full report content lives in Obsidian; the sub-agent must **not** dump the entire report into its return message.
+
+### 4.3 Follow-up dispatch when the user requests changes
+
+If the user asks for changes after reviewing the report, dispatch a follow-up sub-agent. The follow-up prompt mirrors section 4.1 plus:
+
+- A note that `feature/step-N` already exists with commits — switch to it, do not re-create it.
+- The specific change requests from the user (verbatim).
+- A directive to update the existing report in place (do not create a new file), tick any Manual Verification items the user has already confirmed, and re-commit on the same branch.
+
+Loop sections 3.2–3.3 (present → review) until the user approves.
+
+## 5. Sub-agent's per-step work [sub-agent]
+
+The sub-agent performs the following sequence inside its own context and returns the summary defined in section 4.2.
+
+### 5.1 Create the step branch
 
 ```bash
 git checkout develop
 git pull --ff-only || true
-git checkout -b feature/step-N
+git checkout -b feature/step-N    # or: git checkout feature/step-N for a follow-up dispatch
 ```
 
-### 4.2 Read the sub-plan
+### 5.2 Read the sub-plan
 
 Resolve the sub-plan wikilink to `${OBSIDIAN_HOME}/00. Plans/{base}-STEP-N.md` and read:
 
@@ -56,7 +103,7 @@ Resolve the sub-plan wikilink to `${OBSIDIAN_HOME}/00. Plans/{base}-STEP-N.md` a
 - `## Build Verification` — commands that must pass
 - `## Completion Checklist`
 
-### 4.3 Implement with TDD
+### 5.3 Implement with TDD
 
 For each task in `## Tasks`:
 
@@ -71,7 +118,7 @@ Testing rules:
 - Test **public/exported** methods. No tests for internal helpers.
 - Exception to TDD: pure scaffolding (directory creation, empty config) where a test adds no signal.
 
-### 4.4 Verify
+### 5.4 Verify
 
 Run the sub-plan's `## Build Verification` commands:
 
@@ -86,7 +133,7 @@ All must pass. If anything fails, follow Error Recovery in SKILL.md.
 
 Tick each item in `## Completion Checklist` as it is satisfied.
 
-### 4.5 Write the step completion report (with Manual Verification)
+### 5.5 Write the step completion report (with Manual Verification)
 
 Create the step-level completion report in Obsidian following [report-file.md](report-file.md). The report filename matches the sub-plan: `{base}-STEP-N.md` stored in `${OBSIDIAN_HOME}/02. Implementation Reports/`. The report links back to the sub-plan (and, by extension, the main plan) via wikilink.
 
@@ -94,20 +141,24 @@ Create the step-level completion report in Obsidian following [report-file.md](r
 
 Add a wikilink to the report at the top of the sub-plan file so the link is bidirectional.
 
-Commit the step implementation on `feature/step-N` (the report lives in Obsidian, not the repo):
+### 5.6 Commit and return
+
+Commit the step implementation on `feature/step-N` (the report lives in Obsidian, not the repo). **Do not merge** — that is the main session's responsibility.
 
 ```bash
 git add -A
 git commit -m "feat: implement step N - {title}"
 ```
 
-### 4.6 Pause for user review, then merge on approval
+Then return the summary defined in section 4.2 as the sub-agent's single final message.
 
-**Do not merge to `develop` automatically.** After the step is committed on `feature/step-N`:
+## 6. Review gate and merge [main session]
 
-1. Present the step's completion report — especially the `## Manual Verification` checklist — to the user.
+**Do not merge to `develop` automatically.** After the sub-agent returns:
+
+1. Present the returned summary to the user — especially the `## Manual Verification` checklist.
 2. Wait for the user to perform any manual verification and to give **explicit approval** to proceed.
-3. If the user requests changes, address them on the same `feature/step-N` branch, update the report (and tick off any Manual Verification items the user has confirmed), and re-request approval. Do not merge until approval is given.
+3. If the user requests changes, run section 4.3 (follow-up dispatch). Do not merge until approval is given.
 
 Only after the user approves:
 
@@ -125,14 +176,14 @@ Then run post-merge validation on `develop` to catch integration issues:
 make lint && make test && make build
 ```
 
-If this fails, the merge introduced a regression — investigate and fix before starting the next step.
+If this fails, the merge introduced a regression. Investigate; for non-trivial fixes, dispatch a fresh sub-agent on a `hotfix/step-N` branch with the failure details rather than fixing inline in the main session.
 
 (Optional) Tick the row for this step in the main plan's `## Steps Overview` once the merge is complete.
 
-## 5. Completion
+## 7. Completion [main session]
 
 When all steps are merged and the final validation on `develop` passes:
 
 1. Run the full verification suite one final time on `develop`.
-2. Write a **final summary report** (optional but recommended) at `${OBSIDIAN_HOME}/02. Implementation Reports/{base}.md` — a top-level report that links to each `-STEP-N` report via wikilink and summarizes overall outcomes, deviations, and coverage. Add a wikilink to this summary report at the top of the main plan.
+2. Write a **final summary report** (optional but recommended) at `${OBSIDIAN_HOME}/02. Implementation Reports/{base}.md` — a top-level report that links to each `-STEP-N` report via wikilink and summarizes overall outcomes, deviations, and coverage. Add a wikilink to this summary report at the top of the main plan. The main session writes this directly using the per-step summaries it already collected; no sub-agent is needed for this small synthesis task.
 3. Report to the user: which steps completed, any deviations, overall test coverage. The `develop → main` merge is left to the user to perform manually.

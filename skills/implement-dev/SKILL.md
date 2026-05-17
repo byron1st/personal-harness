@@ -1,6 +1,6 @@
 ---
 name: implement-dev
-description: Execute an implementation plan produced by `plan-dev`. Auto-detects mode from the plan file — single-step (one plan file → one implementation pass) or multi-steps (main plan + `-STEP-N` sub-plans → sequential per-step implementation on `feature/step-N` branches off `develop`, pausing after each step for user review and approval before merging back to `develop`). Applies TDD Red-Green-Refactor in both modes, updates the plan's TODO/task checkboxes immediately as each item is completed, records any required manual verification in the step's report, and writes completion reports to Obsidian `02. Implementation Reports`. Use after `plan-dev` produces a plan or when the user asks to implement against an existing plan file.
+description: Execute an implementation plan produced by `plan-dev`. Auto-detects mode from the plan file — single-step (one plan file → one implementation pass in the main session) or multi-steps (main plan + `-STEP-N` sub-plans → each step delegated to a fresh sub-agent that builds on a `feature/step-N` branch off `develop` and returns only a concise summary, so the main session's context stays free of per-step implementation noise). After each step the main session pauses for user review and explicit approval before merging back to `develop`. Applies TDD Red-Green-Refactor in both modes, updates the plan's TODO/task checkboxes immediately as each item is completed, records any required manual verification in the step's report, and writes completion reports to Obsidian `02. Implementation Reports`. Use after `plan-dev` produces a plan or when the user asks to implement against an existing plan file.
 ---
 
 # Implement Dev
@@ -31,15 +31,23 @@ After the happy-path is green, add edge-case tests (boundary values, error paths
 
 **Exception**: pure documentation, configuration, or trivially obvious one-line changes where a test would add no signal. When in doubt, write the test.
 
-### 3. Multi-steps: per-step review gate (no auto-merge)
+### 3. Multi-steps: each step runs in a sub-agent (clean main context)
 
-In **multi-steps** mode, steps are executed **one at a time, sequentially**. After each step is implemented on its `feature/step-N` branch:
+In **multi-steps** mode, the main session does **not** implement steps directly. For each step it invokes the `Agent` tool (subagent_type `general-purpose`) with a self-contained prompt; the sub-agent runs the entire per-step build — branch creation, sub-plan TDD work, build verification, completion report, commit — and returns a concise summary back. The main session only orchestrates: dispatch each step, present the returned summary at the review gate, and (after approval) merge `feature/step-N` into `develop`.
 
-1. The completion report (including a `## Manual Verification` checklist) is written to Obsidian.
-2. The agent **pauses** and waits for the user's explicit approval — manual checks performed by the user are part of this gate.
-3. Only after approval does the agent merge `feature/step-N` into `develop` and start the next step.
+This keeps the main session's context free of per-step implementation noise — file edits, test runs, and verification output stay inside the sub-agent and are discarded when it returns. Only the orchestration trail and per-step summary fields accumulate in the main context.
 
-Because every step now blocks on a user review, **do not dispatch steps in parallel** — there is no benefit, and parallelism conflicts with the review gate. Execute steps strictly in dependency order, one after another.
+The sub-agent's prompt and return contract are defined in [references/multi-steps-implement.md](references/multi-steps-implement.md) sections 4–5; the sub-agent's own per-step work (TDD per task, verify, report, commit) lives there too.
+
+### 4. Multi-steps: per-step review gate (no auto-merge)
+
+Steps are executed **one at a time, sequentially**. After the sub-agent for step N returns:
+
+1. The completion report (including a `## Manual Verification` checklist) has been written to Obsidian by the sub-agent.
+2. The main session **pauses** and presents the sub-agent's returned summary — especially the Manual Verification items — and waits for the user's explicit approval. Manual checks performed by the user are part of this gate.
+3. Only after approval does the main session merge `feature/step-N` into `develop` and dispatch the next step's sub-agent.
+
+Because every step blocks on a user review, **do not dispatch steps in parallel** — there is no benefit, and parallelism conflicts with the review gate. Execute steps strictly in dependency order, one after another.
 
 ## Prepare
 
