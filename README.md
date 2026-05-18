@@ -12,8 +12,15 @@
 
 ### Core Development Process
 
-- `plan-dev`: 호스트 에이전트(Claude Code, Codex, OpenCode 등)의 내장 Plan 모드를 활용해 구현 플랜을 수립하고 Obsidian에 저장한다. 필요 시 다단계(main + sub-plans) 플랜으로 분할한다. 
+기본 개발 흐름은 다음 체인으로 조립된다. 각 스킬은 단독 사용도 가능하지만, 보통 앞 스킬이 만든 산출물(플랜 / 구현 결과 / 리뷰 코멘트 등)을 다음 스킬이 입력으로 받는다.
+
+```
+plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev → review-code → (이슈 발견 시 fix-dev 반복) → commit-code → request-merge
+```
+
+- `plan-dev`: 호스트 에이전트(Claude Code, Codex, OpenCode 등)의 내장 Plan 모드를 활용해 구현 플랜을 수립하고 Obsidian에 저장한다. 필요 시 다단계(main + sub-plans) 플랜으로 분할한다.
 - `implement-dev`: `plan-dev`가 생성한 구현 플랜을 실행(TDD Red-Green-Refactor)해 코드를 작성하고 Obsidian에 완료 보고서를 저장한다. 단일 단계/다단계 플랜을 자동 인식하며, 다단계 모드에서는 각 step을 sub-agent에 위임해 메인 세션 컨텍스트를 깨끗하게 유지한다.
+- `fix-dev`: 리뷰 단계(단일 step 구현 완료 직후, 또는 다단계 step 사이)에서 발견된 결함을 sub-agent에 위임해 원인 분석·수정·검증까지 마치고 결과 요약만 메인 세션에 반환한다. 수정 후에는 해당 Implementation Report 끝에 `## Fix` 섹션을 누적해 변경 내역을 기록한다. 명시적 요청이 없으면 커밋은 하지 않는다.
 - `test-dev`: `implement-dev` 이후(혹은 코드베이스 전체)의 테스트 스위트를 보강한다. 유닛/E2E 테스트 갭 채우기와 mutation testing의 LIVED mutant 제거를 순차적으로 수행한다.
 - `review-code`: 보안·신뢰성·유지보수성 관점에서 코드 변경(diff, PR, 브랜치 등)을 리뷰한다.
 - `commit-code`: 현재 수정된 파일을 기반으로 커밋을 생성한다.
