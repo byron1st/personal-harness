@@ -6,6 +6,7 @@
 
 - **skills**: 개인 Agent Skills를 모아놓은 디렉토리. 각 스킬은 별도의 폴더로 관리된다.
 - **agents**: 커스텀 sub-agent 정의 모음. 플랫폼별 서브 디렉토리(`agents/claude/` 등)로 구분된다. 스킬이 일부 단계를 위임할 때 dispatch하는 persona 에이전트들이 여기에 들어간다.
+- **hooks**: 플랫폼별 Hook 정의와 실행 스크립트 모음. 예: `hooks/claude/`에는 Claude Code의 `settings.json` 스니펫과 hook 스크립트(`hooks/claude/hooks/*.sh`)가 들어있다.
 - **instructions**: Claude Code, OpenCode, Codex 등 에이전트 실행 시 사용할 전역 명령어와 개발 원칙을 정의하는 `AGENTS.md` 파일을 포함한다.
 - **scripts**: 스킬과 전역 명령어를 여러 에디터/에이전트에 설치·동기화하는 배포 스크립트를 포함한다.
 
