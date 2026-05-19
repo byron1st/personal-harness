@@ -56,4 +56,6 @@ Skills 실행에 필요한 환경변수 목록. 각 Agent 의 환경변수 설�
 **동작:**
 - `skills/` 디렉토리의 모든 스킬을 `~/.claude/skills`, `~/.cursor/skills`, `~/.agents/skills`로 복사한다.
 - `instructions/AGENTS.md` 파일을 각 플랫폼의 설정 디렉토리에 `CLAUDE.md`, `AGENTS.md` 형식으로 복사한다.
+- Claude Code 전용으로 `agents/claude/*`를 `~/.claude/agents/`로, `hooks/claude/hooks/*`를 `~/.claude/hooks/`로 동기화한다.
+- `hooks/claude/settings.json`의 `hooks` 블록을 `~/.claude/settings.json`에 `jq`로 머지한다. 사용자의 `permissions`/`model`/`env` 등 다른 설정은 보존되며, 대상 파일이 없으면 통째로 생성한다 (jq 필요).
 - 기존 설치 파일을 정리한 후 최신 상태로 갱신한다.
