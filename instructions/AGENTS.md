@@ -35,4 +35,6 @@ The test: Every changed line should trace directly to the user's request.
 
 - Always use Context7 for code generation, setup/configuration steps, or library/API documentation.
 - Check `Makefile` to find useful commands for verifying the code, generating mocks/database models/swagger documentation, testing the code, building the application, or listing outdated direct dependencies.
+- Use `rg` (ripgrep) instead of `grep` for code/codebase searches. Plain pipe-filter usage (e.g. `git status | grep modified`) is fine.
+- Use `fd` instead of `find` for file/code searches. Metadata-only queries (e.g. `find . -mtime ...`, `-size`, `-perm`) may still use `find`.
 - After adding a new feature or refactoring existing code, ALWAYS check `AGENTS.md`, `CLAUDE.md`, and `README.md` files to figure out outdated contents. DO NOT add/delete the existing "section" structure and ONLY check the contents of existing sections.

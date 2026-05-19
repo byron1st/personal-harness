@@ -7,6 +7,14 @@
           {
             "type": "command",
             "command": "$HOME/.claude/hooks/git-identity-guard.sh"
+          },
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/enforce-rg.sh"
+          },
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/enforce-fd.sh"
           }
         ]
       }
