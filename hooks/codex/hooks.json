@@ -1,0 +1,44 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.codex/hooks/git-identity-guard.sh"
+          },
+          {
+            "type": "command",
+            "command": "$HOME/.codex/hooks/enforce-rg.sh"
+          },
+          {
+            "type": "command",
+            "command": "$HOME/.codex/hooks/enforce-fd.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.codex/hooks/auto-format.sh"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.codex/hooks/doc-drift-reminder.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
