@@ -38,3 +38,4 @@ The test: Every changed line should trace directly to the user's request.
 - Use `rg` (ripgrep) instead of `grep` for code/codebase searches. Plain pipe-filter usage (e.g. `git status | grep modified`) is fine.
 - Use `fd` instead of `find` for file/code searches. Metadata-only queries (e.g. `find . -mtime ...`, `-size`, `-perm`) may still use `find`.
 - After adding a new feature or refactoring existing code, ALWAYS check `AGENTS.md`, `CLAUDE.md`, and `README.md` files to figure out outdated contents. DO NOT add/delete the existing "section" structure and ONLY check the contents of existing sections.
+- When writing Markdown documents, do not insert line breaks solely for readability; keep each paragraph or bullet as a single logical line unless the format requires line breaks.
