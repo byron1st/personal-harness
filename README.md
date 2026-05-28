@@ -30,6 +30,7 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 
 ### Misc
 
+- `spec-creator`: 신규 소프트웨어 프로젝트의 요구사항을 단계적으로 정리해 한국어 SPEC.md 문서를 만든다.
 - `setup-initial-repo`: SPEC.md 문서를 기반으로 신규 프로젝트 저장소를 부트스트랩한다. CLAUDE.md/AGENTS.md, 언어별 컨벤션 docs, Makefile, .gitignore 생성 및 적절한 Git identity로 `git init`과 remote origin 연결까지 수행한다.
 - `application-research-sync`: 코드 변경 사항을 분석해 Obsidian Vault의 Research 파일을 일괄 업데이트한다.
 - `summarize-week`: Obsidian의 Daily note와 플랜·Research 문서를 읽어 주간 코딩 요약을 작성한다.
