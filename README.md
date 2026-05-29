@@ -52,13 +52,14 @@ Skills 실행에 필요한 환경변수 목록. 각 Agent 의 환경변수 설�
 
 ### apply-to-global.sh
 
-스킬과 전역 명령어를 Claude Code와 Codex에 설치·동기화하는 스크립트다.
+스킬과 전역 명령어를 Claude Code, Codex, Cursor에 설치·동기화하는 스크립트다.
 
 **동작:**
-- `skills/claude/` 디렉토리의 스킬을 `~/.claude/skills`로, `skills/codex/` 디렉토리의 스킬을 `~/.codex/skills`로 복사한다.
+- `skills/claude/` 디렉토리의 스킬을 `~/.claude/skills`로, `skills/codex/` 디렉토리의 스킬을 `~/.codex/skills`로, `skills/cursor/` 디렉토리의 스킬을 `~/.cursor/skills`로 복사한다.
 - `instructions/AGENTS.md` 파일을 Claude Code에는 `CLAUDE.md`, Codex에는 `AGENTS.md` 형식으로 복사한다.
 - Claude Code 전용으로 `agents/claude/*`를 `~/.claude/agents/`로, `hooks/claude/hooks/*`를 `~/.claude/hooks/`로 동기화한다.
 - Codex 전용으로 `~/.codex/agents/`를 정리한 뒤 `agents/codex/*.toml`을 동기화한다.
 - Codex 전용으로 `~/.codex/hooks/`를 정리한 뒤 `hooks/codex/hooks/*`를 동기화하고, `hooks/codex/hooks.json`을 `~/.codex/hooks.json`으로 복사한다.
+- Cursor 전용으로 `~/.cursor/agents/`를 정리한 뒤 `agents/cursor/*.md`를 동기화하고, `~/.cursor/hooks/`를 정리한 뒤 `hooks/cursor/hooks/*`를 동기화하며, `hooks/cursor/hooks.json`을 `~/.cursor/hooks.json`으로 복사한다.
 - `hooks/claude/settings.json`의 `hooks` 블록을 `~/.claude/settings.json`에 `jq`로 머지한다. 사용자의 `permissions`/`model`/`env` 등 다른 설정은 보존되며, 대상 파일이 없으면 통째로 생성한다 (jq 필요).
 - 관리 대상 설치 파일을 최신 상태로 갱신한다.
