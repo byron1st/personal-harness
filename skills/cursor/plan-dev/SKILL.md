@@ -1,15 +1,15 @@
 ---
 name: plan-dev
-description: Create an implementation plan in Codex plan mode and persist it to Obsidian after approval. Use when the user wants to plan before coding; single-step by default, multi-step only on explicit request.
+description: Create an implementation plan in Cursor plan mode and persist it to Obsidian after approval. Use when the user wants to plan before coding; single-step by default, multi-step only on explicit request.
 ---
 
 # Plan Dev
 
-Create an implementation plan through iterative refinement entirely inside Codex plan mode, then persist the result as markdown file(s) in Obsidian as the very first action after Codex transitions out of plan mode.
+Create an implementation plan through iterative refinement entirely inside Cursor plan mode, then persist the result as markdown file(s) in Obsidian as the very first action after Cursor transitions out of plan mode.
 
 ## Why this skill exists
 
-Codex plan mode blocks file writes while the agent researches and proposes changes. That gate is valuable — the user reads the plan before any side effect happens. But the planning workflow itself produces durable artifacts (plan documents, research notes) the user wants persisted. `plan-dev` threads the needle: planning happens inside plan mode using read-only tools; persistence to Obsidian happens immediately after plan mode ends, as the very first action of the build/execute phase.
+Cursor plan mode blocks file writes while the agent researches and proposes changes. That gate is valuable — the user reads the plan before any side effect happens. But the planning workflow itself produces durable artifacts (plan documents, research notes) the user wants persisted. `plan-dev` threads the needle: planning happens inside plan mode using read-only tools; persistence to Obsidian happens immediately after plan mode ends, as the very first action of the build/execute phase.
 
 This skill is the plan-mode-compatible counterpart of `plan-dev`. The technical thinking and review/refine cycle are identical; what differs is *when* the writes happen.
 
@@ -17,9 +17,9 @@ This skill is the plan-mode-compatible counterpart of `plan-dev`. The technical 
 
 Steps 1–9 below MUST run with read-only tools only (file reads, `rg`/file searches, user questions, read-only `obsidian base:query` lookups or direct file search under `${OBSIDIAN_HOME}`). No writes to Obsidian or the working tree happen during this phase — that is what plan mode enforces, and the skill is designed around it.
 
-When the user approves the plan, Codex exits plan mode through the UI's approval flow. There is no agent-callable plan-exit tool in Codex.
+The user leaves plan mode by building the plan (via the build action, or Shift+Tab / the mode picker). There is no agent-callable plan-exit tool in Cursor.
 
-The first tool calls after the user has approved the plan and Codex is allowed to write MUST be the persistence steps in step 11, in this exact order: research files → plan file(s) → daily note. Only after those three are done may any further follow-up work begin.
+The first tool calls after the user has approved the plan and Cursor is allowed to write MUST be the persistence steps in step 11, in this exact order: research files → plan file(s) → daily note. Only after those three are done may any further follow-up work begin.
 
 ## Language Rule
 
@@ -120,7 +120,7 @@ Review the draft for:
 - **Actionability** — each task / step can be executed without re-investigating the codebase.
 - **Multi-steps integrity** — each step keeps the project compiling and tests passing when completed; step dependencies form a sensible DAG.
 
-Highlight risks, edge cases, and remaining assumptions. Present the plan to the user. This is the content the user reviews before approving Codex to leave plan mode and proceed with writes.
+Highlight risks, edge cases, and remaining assumptions. Present the plan to the user. This is the content the user reviews before approving Cursor to leave plan mode and proceed with writes.
 
 ### 9. Refine
 
@@ -128,15 +128,15 @@ Iterate on the plan based on user feedback. Adjust scope, approach, files, or st
 
 ### 10. Hand off to plan mode exit
 
-Once approved, plan mode ends through Codex's plan approval flow.
+Once approved, plan mode ends when the user builds the plan in Cursor.
 
-Do not call a host-specific plan-exit tool. Present the final reviewed plan, wait for the user's approval in Codex, and then run persistence as the first write-capable action.
+Do not call a host-specific plan-exit tool. Present the final reviewed plan, wait for the user to build the plan in Cursor, and then run persistence as the first write-capable action.
 
 Persistence steps are skill mechanics, not part of the plan content the user reviews — keep the plan focused on the technical work.
 
 ### 11. Persist (first actions in build/execute mode)
 
-These are the very first tool calls after Codex transitions out of plan mode — before any other follow-up:
+These are the very first tool calls after Cursor transitions out of plan mode — before any other follow-up:
 
 1. **Write research files** (if any were drafted in step 4). Save to `${OBSIDIAN_HOME}/01. Research/` per [references/research-file.md](references/research-file.md).
 2. **Write plan file(s)**. Save to `${OBSIDIAN_HOME}/00. Plans/` per the chosen mode's reference. For multi-steps, write the main plan and every sub-plan, then verify each wikilink in the main plan resolves to an existing sub-plan filename.
