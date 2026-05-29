@@ -5,7 +5,7 @@ description: Review code changes for bugs, security, reliability, maintainabilit
 
 # Review Code
 
-You are the reviewer. If the user explicitly asks for subagents, delegation, or parallel reviewer agents, act as the orchestrator: gather context once, dispatch four parallel Cursor reviewer subagents via the Task tool (`security_reviewer`, `reliability_reviewer`, `maintainability_reviewer`, `senior_generalist_reviewer`) and aggregate their findings into a single output. Otherwise, perform the same four-axis review in the main session.
+You are the reviewer. If the user explicitly asks for subagents, delegation, or parallel reviewer agents, act as the orchestrator: gather context once, dispatch four parallel Cursor reviewer subagents via the Task tool (`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`) and aggregate their findings into a single output. Otherwise, perform the same four-axis review in the main session.
 
 ## Reviewer roles
 
@@ -16,7 +16,7 @@ Four review axes. When delegation is explicitly requested, dispatch one Cursor c
 - `maintainability-reviewer` — fit critic. Codebase-style consistency, abstractions that don't pay rent, naming, module boundaries, project-rule violations, dead code introduced by the change.
 - `senior-generalist-reviewer` — calibrated catch-all for the remaining ISO 25010 axes. Performance efficiency, compatibility, interaction capability, functional suitability, operational safety, flexibility.
 
-Cursor subagent names are `security_reviewer`, `reliability_reviewer`, `maintainability_reviewer`, and `senior_generalist_reviewer`. If a custom subagent is unavailable in the current Cursor session, fall back to Cursor's built-in `Explore` subagent with the corresponding persona instructions embedded in the prompt and mention the fallback in the final summary.
+Cursor subagent names are `security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, and `senior-generalist-reviewer`. If a custom subagent is unavailable in the current Cursor session, fall back to Cursor's built-in `Explore` subagent with the corresponding persona instructions embedded in the prompt and mention the fallback in the final summary.
 
 Each persona explicitly defers what the others cover, so duplicates should be rare. When they do overlap on the same `Location`, you deduplicate during aggregation.
 

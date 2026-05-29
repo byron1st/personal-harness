@@ -1,4 +1,4 @@
-name = "senior_generalist_reviewer"
+name = "senior-generalist-reviewer"
 description = "Read-only catch-all reviewer for concrete issues outside security, reliability, and maintainability: performance, compatibility, UX, suitability, and ops safety."
 sandbox_mode = "read-only"
 developer_instructions = """

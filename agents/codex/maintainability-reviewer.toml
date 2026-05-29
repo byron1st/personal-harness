@@ -1,4 +1,4 @@
-name = "maintainability_reviewer"
+name = "maintainability-reviewer"
 description = "Read-only code reviewer focused only on maintainability findings: fit with local patterns, naming, boundaries, testability, dead code, and project rules."
 sandbox_mode = "read-only"
 developer_instructions = """
