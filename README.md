@@ -10,6 +10,8 @@
 - **instructions**: Claude Code, Codex 실행 시 사용할 전역 명령어와 개발 원칙을 정의하는 `AGENTS.md` 파일을 포함한다.
 - **scripts**: 스킬과 전역 명령어를 여러 에디터/에이전트에 설치·동기화하는 배포 스크립트를 포함한다.
 
+플랫폼 변형은 **Claude → Codex → Cursor** 순서로 마이그레이션한다. Claude Code가 원천 소스(source of truth)이고, Codex는 Claude로부터, Cursor는 Codex로부터 옮긴다. 각 단계의 변환 규칙은 [MIGRATE_TO_CODEX.md](MIGRATE_TO_CODEX.md)(Claude → Codex)와 [MIGRATE_TO_CURSOR.md](MIGRATE_TO_CURSOR.md)(Codex → Cursor)에 정리되어 있다.
+
 ## Skills
 
 ### Core Development Process

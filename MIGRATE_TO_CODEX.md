@@ -1,8 +1,16 @@
-# Migrating Claude Code Skills to Codex
+# Migrating Claude Code to Codex
 
-이 문서는 Claude Code 기준으로 작성된 Agent Skill을 Codex에 맞게 옮길 때 적용하는 일반 점검표다. 특정 스킬에 묶이지 않도록 작성하며, 새 스킬이 추가될 때도 같은 기준으로 검사한다.
+이 문서는 **Claude Code → Codex** 마이그레이션 점검표다. 특정 스킬에 묶이지 않도록 작성하며, 새 스킬·서브에이전트·훅이 추가될 때도 같은 기준으로 검사한다.
 
-## 1. Keep frontmatter descriptions short and trigger-focused
+마이그레이션 경로는 **Claude → Codex → Cursor**다. Claude Code가 원천 소스(source of truth)이고, Codex는 Claude로부터, Cursor는 Codex로부터 옮긴다. 이 문서의 소스는 Claude 변형(`skills/claude/`, `agents/claude/`, `hooks/claude/`), 대상은 Codex 변형(`skills/codex/`, `agents/codex/`, `hooks/codex/`)이다. Codex → Cursor 단계는 [MIGRATE_TO_CURSOR.md](MIGRATE_TO_CURSOR.md)를 참고한다.
+
+옮기는 대상은 크게 세 가지 — 스킬(`SKILL.md`), 서브에이전트(custom agent 정의 파일), 훅(hook 설정·스크립트) — 이고, 아래도 그 순서로 나눈다.
+
+## Skill migration
+
+`skills/claude/<skill>`를 `skills/codex/<skill>`로 옮길 때의 규칙이다.
+
+### Keep frontmatter descriptions short and trigger-focused
 
 Codex는 시작 시 각 Skill의 `name`, `description`, 경로만 먼저 본다. 초기 Skill 목록에는 예산이 있으므로 Skill이 많거나 description이 길면 description이 축약되거나 일부 Skill이 초기 목록에서 빠질 수 있다.
 
@@ -11,7 +19,7 @@ Codex는 시작 시 각 Skill의 `name`, `description`, 경로만 먼저 본다.
 - 긴 bullet list, 다중 문단 description, 플랫폼별 내부 구현 설명을 피한다.
 - 권장 기준: 한두 문장, 대략 300자 이내.
 
-## 2. Gate subagent usage behind explicit user intent
+### Gate subagent usage behind explicit user intent
 
 Claude Code는 subagent description과 문맥을 보고 자동 위임할 수 있지만, Codex는 사용자가 명시적으로 subagent, delegation, parallel agent work를 요청했을 때만 subagent를 spawn한다.
 
@@ -20,17 +28,16 @@ Claude Code는 subagent description과 문맥을 보고 자동 위임할 수 있
 - 자동 위임을 전제로 한 문장, 예를 들어 "always dispatch" 같은 지시는 Codex용 Skill에서 제거한다.
 - 사용자가 위임 여부를 선택해야 하는 workflow라면 작업 시작 전에 한 번만 묻는다.
 
-## 3. Replace Claude Code agent invocation with Codex agent concepts
+### Replace Claude Code agent invocation with Codex agent concepts
 
 Claude Code의 `Agent` tool, `subagent_type`, Markdown 기반 custom agent 파일은 Codex의 agent 모델과 다르다.
 
 - Codex 기본 agent는 `default`, `worker`, `explorer`를 기준으로 생각한다.
 - 구현/수정 작업은 보통 `worker`, 읽기 중심 조사나 리뷰는 보통 `explorer`에 맞춘다.
-- custom agent가 필요하면 Markdown frontmatter가 아니라 `.codex/agents/*.toml`의 `name`, `description`, `developer_instructions` 형식을 사용한다.
-- Claude Code persona agent 이름을 그대로 Codex agent type으로 쓰지 않는다. 필요한 persona는 Codex agent prompt 안에 명시한다.
+- custom agent 정의 자체는 "Sub-agent migration"에서 다룬다. Skill 본문에서는 Claude persona agent 이름을 그대로 Codex agent type으로 쓰지 말고, 필요한 persona는 Codex agent prompt 안에 명시한다.
 - 별도 컨텍스트가 목적이면 self-contained prompt를 넘기고, parent conversation fork는 필요한 경우에만 사용한다.
 
-## 4. Re-check permissions, sandbox, and tool assumptions
+### Re-check permissions, sandbox, and tool assumptions
 
 Claude Code subagent는 frontmatter나 settings로 도구 제한, permission mode, hooks를 따로 가질 수 있다. Codex subagent는 기본적으로 현재 sandbox와 approval policy를 상속하며, 부모 turn의 runtime override도 다시 적용된다.
 
@@ -39,7 +46,7 @@ Claude Code subagent는 frontmatter나 settings로 도구 제한, permission mod
 - 승인이 필요한 작업은 child thread에서 실패하거나 parent workflow로 surfaced 될 수 있음을 문서화한다.
 - Claude Code 전용 `allowed-tools`, subagent hook, permission-mode 전제를 Codex용 지시로 남기지 않는다.
 
-## 5. Use Codex plan-mode approval, not host-specific exit tools
+### Use Codex plan-mode approval, not host-specific exit tools
 
 Claude Code에는 agent가 호출하는 plan-mode exit tool이 있지만, Codex에서는 UI의 plan approval flow를 통해 사용자가 계획을 승인하고 write-capable 단계로 넘어간다.
 
@@ -48,7 +55,7 @@ Claude Code에는 agent가 호출하는 plan-mode exit tool이 있지만, Codex�
 - 승인 후 첫 write는 Skill이 요구하는 persistence나 기록 작업이어야 한다.
 - host-specific plan-exit tool 호출을 Codex용 Skill에 남기지 않는다.
 
-## 6. Replace Claude-specific tool names with Codex-safe wording
+### Replace Claude-specific tool names with Codex-safe wording
 
 Claude Code Skill에는 `Read`, `Grep`, `Glob`, `Bash`, `Edit`, `Write`, `AskUserQuestion` 같은 도구명이 직접 들어가 있을 수 있다. Codex 환경에서는 도구 이름과 사용 방식이 다를 수 있으므로, Skill 본문은 Codex에서 실행 가능한 표현으로 바꾼다.
 
@@ -58,7 +65,11 @@ Claude Code Skill에는 `Read`, `Grep`, `Glob`, `Bash`, `Edit`, `Write`, `AskUse
 - 검색 지시는 `rg` 같은 실제 명령이나 "read/search tools"처럼 Codex에서 수행 가능한 방식으로 적는다.
 - 전역 지시 파일은 Codex가 자동으로 읽는 `AGENTS.md`를 우선하되, cross-agent repo에서 `CLAUDE.md`가 병존할 수 있으면 필요한 경우 둘 다 확인하도록 둔다.
 
-## 7. Convert custom agents to Codex TOML agents
+## Sub-agent migration
+
+`agents/claude/*.md`(custom agent)를 `agents/codex/*.toml`로 옮길 때의 규칙이다.
+
+### Convert custom agents to Codex TOML agents
 
 Claude Code custom agent는 Markdown 파일의 YAML frontmatter와 본문으로 정의되지만, Codex custom agent는 standalone TOML 파일로 정의한다. Claude Code용 custom agent를 Codex에서도 쓰려면 파일 형식을 변환하고 배포 경로를 분리한다.
 
@@ -73,7 +84,11 @@ Claude Code custom agent는 Markdown 파일의 YAML frontmatter와 본문으로 
 - Skill 본문에서 custom agent를 사용할 때는 Claude Code의 `Agent` / `subagent_type` 표현 대신 Codex agent `name`을 명시한다.
 - 배포 스크립트가 personal harness를 Codex agent의 source of truth로 관리한다면 `~/.codex/agents/`를 먼저 정리한 뒤 `agents/codex/*.toml`만 복사한다. 기존 사용자 agent를 보존해야 하는 환경이라면 별도 디렉토리나 프로젝트 범위 `.codex/agents/`를 사용한다.
 
-## 8. Convert hooks to Codex hooks.json
+## Hook migration
+
+`hooks/claude/`를 `hooks/codex/`로 옮길 때의 규칙이다.
+
+### Convert hooks to Codex hooks.json
 
 Claude Code hook 설정은 `settings.json`의 `hooks` 블록으로 배포할 수 있지만, Codex는 `hooks.json` 또는 `config.toml`의 inline `[hooks]` 테이블을 읽는다. 같은 layer에 둘 다 두면 Codex가 merge하고 startup warning을 낼 수 있으므로 한 표현을 고른다. Personal harness에서는 `hooks.json`을 기본 형식으로 사용한다.
 
