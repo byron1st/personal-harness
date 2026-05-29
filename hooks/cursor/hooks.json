@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      { "command": "./hooks/git-identity-guard.sh", "failClosed": true },
+      { "command": "./hooks/enforce-rg.sh" },
+      { "command": "./hooks/enforce-fd.sh" }
+    ],
+    "afterFileEdit": [
+      { "command": "./hooks/auto-format.sh" }
+    ],
+    "beforeSubmitPrompt": [
+      { "command": "./hooks/doc-drift-flag.sh" }
+    ],
+    "stop": [
+      { "command": "./hooks/doc-drift-reminder.sh" }
+    ]
+  }
+}

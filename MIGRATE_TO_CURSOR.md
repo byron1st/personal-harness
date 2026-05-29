@@ -1,6 +1,6 @@
 # Migrating Codex Skills to Cursor
 
-이 문서는 Codex 기준으로 작성된 Agent Skill과 그 스킬이 위임하는 서브 에이전트 정의를 Cursor에 맞게 옮길 때 적용하는 일반 점검표다. 특정 스킬에 묶이지 않도록 작성하며, 스킬이 변경되거나 새로 추가될 때도 같은 기준으로 검사한다. 스킬 소스는 `skills/codex/<skill>`, 대상은 `skills/cursor/<skill>`이고, 서브 에이전트 소스는 `agents/codex/*.toml`, 대상은 `agents/cursor/*.md`다.
+이 문서는 Codex 기준으로 작성된 Agent Skill과 그 스킬이 위임하는 서브 에이전트 정의를 Cursor에 맞게 옮길 때 적용하는 일반 점검표다. 특정 스킬에 묶이지 않도록 작성하며, 스킬이 변경되거나 새로 추가될 때도 같은 기준으로 검사한다. 스킬 소스는 `skills/codex/<skill>`, 대상은 `skills/cursor/<skill>`이고, 서브 에이전트 소스는 `agents/codex/*.toml`, 대상은 `agents/cursor/*.md`이며, hooks 소스는 `hooks/codex/`, 대상은 `hooks/cursor/`다.
 
 이 점검표의 핵심은 이전 호환성 분석의 A(서브에이전트 위임), C(Codex 전용 용어·plan mode), D(구조화 사용자 입력)다. MCP 표현 정리(B)는 1회성 작업이라 제외한다.
 
@@ -83,7 +83,45 @@ readonly: true
 ...본문 (developer_instructions 내용 그대로)...
 ```
 
-## 8. Verify after migration
+## 8. Convert the hooks (Codex hooks.json → Cursor hooks.json)
+
+Codex hook은 Claude식 `hooks.json`(`PreToolUse`/`PostToolUse`/`UserPromptSubmit`)이지만 Cursor hook은 이벤트 이름·차단 방식·I/O 스키마가 근본적으로 다르다. 소스는 `hooks/codex/`, 대상은 `hooks/cursor/`다(`hooks/claude/`와 평행). 단순 치환이 아니라 이벤트 모델 재매핑이다.
+
+- **파일·경로**: `hooks.json`에 **`"version": 1` 필수**. 설치 대상은 전역 `~/.cursor/hooks.json` + `~/.cursor/hooks/`(프로젝트 범위면 `<repo>/.cursor/`). command는 상대경로 — 전역 훅은 `~/.cursor/`에서 실행되므로 `./hooks/foo.sh`로 적는다(codex의 절대경로 `$HOME/.codex/hooks/...` 대체). 스크립트는 `chmod +x` 필요.
+- **이벤트 매핑**: 도구 단위 matcher 대신 목적별 이벤트로 옮긴다.
+
+| Codex | Cursor 이벤트 | 비고 |
+| --- | --- | --- |
+| `PreToolUse` matcher `Bash` | `beforeShellExecution` | 입력에 `command`·`cwd` 제공 |
+| `PostToolUse` matcher `apply_patch\|Edit\|Write` | `afterFileEdit` | 입력에 `file_path`·`edits`; **관찰 전용** |
+| `UserPromptSubmit` | `beforeSubmitPrompt` + `stop` | 컨텍스트 주입 불가라 분리(아래) |
+
+- **I/O·차단**: stdin JSON → stdout JSON → exit code. 모든 agent 훅에 **공통 base 필드**(`conversation_id`·`generation_id`·`workspace_roots`·`hook_event_name` 등)가 들어오나 **`cwd`는 `beforeShellExecution`에만** 있다. 차단은 `{"permission":"deny","user_message":...,"agent_message":...}`(또는 exit 2). exit 0=stdout JSON 사용, exit 2=deny, 그 외=**fail-open** — 반드시 막아야 하는 가드는 entry에 `failClosed:true`를 둔다.
+- **입력 필드 변경**: `.tool_input.command`→`.command`; `.cwd`→이벤트별(`beforeShellExecution`만 `.cwd`, file/stop 계열은 `.workspace_roots[0]`); `.prompt`는 그대로(`beforeSubmitPrompt`).
+- **차단 메시지 이동**: codex의 `stderr`+`exit 2`를 `agent_message`(에이전트에 전달)로 옮긴다. 통과 시 `{"permission":"allow"}`+exit 0.
+- **능력 손실 주의**: `afterFileEdit`는 출력 무시·차단 불가 — 포매터는 돌리되 **실패를 에이전트에 surface 못 한다**(stderr 로그만, best-effort). `beforeSubmitPrompt`는 **컨텍스트 주입 수단이 없고**(차단만 가능) `cwd`도 없다.
+- **컨텍스트 주입이 필요한 훅(doc-drift류)은 `beforeSubmitPrompt`(플래그) + `stop`(주입)으로 분리한다**: ① `beforeSubmitPrompt`에서 트리거 구문을 `.prompt`로 감지하면 `conversation_id` 기준 임시 플래그 파일(`${TMPDIR:-/tmp}/...`)만 기록한다(출력이 무시될 수 있으므로 부수효과만 쓰고 차단하지 않음). ② `stop`에서 플래그가 있고 `loop_count==0`이며 조건 충족 시 `{"followup_message":...}`를 출력하면 Cursor가 다음 user 메시지로 자동 제출해 에이전트 루프에 주입한다. repo 경로는 `.workspace_roots[0]`로 얻는다. ③ 무한 루프 방지로 `loop_count==0` 가드 + 처리 후 플래그 삭제(1회성)를 두고, `loop_limit`(기본 5)를 백스톱으로 삼는다. 이 분리 때문에 `hooks/cursor`는 codex보다 스크립트가 하나 많다(`doc-drift-flag.sh` 추가).
+- **matcher(선택)**: `beforeShellExecution`의 matcher는 *셸 명령 문자열* 정규식이다(`preToolUse`는 도구 이름). codex처럼 스크립트가 내부에서 필터하면 생략한다.
+
+대상 `hooks/cursor/hooks.json` 예시:
+
+```json
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      { "command": "./hooks/git-identity-guard.sh", "failClosed": true },
+      { "command": "./hooks/enforce-rg.sh" },
+      { "command": "./hooks/enforce-fd.sh" }
+    ],
+    "afterFileEdit": [{ "command": "./hooks/auto-format.sh" }],
+    "beforeSubmitPrompt": [{ "command": "./hooks/doc-drift-flag.sh" }],
+    "stop": [{ "command": "./hooks/doc-drift-reminder.sh" }]
+  }
+}
+```
+
+## 9. Verify after migration
 
 - 트리 패리티: `skills/codex`와 `skills/cursor`의 파일 목록이 동일한가.
 - 각 `SKILL.md`의 `name:`이 디렉터리명과 일치하는가.
@@ -94,7 +132,11 @@ readonly: true
 - 각 `agents/cursor/*.md` frontmatter가 실제 YAML 파서로 파싱되는가 — 특히 `description`의 `: `(콜론+공백)를 따옴표로 감쌌는가.
 - 각 서브 에이전트의 `name`이 파일명·skill 본문 dispatch 참조와 일치하고 `readonly: true`가 있는가.
 - 각 본문이 대응하는 Codex `developer_instructions`와 동일한가.
+- hooks 트리 대응: `hooks/codex/`와 `hooks/cursor/`의 스크립트가 매핑되는가(doc-drift는 `beforeSubmitPrompt`+`stop` 분리로 `doc-drift-flag.sh`가 추가됨).
+- `hooks/cursor/hooks.json`이 유효 JSON이고 `"version":1`이 있으며 command가 `./hooks/...` 상대경로인가; 스크립트가 `chmod +x`·`bash -n`을 통과하는가.
+- 샘플 stdin 스모크 테스트: 차단 케이스가 `{"permission":"deny"}`, 통과가 `{"permission":"allow"}`를 내는가; doc-drift는 플래그→`followup_message` 연동과 `loop_count` 가드가 동작하는가.
+- 입력 필드가 Cursor 스키마(`.command`/`.file_path`/`.workspace_roots[0]`)를 쓰는가 — 잔존 `.tool_input.command`나 무조건적 `.cwd` 의존이 없는가.
 
 ## Out of scope
 
-- 설치/배포 배선(`scripts/apply-to-global.sh`에 cursor 분기 추가, `~/.cursor/skills`·`~/.cursor/agents` 동기화)과 hooks 변환은 이 점검표에 포함하지 않는다. skill·서브 에이전트 본문 마이그레이션에 집중한다.
+- 설치/배포 배선(`scripts/apply-to-global.sh`에 cursor 분기 추가, `~/.cursor/skills`·`~/.cursor/agents`·`~/.cursor/hooks` 동기화)은 이 점검표에 포함하지 않는다. skill·서브 에이전트·hooks 본문 마이그레이션에 집중한다.
