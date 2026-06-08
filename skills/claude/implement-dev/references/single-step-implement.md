@@ -55,12 +55,6 @@ Create the completion report in Obsidian following [report-file.md](report-file.
 
 After writing the report, add a wikilink to it at the top of the plan file (under the plan's frontmatter or heading) so the plan ↔ report link is bidirectional.
 
-## 6. Inline summary in the response
+## 6. Print the review cockpit
 
-Alongside the saved report, output a **brief** summary in the response body so the user can review without opening Obsidian:
-
-- What was implemented (one sentence per feature/area).
-- Path to the saved report (Obsidian wikilink or relative path).
-- Any deviations from the plan worth the user's attention.
-
-Keep the inline summary short; the full detail lives in the report file.
+Alongside the saved report, print its **cockpit** sections — `## Summary`, `## Review Map`, `## Red Flags`, `## Open Questions` — verbatim in the response body, followed by the report path, so the user can start reviewing without opening Obsidian. The `## Change Walkthrough` and everything below it stay in the file for on-demand reading; do not reprint them here.

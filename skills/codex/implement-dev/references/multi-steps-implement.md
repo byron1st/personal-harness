@@ -30,7 +30,7 @@ Walk the steps in dependency order from `## Execution Flow`. **Execute one step 
 1. **Run** step N:
    - Delegation explicitly requested: dispatch a Codex `worker` agent (section 4). Wait for it to return.
    - No delegation request: perform the per-step work directly in the main session (section 5).
-2. **Present** the step summary — especially the `## Manual Verification` items — to the user.
+2. **Present** the step summary — especially the Red Flags, Open Questions, and `## Manual Verification` items — to the user.
 3. **Wait** for explicit user approval. If the user requests changes, use a follow-up `worker` only when delegation was explicitly requested; otherwise make the follow-up changes in the main session. Re-request approval and do not merge until approved.
 4. **Merge** `feature/step-N` into `develop` (section 6), delete the feature branch, run post-merge validation.
 5. Move on to step N+1.
@@ -65,6 +65,8 @@ The worker's single return message is the only thing that enters the main sessio
 - **Status**: `success` | `blocked` | `failed`.
 - **Report path**: absolute path to the completion report in Obsidian (so the user can open it if they want detail).
 - **Branch**: feature branch name and the latest commit SHA.
+- **Red Flags**: the report's `## Red Flags` list copied verbatim (each id + `file:line` + one line), or `None`. The main session surfaces these at the review gate — they are the AI-specific signals most worth the user's distrust.
+- **Open Questions**: the report's `## Open Questions` list copied verbatim (each id + `file:line` + one line), or `None`. The reviewer can answer by id.
 - **Manual Verification items**: the bullet list copied verbatim from the report's `## Manual Verification` section. Write `None` if there is nothing to verify manually. The main session presents these directly to the user — it does not re-read the report file.
 - **Files changed**: short bullet list of changed paths (no diffs).
 - **Deviations**: any deviations from the sub-plan and the reason. Omit the field if none.
@@ -141,6 +143,8 @@ Create the step-level completion report in Obsidian following [report-file.md](r
 
 **Manual Verification section — required.** The report must include a `## Manual Verification` section that lists everything the user must check by hand before approving the merge: UI behavior, third-party integrations, external side effects, content/copy review, visual regressions, data migrations, configuration changes on shared environments, etc. Each item is a checkbox `- [ ]` with concrete steps to verify it. If there is genuinely nothing to verify manually, write a single line `None` — do not omit the section.
 
+**Review cockpit — required.** Fill the report's `## Summary`, `## Review Map`, `## Red Flags`, and `## Open Questions` sections per [report-file.md](report-file.md); write `None` in Red Flags / Open Questions only when genuinely empty. The Red Flags and Open Questions are surfaced in the step summary (section 4.2) and drive the review gate, so they must reflect this step's real risks and uncertainties.
+
 Add a wikilink to the report at the top of the sub-plan file so the link is bidirectional.
 
 ### 5.6 Commit and summarize
@@ -158,7 +162,7 @@ If running in a worker, return the summary defined in section 4.2 as the worker'
 
 **Do not merge to `develop` automatically.** After the step work completes:
 
-1. Present the step summary to the user — especially the `## Manual Verification` checklist.
+1. Present the step summary to the user — especially the Red Flags, Open Questions, and `## Manual Verification` checklist.
 2. Wait for the user to perform any manual verification and to give **explicit approval** to proceed.
 3. If the user requests changes, run section 4.3 only when delegation was explicitly requested; otherwise make the follow-up changes in the main session. Do not merge until approval is given.
 

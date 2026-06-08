@@ -45,7 +45,7 @@ Do not spawn a subagent just because the plan is multi-steps. The delegation pat
 Steps are executed **one at a time, sequentially**. After step N is complete:
 
 1. The completion report (including a `## Manual Verification` checklist) has been written to Obsidian.
-2. The main session **pauses** and presents the step summary — especially the Manual Verification items — and waits for the user's explicit approval. Manual checks performed by the user are part of this gate.
+2. The main session **pauses** and presents the step summary — especially the Red Flags, Open Questions, and Manual Verification items — and waits for the user's explicit approval. Manual checks performed by the user are part of this gate.
 3. Only after approval does the main session merge `feature/step-N` into `develop` and start the next step.
 
 Because every step blocks on a user review, **do not run steps in parallel** — there is no benefit, and parallelism conflicts with the review gate. Execute steps strictly in dependency order, one after another.
@@ -71,12 +71,12 @@ Follow the reference document for the decided mode:
 
 ## Report
 
-Both modes write completion reports to Obsidian at `${OBSIDIAN_HOME}/02. Implementation Reports/`. File naming, content format, and the plan ↔ report wikilink convention are in [references/report-file.md](references/report-file.md).
+Both modes write completion reports to Obsidian at `${OBSIDIAN_HOME}/02. Implementation Reports/`. File naming, content format, the review-cockpit layout, and the plan ↔ report wikilink convention are in [references/report-file.md](references/report-file.md).
 
-After saving the report file, also print the report's full content as the session's final output to the user — not a paraphrase or shortened version. The user should see exactly what was written to Obsidian without having to open the file.
+After saving the report file, print its **review cockpit** — the `## Summary`, `## Review Map`, `## Red Flags`, and `## Open Questions` sections, verbatim — as the session's final output, followed by the report's path. The cockpit is the high-signal block that directs the user's review; the `## Change Walkthrough` and everything below it stay in the file for on-demand reading, so do not print them. Always include the path so the user can open the full report.
 
-- **single-step**: print the single completion report.
-- **multi-steps**: print only the final summary report (the `multi-steps-summary` document). Do not print each per-step report — they remain in Obsidian for reference.
+- **single-step**: print the cockpit of the single completion report.
+- **multi-steps**: print the cockpit of the final summary report (Overall Outcome plus the aggregated outstanding Red Flags & Open Questions). Do not print each per-step report — they remain in Obsidian and were already surfaced at each step's review gate.
 
 ## Error Recovery
 

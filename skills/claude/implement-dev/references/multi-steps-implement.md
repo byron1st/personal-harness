@@ -28,7 +28,7 @@ git pull --ff-only || true
 Walk the steps in dependency order from `## Execution Flow`. **Execute one step at a time, sequentially.** For each step:
 
 1. **Dispatch** a sub-agent to implement step N (section 4). Wait for it to return.
-2. **Present** the sub-agent's returned summary — especially the `## Manual Verification` items — to the user.
+2. **Present** the sub-agent's returned summary — especially the Red Flags, Open Questions, and `## Manual Verification` items — to the user.
 3. **Wait** for explicit user approval. If the user requests changes, dispatch a follow-up sub-agent on the same `feature/step-N` branch (section 4.3) and re-request approval; do not merge until approved.
 4. **Merge** `feature/step-N` into `develop` (section 6), delete the feature branch, run post-merge validation.
 5. Move on to step N+1.
@@ -63,6 +63,8 @@ The sub-agent's single return message is the only thing that enters the main ses
 - **Status**: `success` | `blocked` | `failed`.
 - **Report path**: absolute path to the completion report in Obsidian (so the user can open it if they want detail).
 - **Branch**: feature branch name and the latest commit SHA.
+- **Red Flags**: the report's `## Red Flags` list copied verbatim (each id + `file:line` + one line), or `None`. The main session surfaces these at the review gate — they are the AI-specific signals most worth the user's distrust.
+- **Open Questions**: the report's `## Open Questions` list copied verbatim (each id + `file:line` + one line), or `None`. The reviewer can answer by id.
 - **Manual Verification items**: the bullet list copied verbatim from the report's `## Manual Verification` section. Write `None` if there is nothing to verify manually. The main session presents these directly to the user — it does not re-read the report file.
 - **Files changed**: short bullet list of changed paths (no diffs).
 - **Deviations**: any deviations from the sub-plan and the reason. Omit the field if none.
@@ -139,6 +141,8 @@ Create the step-level completion report in Obsidian following [report-file.md](r
 
 **Manual Verification section — required.** The report must include a `## Manual Verification` section that lists everything the user must check by hand before approving the merge: UI behavior, third-party integrations, external side effects, content/copy review, visual regressions, data migrations, configuration changes on shared environments, etc. Each item is a checkbox `- [ ]` with concrete steps to verify it. If there is genuinely nothing to verify manually, write a single line `None` — do not omit the section.
 
+**Review cockpit — required.** Fill the report's `## Summary`, `## Review Map`, `## Red Flags`, and `## Open Questions` sections per [report-file.md](report-file.md); write `None` in Red Flags / Open Questions only when genuinely empty. The Red Flags and Open Questions are echoed back in the return summary (section 4.2) and drive the review gate, so they must reflect this step's real risks and uncertainties.
+
 Add a wikilink to the report at the top of the sub-plan file so the link is bidirectional.
 
 ### 5.6 Commit and return
@@ -156,7 +160,7 @@ Then return the summary defined in section 4.2 as the sub-agent's single final m
 
 **Do not merge to `develop` automatically.** After the sub-agent returns:
 
-1. Present the returned summary to the user — especially the `## Manual Verification` checklist.
+1. Present the returned summary to the user — especially the Red Flags, Open Questions, and `## Manual Verification` checklist.
 2. Wait for the user to perform any manual verification and to give **explicit approval** to proceed.
 3. If the user requests changes, run section 4.3 (follow-up dispatch). Do not merge until approval is given.
 
