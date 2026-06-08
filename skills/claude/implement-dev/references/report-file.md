@@ -52,14 +52,14 @@ Plan: [[00. Plans/{plan or sub-plan base}]]
 - **See the change**: `{ReviewBase}`. Every `file:line` anchor in this report is valid against that snapshot.
 - **Reading order** — foundation-first; read top to bottom and you never meet a symbol before its definition:
 
-  | # | Group | Risk | Lens | Intent (one line) |
-  |---|-------|------|------|-------------------|
-  | 1 | {types & contracts} | low | skim | {why this group exists} |
-  | 2 | {core logic} | high | line-by-line | {…} |
-  | 3 | {wiring / glue} | medium | top-down | {…} |
-  | 4 | {tests} | low | test-as-spec | {…} |
+| # | Group | Risk | Lens | Intent (one line) |
+|---|-------|------|------|-------------------|
+| 1 | {types & contracts} | low | skim | {why this group exists} |
+| 2 | {core logic} | high | line-by-line | {…} |
+| 3 | {wiring / glue} | medium | top-down | {…} |
+| 4 | {tests} | low | test-as-spec | {…} |
 
-  Risk ∈ low · medium · high. Lens ∈ line-by-line · top-down · bottom-up+flow · test-as-spec · skim.
+Risk ∈ low · medium · high. Lens ∈ line-by-line · top-down · bottom-up+flow · test-as-spec · skim.
 
 ## Red Flags
 AI-specific signals the reviewer should distrust on sight — new dependencies, possibly-hallucinated or unverified APIs, over-engineering, scope beyond the plan, swallowed errors, hardcoded values or secrets. Each gets a stable id and a `file:line` anchor. Write `None` if there are genuinely none — never omit the section.
