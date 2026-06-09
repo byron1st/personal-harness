@@ -2,7 +2,7 @@
 
 이 문서는 **Codex → Cursor** 마이그레이션 점검표다. 특정 스킬에 묶이지 않도록 작성하며, 스킬·서브에이전트·훅이 변경·추가될 때도 같은 기준으로 검사한다.
 
-마이그레이션 경로는 **Claude → Codex → Cursor**다. Claude Code가 원천 소스(source of truth)이고, Codex는 Claude로부터, Cursor는 Codex로부터 옮긴다. 이 문서의 소스는 Codex 변형(`skills/codex/`, `agents/codex/`, `hooks/codex/`), 대상은 Cursor 변형(`skills/cursor/`, `agents/cursor/`, `hooks/cursor/`)이다. Claude → Codex 단계는 [MIGRATE_TO_CODEX.md](MIGRATE_TO_CODEX.md)를 참고한다.
+마이그레이션 토폴로지는 **Claude ↔ Codex**, 그리고 **Codex → Cursor**다. Personal 환경의 중심은 Claude Code이고 Work 환경의 중심은 Codex이므로, Claude Code와 Codex 변형은 양방향으로 공유할 수 있다. Cursor는 Work의 하위 변형이므로 Codex에서만 파생되며 Cursor를 소스로 쓰는 역방향은 지원하지 않는다. 이 문서의 소스는 Codex 변형(`skills/codex/`, `agents/codex/`, `hooks/codex/`)이고, 대상은 Cursor 변형(`skills/cursor/`, `agents/cursor/`, `hooks/cursor/`)이다. Claude → Codex 단계는 [MIGRATE_TO_CODEX.md](MIGRATE_TO_CODEX.md), Codex → Claude Code 단계는 [MIGRATE_TO_CLAUDE.md](MIGRATE_TO_CLAUDE.md)를 참고한다.
 
 Cursor는 Claude Code처럼 subagent와 plan mode를 기본 지원하지만, 이 harness의 Cursor 변형은 Codex 변형의 동작(명시적 요청 시에만 위임)을 유지한다. 따라서 마이그레이션은 "재설계"가 아니라 "Codex 고유 표현을 Cursor 표현으로 치환"하는 작업에 가깝다 — 핵심은 서브에이전트 위임, Codex 전용 용어·plan mode, 구조화 사용자 입력 처리다.
 
@@ -159,4 +159,4 @@ Codex hook은 Claude식 `hooks.json`(`PreToolUse`/`PostToolUse`/`UserPromptSubmi
 
 ## Out of scope
 
-- 설치/배포 배선은 이 점검표가 아니라 `scripts/apply-to-global.sh`가 담당한다(cursor 분기는 이미 구현됨) — `skills/cursor/`·`agents/cursor/`·`hooks/cursor/`를 각각 `~/.cursor/`의 `skills`·`agents`·`hooks`(+ `hooks.json`)로 동기화한다. 동작은 README의 apply-to-global.sh 항목을 참고한다. 이 문서는 스킬·서브에이전트·훅 본문 마이그레이션 규칙에 집중한다.
+- 설치/배포 배선은 이 점검표가 아니라 `scripts/apply-to-work.sh`가 담당한다(cursor 분기는 이미 구현됨) — `skills/cursor/`·`agents/cursor/`·`hooks/cursor/`를 각각 `~/.cursor/`의 `skills`·`agents`·`hooks`(+ `hooks.json`)로 동기화한다. 동작은 README의 apply-to-personal.sh / apply-to-work.sh 항목을 참고한다. 이 문서는 스킬·서브에이전트·훅 본문 마이그레이션 규칙에 집중한다.

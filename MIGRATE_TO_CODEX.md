@@ -2,7 +2,7 @@
 
 이 문서는 **Claude Code → Codex** 마이그레이션 점검표다. 특정 스킬에 묶이지 않도록 작성하며, 새 스킬·서브에이전트·훅이 추가될 때도 같은 기준으로 검사한다.
 
-마이그레이션 경로는 **Claude → Codex → Cursor**다. Claude Code가 원천 소스(source of truth)이고, Codex는 Claude로부터, Cursor는 Codex로부터 옮긴다. 이 문서의 소스는 Claude 변형(`skills/claude/`, `agents/claude/`, `hooks/claude/`), 대상은 Codex 변형(`skills/codex/`, `agents/codex/`, `hooks/codex/`)이다. Codex → Cursor 단계는 [MIGRATE_TO_CURSOR.md](MIGRATE_TO_CURSOR.md)를 참고한다.
+마이그레이션 토폴로지는 **Claude ↔ Codex**, 그리고 **Codex → Cursor**다. Personal 환경의 중심은 Claude Code이고 Work 환경의 중심은 Codex이므로, Claude Code와 Codex 변형은 양방향으로 공유할 수 있다. Cursor는 Work의 하위 변형이므로 Codex에서만 파생되며 Cursor를 소스로 쓰는 역방향은 지원하지 않는다. 이 문서의 소스는 Claude 변형(`skills/claude/`, `agents/claude/`, `hooks/claude/`)이고, 대상은 Codex 변형(`skills/codex/`, `agents/codex/`, `hooks/codex/`)이다. Codex → Claude Code 단계는 [MIGRATE_TO_CLAUDE.md](MIGRATE_TO_CLAUDE.md), Codex → Cursor 단계는 [MIGRATE_TO_CURSOR.md](MIGRATE_TO_CURSOR.md)를 참고한다.
 
 옮기는 대상은 크게 세 가지 — 스킬(`SKILL.md`), 서브에이전트(custom agent 정의 파일), 훅(hook 설정·스크립트) — 이고, 아래도 그 순서로 나눈다.
 
