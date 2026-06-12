@@ -36,6 +36,7 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 - `setup-initial-repo`: SPEC.md 문서를 기반으로 신규 프로젝트 저장소를 부트스트랩한다. CLAUDE.md/AGENTS.md, 언어별 컨벤션 docs, Makefile, .gitignore 생성 및 적절한 Git identity로 `git init`과 remote origin 연결까지 수행한다.
 - `application-research-sync`: 코드 변경 사항을 분석해 Obsidian Vault의 Research 파일을 일괄 업데이트한다.
 - `summarize-week`: Obsidian의 Daily note와 플랜·Research 문서를 읽어 주간 코딩 요약을 작성한다.
+- `learn-from-manual-edits`: 에이전트가 작성한 코드 위에 사용자가 직접 수정한 부분을 식별해 각 수정 배경의 일반적인 선호(스타일·아키텍처·네이밍 등)를 추론하고, 프로젝트의 CLAUDE.md(Claude Code) 또는 AGENTS.md(Codex/Cursor)에 재사용 가능한 컨벤션으로 기록한다.
 
 ## 환경변수
 
