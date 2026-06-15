@@ -111,7 +111,7 @@ When all steps are merged, a top-level summary report may be written at `{YYYYMM
 Application: {Application}
 JiraTicket: {Jira ticket number}
 ReportType: multi-steps-summary
-ReviewBase: {cumulative diff on develop, e.g. `git diff main...develop`}
+ReviewBase: {cumulative diff on develop, e.g. git diff main...develop}
 ---
 
 # [Project / Initiative Name] — Implementation Summary
