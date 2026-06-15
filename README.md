@@ -22,6 +22,7 @@
 plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev → review-code → (이슈 발견 시 fix-dev 반복) → commit-code → request-merge
 ```
 
+- `dev-flow`: 이미 작성된 `plan-dev` 플랜 파일을 받아 `implement-dev` → `test-dev` → `review-code`를 직렬 sub-agent flow로 실행하고, 최종 flow summary를 채팅 세션에 출력하는 얇은 오케스트레이션 스킬이다.
 - `plan-dev`: 호스트 에이전트(Claude Code, Codex)의 내장 Plan 모드를 활용해 구현 플랜을 수립하고 Obsidian에 저장한다. 필요 시 다단계(main + sub-plans) 플랜으로 분할한다.
 - `implement-dev`: `plan-dev`가 생성한 구현 플랜을 실행(TDD Red-Green-Refactor)해 코드를 작성하고 Obsidian에 완료 보고서를 저장한다. 단일 단계/다단계 플랜을 자동 인식하며, 다단계 모드에서는 플랫폼 정책에 따라 각 step을 sub-agent에 위임하거나 메인 세션에서 순차 실행한다. Codex는 사용자가 sub-agent/delegation을 명시했을 때만 위임한다.
 - `fix-dev`: 리뷰 단계(단일 step 구현 완료 직후, 또는 다단계 step 사이)에서 발견된 결함을 원인 분석·수정·검증까지 처리하고 결과를 요약한다. 지원 플랫폼 또는 명시적 위임 요청이 있는 Codex 세션에서는 sub-agent에 위임할 수 있다. 수정 후에는 해당 Implementation Report 끝에 `## Fix` 섹션을 누적해 변경 내역을 기록한다. 명시적 요청이 없으면 커밋은 하지 않는다.

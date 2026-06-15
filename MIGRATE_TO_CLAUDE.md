@@ -16,6 +16,7 @@
 
 - 먼저 Codex 변형이 실제로 바꾼 사용자-facing 의미를 식별한다. 단순히 Claude 원본을 다시 복사하면 Codex에서 추가된 동작·문구·검증 규칙을 잃을 수 있다.
 - 트리 구조, 파일명, `references/`·`scripts/` 경로, frontmatter `name`은 기본적으로 유지한다. `references/`와 `scripts/`가 host-neutral하면 그대로 복사한다.
+- skill-local `agents/openai.yaml`은 Codex/OpenAI UI 메타데이터이며 Claude Code custom subagent 정의가 아니다. Codex 소스에 이 파일이 있어도 `skills/claude/<skill>/agents/openai.yaml`로 복사하지 말고, Claude 대상 스킬에는 필요한 `SKILL.md`, host-neutral `references/`, `scripts/`만 둔다.
 - Claude Code 변형에서는 Codex 실행모델을 설명하는 문장을 Claude Code 실행모델로 바꾼다. 예: Codex `sandbox and approval policy`, `worker`, `explorer`, `/permissions`는 Claude Code의 permission mode, `Agent` tool, `subagent_type`, `ExitPlanMode`, `AskUserQuestion` 등으로 바꾼다.
 - host-neutral skill은 거의 그대로 옮긴다. 위임(subagent), plan mode, hook/tool 이름, 권한 모델, Codex 전용 위치(`.agents/skills`, `~/.codex`)가 없으면 차이를 만들지 않는다.
 
@@ -68,6 +69,7 @@ Codex는 sandbox mode와 approval policy를 중심으로 권한을 설명한다.
 ### Verify
 
 - 트리 패리티: 대상 skill에 `SKILL.md`가 있고, host-neutral `references/`·`scripts/` 트리가 Codex 소스와 동일한가.
+- skill-local `agents/openai.yaml`이 Claude 대상에 복사되지 않았는가. Claude custom subagent는 repo-level `agents/claude/*.md`로만 관리한다.
 - frontmatter `name`이 디렉터리명과 일치하고 YAML이 파싱되는가.
 - 잔존 스윕(`rg`): `Codex`, `worker`, `explorer`, `sandbox and approval`, `apply_patch`, `.agents/skills`, `~/.codex`, `ExitPlanMode` 누락, `AskUserQuestion` 누락이 문맥상 의도된 것인지 확인한다. `Codex`가 제품명 예시로 필요한 경우만 허용한다.
 - 위임형 skill은 Claude Code에서 `Agent` tool / `subagent_type` 흐름이 자연스럽고, Codex 전용 "explicit user request only" fallback이 불필요하게 남아있지 않은가.

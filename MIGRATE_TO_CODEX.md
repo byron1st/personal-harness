@@ -65,6 +65,15 @@ Claude Code Skill에는 `Read`, `Grep`, `Glob`, `Bash`, `Edit`, `Write`, `AskUse
 - 검색 지시는 `rg` 같은 실제 명령이나 "read/search tools"처럼 Codex에서 수행 가능한 방식으로 적는다.
 - 전역 지시 파일은 Codex가 자동으로 읽는 `AGENTS.md`를 우선하되, cross-agent repo에서 `CLAUDE.md`가 병존할 수 있으면 필요한 경우 둘 다 확인하도록 둔다.
 
+### Handle Codex skill UI metadata
+
+`skills/codex/<skill>/agents/openai.yaml`은 Codex/OpenAI UI 메타데이터이며 repo-level custom agent 정의(`agents/codex/*.toml`)가 아니다.
+
+- Claude 소스에 대응 파일이 없어도 Codex 대상 스킬이 이미 `agents/openai.yaml`을 사용한다면 삭제하지 않는다.
+- 새 Codex 스킬에서 UI metadata가 필요하다고 판단한 경우에만 `agents/openai.yaml`을 생성한다. 기존 모든 스킬에 일괄 추가하지 않는다.
+- 생성/갱신 시 `SKILL.md`를 기준으로 `display_name`, `short_description`, `default_prompt`를 맞추고, `default_prompt`는 `$skill-name` 형식을 포함한다.
+- 이 파일은 Codex 대상 전용이다. Claude/Cursor로 다시 마이그레이션할 때는 대상 스킬에 복사하지 않는다.
+
 ## Sub-agent migration
 
 `agents/claude/*.md`(custom agent)를 `agents/codex/*.toml`로 옮길 때의 규칙이다.

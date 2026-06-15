@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dev Flow"
+  short_description: "Delegate implementation, tests, and review"
+  default_prompt: "Use $dev-flow to run this existing plan-dev plan through the delegated implementation, test hardening, and review pipeline: {plan path}."
