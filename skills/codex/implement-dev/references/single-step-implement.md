@@ -57,4 +57,4 @@ After writing the report, add a wikilink to it at the top of the plan file (unde
 
 ## 6. Print the review cockpit
 
-Alongside the saved report, print its **cockpit** sections — `## Summary`, `## Review Map`, `## Red Flags`, `## Open Questions` — verbatim in the response body, followed by the report path, so the user can start reviewing without opening Obsidian. The `## Change Walkthrough` and everything below it stay in the file for on-demand reading; do not reprint them here.
+Alongside the saved report, print its **cockpit** sections — `## Summary`, `## Review Map`, `## Red Flags`, `## Open Questions`, `## Change Walkthrough` — verbatim in the response body, followed by the report path, so the user can start reviewing without opening Obsidian. The `## Key Decisions` and everything below it stay in the file for on-demand reading; do not reprint them here.
