@@ -52,6 +52,12 @@ Cursor Plan Mode는 Shift+Tab(또는 복잡한 작업에서 자동 제안)으로
 - "current Codex mode provides it" 류 표현은 "current Cursor mode provides it"로 바꾼다.
 - Cursor 에이전트 챗에는 다지선다용 구조화 입력 도구가 표준으로 제공되지 않는다. 따라서 plain-text(번호 옵션) 폴백을 반드시 남긴다. Codex 변형에 이미 폴백이 있으면 그대로 둔다.
 
+### Format printed file links for Cursor
+
+- 스킬이 최종 채팅 출력에 Markdown 파일 링크를 만들 때, 저장된 문서의 `path:line` 앵커는 그대로 두고 **채팅에 출력하는 링크 target만** Cursor용으로 바꾼다.
+- Codex/Claude Code의 일반 로컬 Markdown target(`(/absolute/path:line)`)을 Cursor로 옮길 때는 VS Code 계열 URL 형식의 Cursor scheme을 쓴다: `[src/app.ts:42](cursor://file//Users/me/repo/src/app.ts:42:1)`. Unix 절대경로는 `/`로 시작하므로 `cursor://file//Users/...`처럼 `file` 뒤에 슬래시가 두 개 온다.
+- 링크 label은 reviewer가 읽기 쉬운 repo-relative `path:line`으로 유지한다. target은 absolute path, line, column 1을 포함해 클릭 시 Cursor가 해당 파일 위치로 열 수 있게 한다.
+
 ### Fix project-target and global-instruction wording
 
 - 신규 프로젝트의 에이전트 파일을 고르는 안내(예: `setup-initial-repo`)에는 Cursor를 예시에 포함한다. Cursor는 `AGENTS.md`를 읽으므로 "Claude Code → CLAUDE.md, Cursor / Codex / other agents → AGENTS.md"처럼 적는다.
