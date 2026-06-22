@@ -1,6 +1,6 @@
 ---
 name: learn-from-manual-edits
-description: Identify the parts of the working tree that the user manually edited on top of code the agent wrote earlier in this session, infer the general preference behind each edit (style, architecture, naming, error handling, testing, …), and persist those preferences as reusable conventions in the project's CLAUDE.md so future implementations follow them from the start. Use this skill whenever the user says they manually changed, fixed, refactored, or touched code the agent produced — e.g. "내가 수동으로 수정한 내용이 있으니 차이점을 확인하고 …", "내가 직접 고친 부분이 있어", "내가 바꾼 부분 반영해", "I made some manual edits, check the diff", "look at what I changed and remember it" — even when (especially when) the request is combined with a follow-up implementation task. Also use it when the user asks to remember or record their coding preferences based on recent uncommitted changes.
+description: Detect the user's manual edits on top of agent-written code in the working tree, infer the general preference behind each edit, and persist those preferences as conventions in the project's CLAUDE.md or AGENTS.md. Use when the user says they manually changed or fixed code the agent wrote, even alongside a follow-up task.
 ---
 
 # Learn from Manual Edits
@@ -42,9 +42,9 @@ Do **not** record: one-off bug fixes, business-logic corrections, typo fixes, ch
 
 When several small edits share one theme (e.g. three renames that all shorten receiver names), merge them into a single rule rather than three entries.
 
-## Step 3 — Record in CLAUDE.md
+## Step 3 — Record in CLAUDE.md / AGENTS.md
 
-Maintain a dedicated section in the project root `CLAUDE.md` (create the file and/or section if missing, appended at the end):
+Maintain a dedicated section in the project root instruction file. Prefer `CLAUDE.md` when it exists, otherwise use `AGENTS.md`; if neither exists, create `CLAUDE.md` and append the section at the end:
 
 ```markdown
 ## Conventions Learned from Manual Edits
@@ -63,7 +63,7 @@ Rules for maintaining the section:
 - **One bullet per rule**: rule in one imperative sentence, optionally a compact `before → after` example, and the date observed. Group bullets under `### Style`, `### Architecture`, `### Naming`, `### Errors`, `### Testing`, `### Other` — create a category heading only when first needed.
 - **Read the existing section before writing.** If an equivalent rule already exists, do not duplicate it — refine its wording if the new observation sharpens it, and update the date. If a new observation *contradicts* an existing rule, the newest preference wins: replace the old bullet.
 - **Keep rules project-general.** No file paths or symbol names in the rule itself (examples may use them). If a rule only makes sense for one file, it failed the Step 2 filter and doesn't belong here.
-- Don't touch anything else in CLAUDE.md.
+- Don't touch anything else in the instructions file.
 
 ## Step 4 — Report, then continue
 

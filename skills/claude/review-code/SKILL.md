@@ -1,22 +1,22 @@
 ---
 name: review-code
-description: Review a proposed code change (git diff, pull request, staged/unstaged changes, or an entire branch) by dispatching four parallel reviewer agents — security, reliability, maintainability, and a senior generalist — and aggregating their findings into a single prioritised report. Enforces project-specific rules from `AGENTS.md` / `CLAUDE.md`. Use whenever the user asks to review code, check a PR, inspect a diff, look for bugs in recent changes, give feedback before merging, do a code review, or evaluate a patch — even if they don't use the exact phrase "code review".
+description: Review code changes for bugs, security, reliability, maintainability, and missing tests. Use for diff, PR, branch, or file reviews; dispatches four parallel reviewer agents in Claude Code.
 ---
 
 # Review Code
 
-You are the orchestrator. You do **not** write findings yourself. You decide scope, gather context once, dispatch four parallel reviewer agents — each with its own persona — and aggregate their findings into a single output.
+You are the orchestrator. Gather context once, dispatch four parallel reviewer agents (`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`) via the `Agent` tool, and aggregate their findings into a single output.
 
 ## Reviewer roles
 
-Four agents, dispatched in parallel via the `Agent` tool. Their tool access is read-only; their system prompts carry the persona and the threshold for raising a finding.
+Four review axes. Dispatch one Claude Code custom subagent per axis:
 
 - `security-reviewer` — adversarial. Authn/authz, secret handling, injection, crypto misuse, malicious-input resistance, TOCTOU.
 - `reliability-reviewer` — failure-mode imaginer. Error handling, resource lifecycle, concurrency, idempotency, timeouts, partial failure, boundary conditions.
 - `maintainability-reviewer` — fit critic. Codebase-style consistency, abstractions that don't pay rent, naming, module boundaries, project-rule violations, dead code introduced by the change.
 - `senior-generalist-reviewer` — calibrated catch-all for the remaining ISO 25010 axes. Performance efficiency, compatibility, interaction capability, functional suitability, operational safety, flexibility.
 
-Each persona explicitly defers what the others cover, so duplicates should be rare. When they do overlap on the same `Location`, you deduplicate during aggregation.
+Use the same value for `subagent_type` as the reviewer name. Each persona explicitly defers what the others cover, so duplicates should be rare. When they do overlap on the same `Location`, you deduplicate during aggregation.
 
 ## Scope of the Review
 
@@ -38,16 +38,16 @@ Before dispatching, do these once. The result becomes part of every dispatch pro
 2. Read `AGENTS.md` / `CLAUDE.md` at the repo root and any nested copies in directories the diff touches. Extract any rules relevant to the four axes.
 3. List the touched files with absolute paths and the language(s) involved.
 
-If the diff is very large (roughly >2000 changed lines), dispatch one set of four reviewers per file (still four in parallel each round). Note the file-by-file mode at the end of the final output so the user knows the review was chunked.
+If the diff is very large (roughly >2000 changed lines), review one file at a time. Use one set of four reviewers per file (still four in parallel each round). Note the file-by-file mode at the end of the final output so the user knows the review was chunked.
 
-## Dispatch the four reviewers (parallel)
+## Dispatch the four reviewers
 
 Send all four `Agent` tool calls in a single message so they run concurrently. `subagent_type` is the persona's own name (`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`).
 
 Each dispatch prompt contains:
 
 - The diff captured above (verbatim, scoped per "Scope of the Review").
-- The relevant `AGENTS.md` / `CLAUDE.md` content. The agent may Read/Grep further files if it needs to verify a finding against code outside the diff.
+- The relevant `AGENTS.md` / `CLAUDE.md` content. The reviewer may read/search further files if it needs to verify a finding against code outside the diff.
 - The list of touched files with absolute paths.
 - The bug bar (see "What counts as a bug" below).
 - The priority tag definitions (see "Priority levels" below).
@@ -58,7 +58,7 @@ The agents do not see each other's output. They each return a list of per-findin
 
 ## Aggregate (in the main session)
 
-Once all four returns arrive:
+Once all four delegated returns arrive:
 
 1. **Deduplicate by `Location`.** If two reviewers flagged the same file and overlapping line range with the same root issue, keep the framing that is most specific (usually the specialist whose axis the issue most closely sits in). If both framings add value, keep the better-worded one and append a one-line note that another persona corroborated. Do not stack two entries for the same defect.
 2. **Sort by priority** (`[CRITICAL]` → `[HIGH]` → `[NORMAL]` → `[LOW]`). Within the same priority, group by file path.

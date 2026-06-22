@@ -16,16 +16,16 @@ Require one input: the path to an existing `plan-dev` plan file. If the user omi
 Act only as the orchestrator:
 
 1. Resolve the plan path to an absolute path, confirm it exists, and identify the repository root.
-2. Dispatch one implementation subagent with the `Agent` tool and instruct it to use `implement-dev` on the plan path.
+2. Dispatch one implementation subagent with the `Agent` tool (`subagent_type: general-purpose`) and instruct it to use `implement-dev` on the plan path.
 3. Wait for the implementation subagent to finish and parse its structured summary.
-4. Dispatch one test-hardening subagent with the `Agent` tool and instruct it to use `test-dev`, scoped to the implementation output.
+4. Dispatch one test-hardening subagent with the `Agent` tool (`subagent_type: general-purpose`) and instruct it to use `test-dev`, scoped to the implementation output.
 5. Wait for the test subagent to finish and parse its structured summary.
-6. Dispatch one review subagent with the `Agent` tool and instruct it to use `review-code` with delegated reviewer agents against the final diff.
+6. Dispatch one review subagent with the `Agent` tool (`subagent_type: general-purpose`) and instruct it to use `review-code` with delegated reviewer agents against the final diff.
 7. Wait for the review subagent to finish and parse its structured summary.
 8. Render the final flow summary in the chat using the delegation contract's output schema.
 9. Return a concise final answer with the final status.
 
-Do not edit production code, tests, or Obsidian reports directly from the main session.
+Do not edit production code, tests, or implementation reports directly from the main session.
 
 ## Delegation Contract
 

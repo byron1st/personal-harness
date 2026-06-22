@@ -5,7 +5,7 @@ description: Fix a bug found during review or verification after implementation.
 
 # Fix Dev
 
-A surgical fix-it skill for issues caught during a review gate. Delegate only when the user explicitly asks for subagents or delegation; then the main session organises the issue and dispatches a fresh Cursor subagent (via the Task tool) to diagnose and patch it. Otherwise, the main session performs the same fix workflow directly.
+A surgical fix-it skill for issues caught during a review gate. Delegate only when the user explicitly asks for subagents or delegation; then the main session organises the issue and dispatches a Cursor subagent via the Task tool to diagnose and patch it. Otherwise, the main session performs the same fix workflow directly.
 
 ## When this skill applies
 
@@ -36,7 +36,7 @@ The main session is the only place that has the surrounding context — which pl
 - **Where it appears** — concrete pointers: file paths (absolute), line numbers, function or component names, reproduction command, failing test name. Whatever the main session already knows.
 - **Expected behavior** — what the user wanted to happen instead. Quote the user's words when useful.
 - **Plan context** — absolute paths to the plan file (and the `-STEP-N.md` sub-plan, if multi-steps), plus which step the fix relates to. This lets the executor see the original intent without the main session paraphrasing it.
-- **Implementation Report path** — absolute path to the existing report in `${OBSIDIAN_HOME}/02. Implementation Reports/` that this fix amends. For single-step, the single report; for a multi-steps step, the `{base}-STEP-N.md` per-step report; for fixes raised after the final summary already exists, still amend the relevant `-STEP-N` report (the per-step report is closer to the change set than the summary). If no report exists yet (e.g. the fix is unrelated to a recent `implement-dev` run), pass `none` — the executor will skip the report update.
+- **Implementation Report path** — absolute path to the existing report under `.agents/doc/dev/` that this fix amends. For single-step, the single report; for a multi-steps step, the `{timestamp}_{Jira}_IMPL_{title}-STEP-N.md` per-step report; for fixes raised after the final summary already exists, still amend the relevant `-STEP-N` report (the per-step report is closer to the change set than the summary). If no report exists yet (e.g. the fix is unrelated to a recent `implement-dev` run), pass `none` — the executor will skip the report update.
 - **Current branch** — the branch name the main session is on. The executor must stay on this branch (do not create a new branch, do not switch).
 - **Commit policy** — `commit-on-success` only if the user explicitly asked for a commit in this turn. Otherwise `no-commit`. When in doubt, choose `no-commit`.
 - **Verification commands** — the lint/format/test/build commands extracted from `Makefile`, `AGENTS.md`, `CLAUDE.md`, or `README.md`. If they were already gathered in the current session (e.g. by an earlier `implement-dev` call), pass them through; otherwise extract them once before dispatching.
@@ -46,7 +46,7 @@ If any required field is missing and cannot be reasonably inferred from the conv
 
 ### 2. Dispatch a subagent only when explicitly requested
 
-Use this section only when the user explicitly asked for subagents or delegation. Dispatch a fresh Cursor subagent via the Task tool with a **self-contained** prompt — embed the brief from §1, the work contract (§4), and the return contract (§5) directly. Do not fork the parent conversation unless the user explicitly asked for that. The subagent starts from a clean context and runs under the same permissions as the parent session, so do not assume it has independent access — put everything it needs in the prompt.
+Use this section only when the user explicitly asked for subagents or delegation. Spawn a Cursor subagent with the Task tool using a **self-contained** prompt — embed the brief from §1, the work contract (§4), and the return contract (§5) directly. Do not fork the parent conversation unless the user explicitly asked for that. The subagent starts in a clean context and runs with the parent session's permissions; do not assume it has independent permissions.
 
 If delegation was not explicitly requested, skip this section and perform the work contract in the main session.
 
@@ -81,7 +81,7 @@ When using a subagent, its prompt must specify the following sequence. When not 
 
 6. **Branch** — stay on the branch given in the brief. Do not create branches, switch branches, or merge.
 
-7. **Commit (only if policy is `commit-on-success`)** — stage the changed files, excluding `PLAN.md` / `plan-*.md`, `RESEARCH.md` / `research-*.md`, and any accidentally built binaries. Use `git commit` with a message following the `commit-code` skill's conventions (i.e. `fix: {title}` for personal repos, or `fix: [{JIRA-123}] {title}` for work repos where a Jira ticket number can be extracted from the branch name). Do **not** add a `Co-Authored-By` trailer. Do **not** push. If commit policy is `no-commit`, leave the working tree as-is so the user can commit later.
+7. **Commit (only if policy is `commit-on-success`)** — stage the changed files, excluding `.agents/doc/dev/*_PLAN_*.md`, `.agents/doc/dev/*_IMPL_*.md`, `.agents/doc/research/*.md`, and any accidentally built binaries. Use `git commit` with a message following the `commit-code` skill's conventions (i.e. `fix: {title}` for personal repos, or `fix: [{JIRA-123}] {title}` for work repos where a Jira ticket number can be extracted from the branch name). Do **not** add a `Co-Authored-By` trailer. Do **not** push. If commit policy is `no-commit`, leave the working tree as-is so the user can commit later.
 
 8. **Append a `## Fix` entry to the Implementation Report** — open the report at the path given in the brief and append (do not overwrite anything) a Fix entry per "Fix section format" below. If the report does not yet contain a `## Fix` heading, create it at the very end of the file. If multiple Fix entries already exist, append the new one beneath them in chronological order. If the brief's `Implementation Report path` is `none`, skip this step entirely (do not create a new report file). Section titles in English, body content in Korean — this matches the existing Implementation Report convention.
 

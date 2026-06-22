@@ -32,7 +32,7 @@ If the current branch *is* `main`, only staged and unstaged edits are in scope.
 
 ## Gather context (once, in the main session)
 
-Before dispatching, do these once. The result becomes part of every dispatch prompt so the four agents do not redo the same work.
+Before dispatching, do these once. The result becomes part of every dispatch prompt so the four subagents do not redo the same work.
 
 1. Capture the diff:
    - Normal branch: `git diff main...HEAD` (or `git diff origin/main...HEAD`).
@@ -44,7 +44,7 @@ If the diff is very large (roughly >2000 changed lines), review one file at a ti
 
 ## Run the four reviewers
 
-If the user explicitly requested subagents or parallel review, spawn all four Cursor custom reviewer subagents in parallel (multiple Task tool calls in a single turn) so they run concurrently. If not, run the four reviewer passes in the main session without spawning agents.
+If the user explicitly requested subagents or parallel review, spawn all four Cursor custom reviewer subagents in parallel (multiple Task tool calls in a single turn) so they run concurrently. If not, run the four reviewer passes in the main session without spawning subagents.
 
 Each delegated prompt, or each main-session reviewer pass, contains:
 
@@ -54,9 +54,9 @@ Each delegated prompt, or each main-session reviewer pass, contains:
 - The bug bar (see "What counts as a bug" below).
 - The priority tag definitions (see "Priority levels" below).
 - The output format (see "Per-finding block" below).
-- An explicit reminder that the agent stays in its own lane and silently defers findings the other reviewers would cover.
+- An explicit reminder that the subagent stays in its own lane and silently defers findings the other reviewers would cover.
 
-When using delegated reviewers, the agents do not see each other's output. They each return a list of per-finding blocks plus a one-sentence axis verdict (e.g., *"보안 축은 깨끗합니다"* / *"신뢰성 측면에서 차단성 이슈 1건과 비차단성 2건이 있습니다"*).
+When using delegated reviewers, the subagents do not see each other's output. They each return a list of per-finding blocks plus a one-sentence axis verdict (e.g., *"보안 축은 깨끗합니다"* / *"신뢰성 측면에서 차단성 이슈 1건과 비차단성 2건이 있습니다"*).
 
 ## Aggregate (in the main session)
 
@@ -68,7 +68,7 @@ Once all four delegated returns arrive, or once the main-session reviewer passes
 
 ## Using the Requirements Catalog
 
-`references/catalog.md` indexes nine ISO 25010 quality characteristics, each in its own file under `references/`. These exist for vocabulary — when an agent fills the `Related Requirements` field of a finding, the sub-characteristic names should come from those files. Agents pull them in as needed; you do not need to read them in the main session.
+`references/catalog.md` indexes nine ISO 25010 quality characteristics, each in its own file under `references/`. These exist for vocabulary — when a subagent fills the `Related Requirements` field of a finding, the sub-characteristic names should come from those files. Subagents pull them in as needed; you do not need to read them in the main session.
 
 ## What counts as a bug
 
@@ -99,7 +99,7 @@ Ignore style, formatting, typos, and nits unless they obscure meaning or violate
 
 ### Per-finding block
 
-(Each agent returns these; the main session preserves the format during aggregation.)
+(Each subagent returns these; the main session preserves the format during aggregation.)
 
 ```
 ### [PRIORITY] {Short bug title}
