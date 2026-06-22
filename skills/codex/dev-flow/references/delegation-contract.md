@@ -40,7 +40,7 @@ Use the `test-dev` skill to strengthen tests for the implementation completed in
 Scope the work to these implementation files when possible:
 {CHANGED_FILES}
 
-Implementation report:
+Implementation report under `.agents/doc/dev`:
 {IMPLEMENTATION_REPORT_PATH}
 
 You are running as the test-hardening worker in a larger delegated dev flow. You own only the test-dev stage. Do not edit production/business logic. Do not run review-code. Do not revert edits made by others. Follow the repository's AGENTS.md / CLAUDE.md / README.md / Makefile instructions.
@@ -81,7 +81,7 @@ Use the `review-code` skill to review the final diff after implementation and te
 
 This is an explicit request for delegated subagent review. Use the review-code skill's delegated reviewer flow with the security, reliability, maintainability, and senior-generalist reviewer agents when available.
 
-Implementation report:
+Implementation report under `.agents/doc/dev`:
 {IMPLEMENTATION_REPORT_PATH}
 
 Test summary:

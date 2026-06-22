@@ -32,8 +32,9 @@ If a Jira ticket number is available, use the format: `{PREFIX}: [{Jira-ticket-n
 
 Basically, stage all modified files, including staged and unstaged changes. However, below files should be excluded:
 
-- `PLAN.md` or `plan-...` related files: Markdown files to describe the plan for an AI agent to perform a task.
-- `RESEARCH.md` or `research-...` related files: Markdown files to describe the research result for the plan.
+- `.agents/doc/dev/*_PLAN_*.md`: Markdown files that describe a plan for an AI agent to perform a task.
+- `.agents/doc/dev/*_IMPL_*.md`: Markdown implementation reports produced by `implement-dev`.
+- `.agents/doc/research/*.md`: Markdown files that describe research results for a plan.
 - A binary file that is accidentally built for testing.
 
 ## Execute

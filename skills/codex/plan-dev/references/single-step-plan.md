@@ -10,25 +10,26 @@ A single-step plan is one markdown file describing the full implementation of a 
 - Storage location (section 2)
 - Frontmatter fields (section 3)
 - Body language: Korean
-- Research file links at the top of the body — when research files were created or consulted (section 4)
-- A `## TODOs` checkbox list at the end of the body — for progress tracking (section 5)
+- Research file links at the top of the body when research files were created or consulted (section 4)
+- A `## TODOs` checkbox list at the end of the body for progress tracking (section 5)
 
 **Flexible**:
 
-- Everything else inside the body. Do NOT force the plan into a fixed section template (Goal / Technical Approach / Affected Files / Risks / Tradeoffs / Verification / …). When the plan was produced by a planning agent, copy its output **verbatim** into the body between the research links and the TODO checklist. Squeezing a rich agent-generated plan into a normalized template loses fidelity — preserve it as-is.
+- Everything else inside the body. Do NOT force the plan into a fixed section template (Goal / Technical Approach / Affected Files / Risks / Tradeoffs / Verification / ...). When the plan was produced by a planning agent, copy its output **verbatim** into the body between the research links and the TODO checklist. Squeezing a rich agent-generated plan into a normalized template loses fidelity; preserve it as-is.
 
 ## 1. File name
 
-`{YYYYMMDD}_{Jira ticket number}_{Application}_{descriptor}.md`
+`{timestamp}_{Jira ticket number}_PLAN_{title}.md`
 
-- `{YYYYMMDD}` — today's date.
-- `{Jira ticket number}` — extract from the current branch name using the regex `[A-Z]+-[0-9]+`. If it cannot be extracted, ask the user.
-- `{Application}` — the working repository name without the URL. Example: origin `github.com/sample-user/sample-server` → `sample-server`.
-- `{descriptor}` — short, concise, hyphen-separated description. No spaces. Example: `refactor-service-layer-to-resolve-cycle-dependencies`.
+- `{timestamp}` - local time in `YYYYMMDDHHMMSS` format.
+- `{Jira ticket number}` - extract from the current branch name using the regex `[A-Z]+-[0-9]+`. If it cannot be extracted, ask the user unless they explicitly confirm `NO-JIRA`.
+- `{title}` - short, concise, hyphen-separated description. No spaces. Example: `refactor-service-layer-to-resolve-cycle-dependencies`.
+
+Example: `20260622153045_BLC-692_PLAN_refactor-service-layer.md`.
 
 ## 2. Storage location
 
-ALWAYS store the file in `${OBSIDIAN_HOME}/00. Plans/`.
+Always store the file in `.agents/doc/dev/` under the project root. Create the directory if it does not exist.
 
 ## 3. Required frontmatter
 
@@ -37,19 +38,20 @@ ALWAYS store the file in `${OBSIDIAN_HOME}/00. Plans/`.
 Application: {Application}
 JiraTicket: {Jira ticket number}
 PlanType: single-step
+Timestamp: {timestamp}
+Title: {title}
 ---
 ```
 
-These three keys are required. Add other keys (e.g., `Tags`, `Status`) when useful.
+These keys are required. Add other keys (e.g., `Tags`, `Status`) only when useful.
 
 ## 4. Research file links
 
-When research files were created or consulted during planning, list them at the top of the body, immediately after the H1 heading. Use plain markdown links or Obsidian wikilinks — DO NOT wrap them in backticks. If no research files exist, omit this block entirely.
+When research files were created or consulted during planning, list them at the top of the body, immediately after the H1 heading. Use plain Markdown links. If no research files exist, omit this block entirely.
 
 ```markdown
 Please refer to the research documents for detailed information about the related code and execution flow.
-- {Link to RESEARCH file}
-- {Link to RESEARCH file}
+- [Research title](../research/research-title.md)
 ```
 
 ## 5. TODO checklist
@@ -71,11 +73,13 @@ If the agent-generated plan already contains its own task list, normalize it int
 Application: {Application}
 JiraTicket: {Jira ticket number}
 PlanType: single-step
+Timestamp: {timestamp}
+Title: {title}
 ---
 
 # [Feature / Change Name]
 
-<!-- Section 4: research file links — when applicable -->
+<!-- Section 4: research file links, when applicable -->
 
 <!-- Agent-generated plan body, copied verbatim. Keep whatever sections / ordering the agent produced. -->
 

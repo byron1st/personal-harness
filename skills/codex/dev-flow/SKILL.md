@@ -25,7 +25,7 @@ Act only as the orchestrator:
 8. Render the final flow summary in the chat using the delegation contract's output schema.
 9. Return a concise final answer with the final status.
 
-Do not edit production code, tests, or Obsidian reports directly from the main session.
+Do not edit production code, tests, or implementation reports directly from the main session.
 
 ## Delegation Contract
 
