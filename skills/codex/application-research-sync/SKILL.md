@@ -1,16 +1,17 @@
 ---
 name: application-research-sync
-description: Sync Obsidian Research files with code changes. Use after implementation, when research docs may be stale, or when asked to update research against uncommitted changes, a commit range, or the full codebase.
+description: Sync repository-local .agents/doc/research files with code changes. Use after implementation, when research docs may be stale, or when asked to update research against uncommitted changes, a commit range, or the full codebase.
 ---
 
 # Application Research Sync
 
-Automatically update Obsidian Vault Research files based on code changes.
+Automatically update repository-local Research files based on code changes.
 
 ## Background
 
-- **Research files**: Markdown documents in the Obsidian Vault that investigate and describe an Application's (identified by Git repository name) features, flows, or architecture. Each file has a `Description` field in its frontmatter. They are located in `${OBSIDIAN_HOME}/01. Research`.
-- **Plan files**: Implementation plan documents, also located in `${OBSIDIAN_HOME}/00. Plans`.
+- **Research files**: Markdown documents in `.agents/doc/research/` that investigate and describe an Application's (identified by Git repository name) features, flows, or architecture. Each file has a `Description` field in its frontmatter.
+- **Research index**: `.agents/doc/research/index.md`, a metadata table containing each Research file's frontmatter fields plus a Markdown link to the file. Agents read this first to decide which Research files to open.
+- **Plan files**: Implementation plan documents located in `.agents/doc/dev/`.
 - A single Application can have multiple Research files. When code changes, some of these files may become outdated.
 
 ## When to Run
@@ -27,7 +28,7 @@ Ask the user which scope to use for detecting changes:
 |------|-------------|---------|
 | **Uncommitted** | Only uncommitted changes (staged + unstaged) | `git diff HEAD` |
 | **Since commit** | All changes after a specific commit | `git diff <commit-hash>` |
-| **Full codebase** | Analyze the entire current codebase regardless of changes | *(no diff — read the full source tree)* |
+| **Full codebase** | Analyze the entire current codebase regardless of changes | *(no diff - read the full source tree)* |
 
 If the user has already specified the mode in their request, use it without asking.
 
@@ -48,46 +49,34 @@ basename $(git rev-parse --show-toplevel)
 Identify the Plan file from the current session context.
 
 - If the Plan file path is available from the conversation context, use it.
-- Otherwise, ask the user to provide the name of the Plan file. Then, use `${OBSIDIAN_HOME}/00. Plans/${PLAN_FILE_NAME}.md`
-- In **Full codebase** mode, the Plan file is optional — if unavailable, proceed without it and rely on comparing Research content directly against the source code.
+- Otherwise, ask the user to provide the plan file path. If they provide only a filename, resolve it under `.agents/doc/dev/`.
+- In **Full codebase** mode, the Plan file is optional. If unavailable, proceed without it and rely on comparing Research content directly against the source code.
 
 Read the Plan file to understand the implementation goals and scope of changes.
 
-### Step 4: Query Research File Metadata
+### Step 4: Read Research Index
 
 Retrieve the list of Research files and their metadata for the Application.
 
-```bash
-obsidian base:query file="Research.base" format=json view=${APPLICATION_NAME}
+1. Read `.agents/doc/research/index.md`.
+2. Parse its metadata table.
+3. Keep rows where `Application` matches the current Application. If `Application` is missing, keep it only when the linked filename or `Description` clearly matches the current repository.
+
+Expected index shape:
+
+```markdown
+# Research Index
+
+| File | Application | ResearchType | Description |
+|------|-------------|--------------|-------------|
+| [key-sharing-metadata-persistence](./key-sharing-metadata-persistence.md) | keyway | Flow | Explains key sharing metadata persistence flow. |
 ```
 
-Returned metadata looks like:
+Extract each Research file's **Description** from the index. This description is the key indicator of what each file investigates. Also retain each linked file path for Step 6.
 
-```
-[
-  {
-    "path": "01. Research/keyway-Flow-key-sharing-metadata-persistence.md",
-    "수정된 시간": "2026-03-30T17:35:11",
-    "Application": "keyway",
-    "ResearchType": "Flow",
-    "이름": "keyway-Flow-key-sharing-metadata-persistence",
-    "Description": "..."
-  },
-  {
-    "path": "01. Research/keyway-Structure-key-sharing-persistence-contracts.md",
-    "수정된 시간": "2026-03-30T17:35:11",
-    "Application": "keyway",
-    "ResearchType": "Structure",
-    "이름": "keyway-Structure-key-sharing-persistence-contracts",
-    "Description": "..."
-  }
-]
-```
+If `index.md` is missing but research files exist in `.agents/doc/research/`, create it before continuing: scan every `.agents/doc/research/*.md` file's frontmatter and build the index table in the shape shown above, then proceed using the freshly built index. If `.agents/doc/research/` contains no research files at all, report that there is nothing to sync and stop.
 
-Extract each Research file's **Description** from the returned metadata. This description is the key indicator of what each file investigates.
-Also, extract each Research file's **path** from the returned metadata. This path is used when you read the file's content.
-
-### Step 5: Impact Analysis — Determine Which Research Files Need Updates
+### Step 5: Impact Analysis - Determine Which Research Files Need Updates
 
 Cross-reference the following information to decide which Research files require updates:
 
@@ -110,27 +99,28 @@ Criteria for inclusion:
 - Are the changes outlined in the Plan related to the Research file's topic?
 - Do the modified files, functions, or modules correspond to components described in the Research file?
 
-Do not touch Research files that are unaffected. When in doubt, include the file — one unnecessary review is better than leaving a document outdated.
+Do not touch Research files that are unaffected. When in doubt, include the file; one unnecessary review is better than leaving a document outdated.
 
 ### Step 6: Read and Update Research Files
 
 Read each Research file identified in Step 5 and apply targeted updates.
 
-Research file path pattern: `${OBSIDIAN_HOME}/${RESEARCH_FILE_PATH_EXTRACTED_FROM_THE_RETURNED_METADATA_AT_STEP_4}`
+Research file path pattern: `.agents/doc/research/{title}.md`.
 
 #### Update Principles
 
 - **Modify only the sections that need changes.** Do not rewrite the entire file.
 - Preserve the existing tone, structure, and formatting.
 - Update frontmatter (`Description`, etc.) only if the content has materially changed.
+- If frontmatter changes, update `.agents/doc/research/index.md` in the same step.
 - Remove or revise content that is no longer valid due to code changes.
 - When new features or flows have been added, weave them naturally into the existing document structure.
 - If code snippets are included, update them to match the current code.
 
 #### Important Guidelines
 
-- Research files are **investigative documents** — they are written to understand a feature or architecture, not as API docs or code comments. Maintain this exploratory, explanatory tone.
-- Do not leave traces of the update — no "changed due to commit X" notes. The file should read as if it was always written to describe the current state.
+- Research files are **investigative documents**. They are written to understand a feature or architecture, not as API docs or code comments. Maintain this exploratory, explanatory tone.
+- Do not leave traces of the update; no "changed due to commit X" notes. The file should read as if it was always written to describe the current state.
 - When uncertain about any detail, read the actual source code to verify before making changes.
 
 ### Step 7: Report Results
@@ -138,5 +128,6 @@ Research file path pattern: `${OBSIDIAN_HOME}/${RESEARCH_FILE_PATH_EXTRACTED_FRO
 After completing all updates, report the following:
 
 - List of updated Research files with a brief summary of what changed in each
+- Whether `.agents/doc/research/index.md` was created or updated
 - List of Research files excluded from updates, with short justifications
 - Any areas that need the user's manual review, if applicable
