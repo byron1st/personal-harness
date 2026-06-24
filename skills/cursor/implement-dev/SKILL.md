@@ -73,10 +73,10 @@ Follow the reference document for the decided mode:
 
 Both modes write completion reports under `.agents/doc/dev/`. File naming, content format, the review-cockpit layout, and the plan/report Markdown link convention are in [references/report-file.md](references/report-file.md).
 
-After saving the report file, print its **review cockpit**: the `## Summary`, `## Review Map`, `## Red Flags`, `## Open Questions`, and `## Change Walkthrough` sections, verbatim except for clickable file links, as the session's final output, followed by the report path. In the printed `## Change Walkthrough`, rewrite every file anchor as a clickable Markdown file link using the repo-relative path as the label and a Cursor file URL with the absolute path plus line number as the target, e.g. `[skills/cursor/implement-dev/SKILL.md:76](cursor://file//Users/a13340/Workspace/personal/personal-harness/skills/cursor/implement-dev/SKILL.md:76:1)`. The cockpit is the high-signal block that directs the user's review; the `## Key Decisions` and everything below it stay in the file for on-demand reading, so do not print them. Always include the path so the user can open the full report.
+After saving the report file, do **not** paste report sections verbatim into the session. As the final output, provide only a short implementation-report summary (2-4 bullets or 2-3 sentences covering what changed, verification status, and any red flags/open questions) plus the report path as a clickable Cursor file link. The full report remains the source of truth for `## Summary`, `## Review Map`, `## Red Flags`, `## Open Questions`, `## Change Walkthrough`, and the detailed sections below them.
 
-- **single-step**: print the cockpit of the single completion report.
-- **multi-steps**: print the cockpit of the final summary report (Overall Outcome plus the aggregated outstanding Red Flags & Open Questions). Do not print each per-step report; they were already surfaced at each step's review gate.
+- **single-step**: summarize the single completion report and link to it.
+- **multi-steps**: summarize the final summary report and link to it. Do not print each per-step report; they were already surfaced at each step's review gate.
 
 ## Error Recovery
 

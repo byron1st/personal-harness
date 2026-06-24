@@ -55,6 +55,6 @@ Create the completion report under `.agents/doc/dev/` following [report-file.md]
 
 After writing the report, add a Markdown link to it at the top of the plan file (under the plan's frontmatter or heading) so the plan/report link is bidirectional.
 
-## 6. Print the review cockpit
+## 6. Send the report summary
 
-Alongside the saved report, print its **cockpit** sections: `## Summary`, `## Review Map`, `## Red Flags`, `## Open Questions`, `## Change Walkthrough`, verbatim except for the clickable-link conversion described in [report-file.md](report-file.md), followed by the report path, so the user can start reviewing without opening the file. The `## Key Decisions` and everything below it stay in the file for on-demand reading; do not reprint them here.
+Alongside the saved report, send only a short implementation-report summary (2-4 bullets or 2-3 sentences) and a clickable report link/path. Include what changed, verification status, and any red flags/open questions at a high level. Do not paste `## Summary`, `## Review Map`, `## Red Flags`, `## Open Questions`, `## Change Walkthrough`, or lower report sections verbatim into the session; the report file carries those details.

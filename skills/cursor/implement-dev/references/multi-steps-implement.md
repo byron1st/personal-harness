@@ -192,4 +192,4 @@ When all steps are merged and the final validation on `develop` passes:
 
 1. Run the full verification suite one final time on `develop`.
 2. Write a **final summary report** (optional but recommended) at `.agents/doc/dev/{timestamp}_{Jira}_IMPL_{title}.md`: a top-level report that links to each `-STEP-N` report and summarizes overall outcomes, deviations, and coverage. Add a Markdown link to this summary report at the top of the main plan. The main session writes this directly using the per-step summaries it already collected; no subagent is needed for this small synthesis task.
-3. Report to the user: which steps completed, any deviations, overall test coverage. The `develop -> main` merge is left to the user to perform manually.
+3. Report to the user with a short implementation-report summary: which steps completed, any deviations, overall verification status, any unresolved red flags/open questions, and the final summary report link/path. Do not paste report sections verbatim into the session. The `develop -> main` merge is left to the user to perform manually.
