@@ -7,7 +7,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "${TMP_DIR}"' EXIT
 
-(cd "${TMP_DIR}" && npx ctx7@latest setup --cli --claude -y -p)
+(cd "${TMP_DIR}" && ctx7 setup --cli --claude -y -p)
 
 FIND_DOCS_SRC="${TMP_DIR}/.claude/skills/find-docs"
 CONTEXT7_RULE_SRC="${TMP_DIR}/.claude/rules/context7.md"
@@ -21,6 +21,9 @@ if [[ ! -f "${CONTEXT7_RULE_SRC}" ]]; then
   echo "Error: context7 rule not found at ${CONTEXT7_RULE_SRC}" >&2
   exit 1
 fi
+
+sed -i '' 's/npx ctx7@latest/ctx7/g' "${CONTEXT7_RULE_SRC}"
+find "${FIND_DOCS_SRC}" -type f -exec sed -i '' 's/npx ctx7@latest/ctx7/g' {} +
 
 for agent_dir in "${REPO_ROOT}"/skills/*/; do
   agent_name="$(basename "${agent_dir}")"
