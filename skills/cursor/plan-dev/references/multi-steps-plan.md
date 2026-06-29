@@ -32,13 +32,13 @@ Sub-plans: `{timestamp}_{Jira}_PLAN_{title}-STEP-{N}.md` where `N` starts at 1.
 
 ## 2. Storage location
 
-Always store all plan files (main + sub-plans) in `.agents/doc/dev/` under the project root. Create the directory if it does not exist.
+Always store all plan files (main + sub-plans) in `docs/agents/dev/` under the project root. Create the directory if it does not exist.
 
 ## 3. Markdown link conventions
 
 - The main plan links to each sub-plan using Markdown links, e.g. `[Step 1](./20260622153045_PROJ-42_PLAN_introduce-event-bus-STEP-1.md)`.
 - Each sub-plan links back to the main plan in its header area, e.g. `Part of main plan: [20260622153045_PROJ-42_PLAN_introduce-event-bus.md](./20260622153045_PROJ-42_PLAN_introduce-event-bus.md)`.
-- Research links point from `.agents/doc/dev/` to `.agents/doc/research/`, e.g. `[auth-flow](../research/auth-flow.md)`.
+- Research links point from `docs/agents/dev/` to `docs/agents/research/`, e.g. `[auth-flow](../research/auth-flow.md)`.
 
 ## 4. Main plan
 

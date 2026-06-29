@@ -131,7 +131,7 @@ Print a brief summary in the chat — no file artifacts:
 - **Remaining attention items**: any LIVED mutants left unresolved with the reason (equivalent mutant, infeasible distinguishing test, refactor needed, etc.).
 - **Suspected business-logic defects**: the running list collected per Global Rule 6. For each entry: file:line, the test path that surfaced it (Phase 1/2/3), observed vs expected behavior in one sentence, and whether the test was left red or skipped. This list is the most important attention item — flag it prominently in the summary.
 
-Keep the summary tight. Do not write a separate report file. Do not modify `.agents/doc/dev` implementation reports.
+Keep the summary tight. Do not write a separate report file. Do not modify `docs/agents/dev` implementation reports.
 
 ## Error Recovery
 

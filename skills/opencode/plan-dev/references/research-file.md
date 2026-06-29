@@ -13,7 +13,7 @@ Not every task needs the same depth or angle. A single task may produce multiple
 - File name pattern (section 3)
 - Storage location (section 3)
 - Frontmatter fields including `ResearchType` (section 4)
-- Research index entry in `.agents/doc/research/index.md` (section 5)
+- Research index entry in `docs/agents/research/index.md` (section 5)
 - Body language: Korean
 
 **Flexible**:
@@ -66,9 +66,9 @@ Maps the static relationships between components: interfaces, implementations, d
 
 File name: `{title}.md`
 
-- `{title}` - short, descriptive, kebab-case title that makes the focus immediately clear to a reader scanning `.agents/doc/research/`. Examples: `auth-flow`, `module-dependencies`, `test-gaps`.
+- `{title}` - short, descriptive, kebab-case title that makes the focus immediately clear to a reader scanning `docs/agents/research/`. Examples: `auth-flow`, `module-dependencies`, `test-gaps`.
 
-Storage location: `.agents/doc/research/` under the project root. Create the directory if it does not exist.
+Storage location: `docs/agents/research/` under the project root. Create the directory if it does not exist.
 
 The actual file write happens in step 11 of `SKILL.md`, after plan mode is exited.
 
@@ -82,11 +82,11 @@ Description: Concise, understandable description for this research. AI agents de
 ---
 ```
 
-The `Description` matters: future planning and research-sync runs inspect `.agents/doc/research/index.md` and decide what to read based on this field. Write it so a stranger can tell at a glance whether this file is relevant to their problem.
+The `Description` matters: future planning and research-sync runs inspect `docs/agents/research/index.md` and decide what to read based on this field. Write it so a stranger can tell at a glance whether this file is relevant to their problem.
 
 ## 5. Research index
 
-Maintain `.agents/doc/research/index.md` whenever a research file is created, renamed, deleted, or its frontmatter changes. Agents must read this index first, then open only the research files whose metadata looks relevant.
+Maintain `docs/agents/research/index.md` whenever a research file is created, renamed, deleted, or its frontmatter changes. Agents must read this index first, then open only the research files whose metadata looks relevant.
 
 `index.md` is an index only. Do not duplicate research body content there.
 
@@ -102,7 +102,7 @@ Required shape:
 ```
 
 Rules:
-- Include one row per research file in `.agents/doc/research/`, excluding `index.md`.
+- Include one row per research file in `docs/agents/research/`, excluding `index.md`.
 - Keep `Application`, `ResearchType`, and `Description` exactly aligned with the research file frontmatter.
 - Sort rows by `Application`, then `ResearchType`, then file title for stable diffs.
 - When updating a research file's frontmatter, update the matching index row in the same persistence step.

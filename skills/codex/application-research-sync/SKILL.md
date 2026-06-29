@@ -1,6 +1,6 @@
 ---
 name: application-research-sync
-description: Sync repository-local .agents/doc/research files with code changes. Use after implementation, when research docs may be stale, or when asked to update research against uncommitted changes, a commit range, or the full codebase.
+description: Sync repository-local docs/agents/research files with code changes. Use after implementation, when research docs may be stale, or when asked to update research against uncommitted changes, a commit range, or the full codebase.
 ---
 
 # Application Research Sync
@@ -9,9 +9,9 @@ Automatically update repository-local Research files based on code changes.
 
 ## Background
 
-- **Research files**: Markdown documents in `.agents/doc/research/` that investigate and describe an Application's (identified by Git repository name) features, flows, or architecture. Each file has a `Description` field in its frontmatter.
-- **Research index**: `.agents/doc/research/index.md`, a metadata table containing each Research file's frontmatter fields plus a Markdown link to the file. Agents read this first to decide which Research files to open.
-- **Plan files**: Implementation plan documents located in `.agents/doc/dev/`.
+- **Research files**: Markdown documents in `docs/agents/research/` that investigate and describe an Application's (identified by Git repository name) features, flows, or architecture. Each file has a `Description` field in its frontmatter.
+- **Research index**: `docs/agents/research/index.md`, a metadata table containing each Research file's frontmatter fields plus a Markdown link to the file. Agents read this first to decide which Research files to open.
+- **Plan files**: Implementation plan documents located in `docs/agents/dev/`.
 - A single Application can have multiple Research files. When code changes, some of these files may become outdated.
 
 ## When to Run
@@ -49,7 +49,7 @@ basename $(git rev-parse --show-toplevel)
 Identify the Plan file from the current session context.
 
 - If the Plan file path is available from the conversation context, use it.
-- Otherwise, ask the user to provide the plan file path. If they provide only a filename, resolve it under `.agents/doc/dev/`.
+- Otherwise, ask the user to provide the plan file path. If they provide only a filename, resolve it under `docs/agents/dev/`.
 - In **Full codebase** mode, the Plan file is optional. If unavailable, proceed without it and rely on comparing Research content directly against the source code.
 
 Read the Plan file to understand the implementation goals and scope of changes.
@@ -58,7 +58,7 @@ Read the Plan file to understand the implementation goals and scope of changes.
 
 Retrieve the list of Research files and their metadata for the Application.
 
-1. Read `.agents/doc/research/index.md`.
+1. Read `docs/agents/research/index.md`.
 2. Parse its metadata table.
 3. Keep rows where `Application` matches the current Application. If `Application` is missing, keep it only when the linked filename or `Description` clearly matches the current repository.
 
@@ -74,7 +74,7 @@ Expected index shape:
 
 Extract each Research file's **Description** from the index. This description is the key indicator of what each file investigates. Also retain each linked file path for Step 6.
 
-If `index.md` is missing but research files exist in `.agents/doc/research/`, create it before continuing: scan every `.agents/doc/research/*.md` file's frontmatter and build the index table in the shape shown above, then proceed using the freshly built index. If `.agents/doc/research/` contains no research files at all, report that there is nothing to sync and stop.
+If `index.md` is missing but research files exist in `docs/agents/research/`, create it before continuing: scan every `docs/agents/research/*.md` file's frontmatter and build the index table in the shape shown above, then proceed using the freshly built index. If `docs/agents/research/` contains no research files at all, report that there is nothing to sync and stop.
 
 ### Step 5: Impact Analysis - Determine Which Research Files Need Updates
 
@@ -105,14 +105,14 @@ Do not touch Research files that are unaffected. When in doubt, include the file
 
 Read each Research file identified in Step 5 and apply targeted updates.
 
-Research file path pattern: `.agents/doc/research/{title}.md`.
+Research file path pattern: `docs/agents/research/{title}.md`.
 
 #### Update Principles
 
 - **Modify only the sections that need changes.** Do not rewrite the entire file.
 - Preserve the existing tone, structure, and formatting.
 - Update frontmatter (`Description`, etc.) only if the content has materially changed.
-- If frontmatter changes, update `.agents/doc/research/index.md` in the same step.
+- If frontmatter changes, update `docs/agents/research/index.md` in the same step.
 - Remove or revise content that is no longer valid due to code changes.
 - When new features or flows have been added, weave them naturally into the existing document structure.
 - If code snippets are included, update them to match the current code.
@@ -128,6 +128,6 @@ Research file path pattern: `.agents/doc/research/{title}.md`.
 After completing all updates, report the following:
 
 - List of updated Research files with a brief summary of what changed in each
-- Whether `.agents/doc/research/index.md` was created or updated
+- Whether `docs/agents/research/index.md` was created or updated
 - List of Research files excluded from updates, with short justifications
 - Any areas that need the user's manual review, if applicable

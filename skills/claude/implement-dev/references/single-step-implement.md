@@ -51,7 +51,7 @@ If the implementation changed public APIs, commands, architecture, or setup step
 
 ## 5. Write the completion report
 
-Create the completion report under `.agents/doc/dev/` following [report-file.md](report-file.md). The report filename mirrors the plan filename by replacing `_PLAN_` with `_IMPL_`, and the report links back to the plan using a Markdown link.
+Create the completion report under `docs/agents/dev/` following [report-file.md](report-file.md). The report filename mirrors the plan filename by replacing `_PLAN_` with `_IMPL_`, and the report links back to the plan using a Markdown link.
 
 After writing the report, add a Markdown link to it at the top of the plan file (under the plan's frontmatter or heading) so the plan/report link is bidirectional.
 

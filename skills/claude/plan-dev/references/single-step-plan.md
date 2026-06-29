@@ -29,7 +29,7 @@ Example: `20260622153045_BLC-692_PLAN_refactor-service-layer.md`.
 
 ## 2. Storage location
 
-Always store the file in `.agents/doc/dev/` under the project root. Create the directory if it does not exist.
+Always store the file in `docs/agents/dev/` under the project root. Create the directory if it does not exist.
 
 ## 3. Required frontmatter
 

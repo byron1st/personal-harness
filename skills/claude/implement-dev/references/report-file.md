@@ -1,10 +1,10 @@
 # Implementation report file
 
-A completion report is a **thin review overlay** on an AI-written change: it states what was implemented and why, points the reviewer at the diff rather than copying it, surfaces where to be suspicious, and orders the reading so the code can be checked against its intent quickly. The goal is that a reviewer, armed with this overlay plus the diff, catches more and faster than with a flat diff alone. Reports are produced by `implement-dev` in both modes and stored under `.agents/doc/dev`.
+A completion report is a **thin review overlay** on an AI-written change: it states what was implemented and why, points the reviewer at the diff rather than copying it, surfaces where to be suspicious, and orders the reading so the code can be checked against its intent quickly. The goal is that a reviewer, armed with this overlay plus the diff, catches more and faster than with a flat diff alone. Reports are produced by `implement-dev` in both modes and stored under `docs/agents/dev`.
 
 ## 1. Storage location
 
-Always store the report in `.agents/doc/dev/` under the project root. Create the directory if it does not exist.
+Always store the report in `docs/agents/dev/` under the project root. Create the directory if it does not exist.
 
 ## 2. File name
 

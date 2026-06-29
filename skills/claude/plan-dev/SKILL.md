@@ -1,19 +1,19 @@
 ---
 name: plan-dev
-description: Create an implementation plan in Claude Code plan mode, pass the final plan to ExitPlanMode for approval, and persist plan/research artifacts under .agents/doc after approval. Use when the user wants to plan before coding; single-step by default, multi-step only on explicit request.
+description: Create an implementation plan in Claude Code plan mode, pass the final plan to ExitPlanMode for approval, and persist plan/research artifacts under docs/agents after approval. Use when the user wants to plan before coding; single-step by default, multi-step only on explicit request.
 ---
 
 # Plan Dev
 
-Create an implementation plan through iterative refinement entirely inside Claude Code plan mode, then persist the result as markdown file(s) under the project root's `.agents/doc` directory as the very first action after `ExitPlanMode` approval returns control to write-capable execution.
+Create an implementation plan through iterative refinement entirely inside Claude Code plan mode, then persist the result as markdown file(s) under the project root's `docs/agents` directory as the very first action after `ExitPlanMode` approval returns control to write-capable execution.
 
 ## Why this skill exists
 
-Claude Code plan mode blocks file writes while the agent researches and proposes changes. That gate is valuable because the user reads the plan before any side effect happens. The planning workflow still produces durable artifacts: plan documents and research notes. `plan-dev` keeps planning read-only, then writes those artifacts into the repository-local `.agents/doc` tree immediately after plan mode ends.
+Claude Code plan mode blocks file writes while the agent researches and proposes changes. That gate is valuable because the user reads the plan before any side effect happens. The planning workflow still produces durable artifacts: plan documents and research notes. `plan-dev` keeps planning read-only, then writes those artifacts into the repository-local `docs/agents` tree immediately after plan mode ends.
 
 ## Compatibility with plan mode
 
-Steps 1-9 below MUST run with read-only tools only (`Read`, `Grep`, `Glob`, `AskUserQuestion`, and other read-only queries). No writes to `.agents/doc` or the working tree happen during this phase.
+Steps 1-9 below MUST run with read-only tools only (`Read`, `Grep`, `Glob`, `AskUserQuestion`, and other read-only queries). No writes to `docs/agents` or the working tree happen during this phase.
 
 When the final plan is ready, call `ExitPlanMode` with the reviewed plan as its `plan` argument. The user approves through that tool's UI, and the agent automatically continues into write-capable execution.
 
@@ -25,10 +25,10 @@ Plan and research file content is **always written in Korean**, regardless of th
 
 ## Artifact layout
 
-- Plan files: `.agents/doc/dev/{timestamp}_{Jira ticket}_PLAN_{title}.md`
-- Implementation reports (created later by `implement-dev`): `.agents/doc/dev/{timestamp}_{Jira ticket}_IMPL_{title}.md`
-- Research files: `.agents/doc/research/{title}.md`
-- Research index: `.agents/doc/research/index.md`
+- Plan files: `docs/agents/dev/{timestamp}_{Jira ticket}_PLAN_{title}.md`
+- Implementation reports (created later by `implement-dev`): `docs/agents/dev/{timestamp}_{Jira ticket}_IMPL_{title}.md`
+- Research files: `docs/agents/research/{title}.md`
+- Research index: `docs/agents/research/index.md`
 
 `timestamp` is local time in `YYYYMMDDHHMMSS` format. `{title}` is a short kebab-case descriptor. `{Jira ticket}` is extracted from the current branch name using `[A-Z]+-[0-9]+`; if it cannot be extracted, ask the user unless they explicitly confirm `NO-JIRA`.
 
@@ -85,7 +85,7 @@ Perform this step only if the working directory contains existing source code, i
 
 If research is required:
 
-- Inspect `.agents/doc/research/index.md` first. It lists each research file's frontmatter metadata plus a Markdown link to the file. Use this index to decide which research files are relevant to the planned change. If the index is missing, treat existing research as unavailable for this planning run; do not open every research file to reconstruct metadata unless the user explicitly asks you to rebuild the index.
+- Inspect `docs/agents/research/index.md` first. It lists each research file's frontmatter metadata plus a Markdown link to the file. Use this index to decide which research files are relevant to the planned change. If the index is missing, treat existing research as unavailable for this planning run; do not open every research file to reconstruct metadata unless the user explicitly asks you to rebuild the index.
 - Read relevant research files inline as read-only inputs.
 - Evaluate whether existing research covers the planned change. If gaps remain, investigate the codebase using read tools:
   - **Trace callers & callees** for each function to be modified; follow the chain to stable boundaries (entry points, external APIs, data stores).
@@ -143,7 +143,7 @@ Persistence steps are skill mechanics, not part of the plan content the user rev
 
 These are the very first tool calls after Claude Code transitions out of plan mode, before any other follow-up:
 
-1. **Write research files** (if any were drafted in step 4). Ensure `.agents/doc/research/` exists, then save each file per [references/research-file.md](references/research-file.md). After writing or updating research files, ensure `.agents/doc/research/index.md` exists, creating it when no index.md was present beforehand, then update it so it contains the current metadata and links for every research file.
-2. **Write plan file(s)**. Ensure `.agents/doc/dev/` exists, then save the plan file(s) per the chosen mode's reference. For multi-steps, write the main plan and every sub-plan, then verify each Markdown link in the main plan resolves to an existing sub-plan filename.
+1. **Write research files** (if any were drafted in step 4). Ensure `docs/agents/research/` exists, then save each file per [references/research-file.md](references/research-file.md). After writing or updating research files, ensure `docs/agents/research/index.md` exists, creating it when no index.md was present beforehand, then update it so it contains the current metadata and links for every research file.
+2. **Write plan file(s)**. Ensure `docs/agents/dev/` exists, then save the plan file(s) per the chosen mode's reference. For multi-steps, write the main plan and every sub-plan, then verify each Markdown link in the main plan resolves to an existing sub-plan filename.
 
 After persistence, report the file paths to the user and proceed with whatever follow-up they request (typically: invoke `implement-dev` or another execution skill).

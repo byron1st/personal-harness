@@ -46,13 +46,13 @@ Invoke the `Agent` tool with `subagent_type: general-purpose` and a self-contain
   - the main plan file,
   - the sub-plan file (`-STEP-N.md`),
   - this skill's `SKILL.md` and `references/report-file.md` (so the sub-agent can follow the global rules and the report format).
-- The project root and the `.agents/doc` artifact layout.
+- The project root and the `docs/agents` artifact layout.
 - The verification commands the main session extracted in Prepare (lint, format, test, build).
 - A directive to read `AGENTS.md` / `CLAUDE.md` before coding so it inherits project conventions.
 - The branch contract: create `feature/step-N` off `develop`, commit when done, **do not merge**; the main session owns the merge.
 - The TDD contract: Red -> Green -> Refactor per task, edge-case tests after, test public/exported methods only.
 - The plan-update contract: tick each `- [ ]` -> `- [x]` in the sub-plan file immediately as the task is completed (do not batch).
-- The reporting contract: write the per-step completion report to `.agents/doc/dev/{timestamp}_{Jira}_IMPL_{title}-STEP-N.md` per `references/report-file.md`, with a `## Manual Verification` section, and add a bidirectional Markdown link from the sub-plan.
+- The reporting contract: write the per-step completion report to `docs/agents/dev/{timestamp}_{Jira}_IMPL_{title}-STEP-N.md` per `references/report-file.md`, with a `## Manual Verification` section, and add a bidirectional Markdown link from the sub-plan.
 - The return contract (section 4.2).
 - The error-recovery contract: stop after 3 failed attempts on the same error and return `blocked` with what was tried.
 
@@ -137,7 +137,7 @@ Tick each item in `## Completion Checklist` as it is satisfied.
 
 ### 5.5 Write the step completion report (with Manual Verification)
 
-Create the step-level completion report under `.agents/doc/dev/` following [report-file.md](report-file.md). The report filename mirrors the sub-plan by replacing `_PLAN_` with `_IMPL_`: `{timestamp}_{Jira}_IMPL_{title}-STEP-N.md`. The report links back to the sub-plan (and, by extension, the main plan) via Markdown link.
+Create the step-level completion report under `docs/agents/dev/` following [report-file.md](report-file.md). The report filename mirrors the sub-plan by replacing `_PLAN_` with `_IMPL_`: `{timestamp}_{Jira}_IMPL_{title}-STEP-N.md`. The report links back to the sub-plan (and, by extension, the main plan) via Markdown link.
 
 **Manual Verification section - required.** The report must include a `## Manual Verification` section that lists everything the user must check by hand before approving the merge: UI behavior, third-party integrations, external side effects, content/copy review, visual regressions, data migrations, configuration changes on shared environments, etc. Each item is a checkbox `- [ ]` with concrete steps to verify it. If there is genuinely nothing to verify manually, write a single line `None`; do not omit the section.
 
@@ -189,5 +189,5 @@ If this fails, the merge introduced a regression. Investigate; for non-trivial f
 When all steps are merged and the final validation on `develop` passes:
 
 1. Run the full verification suite one final time on `develop`.
-2. Write a **final summary report** (optional but recommended) at `.agents/doc/dev/{timestamp}_{Jira}_IMPL_{title}.md`: a top-level report that links to each `-STEP-N` report and summarizes overall outcomes, deviations, and coverage. Add a Markdown link to this summary report at the top of the main plan. The main session writes this directly using the per-step summaries it already collected; no sub-agent is needed for this small synthesis task.
+2. Write a **final summary report** (optional but recommended) at `docs/agents/dev/{timestamp}_{Jira}_IMPL_{title}.md`: a top-level report that links to each `-STEP-N` report and summarizes overall outcomes, deviations, and coverage. Add a Markdown link to this summary report at the top of the main plan. The main session writes this directly using the per-step summaries it already collected; no sub-agent is needed for this small synthesis task.
 3. Report to the user with a short implementation-report summary: which steps completed, any deviations, overall verification status, any unresolved red flags/open questions, and the final summary report link/path. Do not paste report sections verbatim into the session. The `develop -> main` merge is left to the user to perform manually.

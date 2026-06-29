@@ -1,11 +1,11 @@
 ---
 name: implement-dev
-description: Execute a plan-dev implementation plan with TDD, verification, TODO updates, and repository-local implementation reports under .agents/doc. Use when the user asks to implement a saved single-step or multi-step plan.
+description: Execute a plan-dev implementation plan with TDD, verification, TODO updates, and repository-local implementation reports under docs/agents. Use when the user asks to implement a saved single-step or multi-step plan.
 ---
 
 # Implement Dev
 
-Execute an implementation plan by writing code test-first, validating via automated checks, keeping the plan's TODOs current, and producing a completion report under `.agents/doc/dev`.
+Execute an implementation plan by writing code test-first, validating via automated checks, keeping the plan's TODOs current, and producing a completion report under `docs/agents/dev`.
 
 ## Global Rules (apply to both modes)
 
@@ -44,7 +44,7 @@ Do not spawn a subagent just because the plan is multi-steps. The Cursor delegat
 
 Steps are executed **one at a time, sequentially**. After step N is complete:
 
-1. The completion report (including a `## Manual Verification` checklist) has been written under `.agents/doc/dev`.
+1. The completion report (including a `## Manual Verification` checklist) has been written under `docs/agents/dev`.
 2. The main session **pauses** and presents the step summary, especially the Red Flags, Open Questions, and Manual Verification items, and waits for the user's explicit approval. Manual checks performed by the user are part of this gate.
 3. Only after approval does the main session merge `feature/step-N` into `develop` and start the next step.
 
@@ -71,7 +71,7 @@ Follow the reference document for the decided mode:
 
 ## Report
 
-Both modes write completion reports under `.agents/doc/dev/`. File naming, content format, the review-cockpit layout, and the plan/report Markdown link convention are in [references/report-file.md](references/report-file.md).
+Both modes write completion reports under `docs/agents/dev/`. File naming, content format, the review-cockpit layout, and the plan/report Markdown link convention are in [references/report-file.md](references/report-file.md).
 
 After saving the report file, do **not** paste report sections verbatim into the session. As the final output, provide only a short implementation-report summary (2-4 bullets or 2-3 sentences covering what changed, verification status, and any red flags/open questions) plus the report path as a clickable Cursor file link. The full report remains the source of truth for `## Summary`, `## Review Map`, `## Red Flags`, `## Open Questions`, `## Change Walkthrough`, and the detailed sections below them.
 
@@ -91,6 +91,6 @@ When verification fails:
 ## Completion
 
 - All plan TODO/Task checkboxes are up to date.
-- The completion report is saved under `.agents/doc/dev`, and the plan/report Markdown links are bidirectional.
+- The completion report is saved under `docs/agents/dev`, and the plan/report Markdown links are bidirectional.
 - `AGENTS.md` / `CLAUDE.md` / `README.md` have been reviewed for staleness caused by the change; update content while preserving the existing section structure.
 - For **multi-steps**: final verification on `develop` passes, and the user sees a summary of completed/skipped/deviated steps. The `develop -> main` merge is left to the user.

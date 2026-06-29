@@ -1,17 +1,17 @@
 ---
 name: summarize-week
-description: Summarize one week of coding work from repository-local .agents/doc plan, implementation, and research documents. Use with an ISO week (`YYYY-WNN`) or date; outputs the summary in chat.
+description: Summarize one week of coding work from repository-local docs/agents plan, implementation, and research documents. Use with an ISO week (`YYYY-WNN`) or date; outputs the summary in chat.
 ---
 
 # summarize-week
 
-Produce a chat summary for one week of coding work, derived from `.agents/doc/dev` Plan / Implementation Report documents and related `.agents/doc/research` documents.
+Produce a chat summary for one week of coding work, derived from `docs/agents/dev` Plan / Implementation Report documents and related `docs/agents/research` documents.
 
 ## Document layout
 
-- Project docs root: `.agents/doc`
-- Plans and implementation reports: `.agents/doc/dev/`
-- Research: `.agents/doc/research/`
+- Project docs root: `docs/agents`
+- Plans and implementation reports: `docs/agents/dev/`
+- Research: `docs/agents/research/`
 
 Plan filenames follow `{timestamp}_{JIRA-TICKET|NO-JIRA}_PLAN_{title}.md`. Implementation report filenames follow `{timestamp}_{JIRA-TICKET|NO-JIRA}_IMPL_{title}.md`. Research filenames are descriptive slugs.
 
@@ -38,7 +38,7 @@ Output is one line: `<week-id> <monday-YYYY-MM-DD> <sunday-YYYY-MM-DD>`. Capture
 
 ### 2. Gather plan and implementation documents
 
-List markdown files under `.agents/doc/dev/`. Select files whose leading timestamp falls within the resolved Monday-Sunday date range.
+List markdown files under `docs/agents/dev/`. Select files whose leading timestamp falls within the resolved Monday-Sunday date range.
 
 Timestamp parsing:
 - File format begins with `YYYYMMDDHHMMSS_`.
@@ -52,11 +52,11 @@ If no Plan or Implementation Report exists for the range, stop and tell the user
 Read every selected Plan and Implementation Report in full before drafting.
 
 While reading:
-- Record Markdown links that point at `.agents/doc/research/` or `../research/`.
-- Also read `.agents/doc/research/index.md` and include research files whose indexed `Application` matches an application mentioned by a selected Plan or Implementation Report and whose `Description` clearly overlaps the week's work.
+- Record Markdown links that point at `docs/agents/research/` or `../research/`.
+- Also read `docs/agents/research/index.md` and include research files whose indexed `Application` matches an application mentioned by a selected Plan or Implementation Report and whose `Description` clearly overlaps the week's work.
 - Deduplicate research documents across the whole week.
 
-If `.agents/doc/research/index.md` is missing, use only research files directly linked from the selected Plan / Implementation Report documents. Do not scan every research file to infer metadata.
+If `docs/agents/research/index.md` is missing, use only research files directly linked from the selected Plan / Implementation Report documents. Do not scan every research file to infer metadata.
 
 Research docs contain investigation notes and findings; focus on conclusions, constraints, and open questions.
 
@@ -139,5 +139,5 @@ Print the weekly summary directly in chat. Do not write a weekly summary file.
 ## Edge cases
 
 - **Unresolved Markdown link** - link target does not exist on disk. Add a `## Broken Links` appendix listing the unresolved targets rather than failing the whole run.
-- **Malformed filename** - if a file in `.agents/doc/dev/` does not match the timestamp prefix pattern, skip it and mention it in a short note only if it appears relevant to the requested week.
+- **Malformed filename** - if a file in `docs/agents/dev/` does not match the timestamp prefix pattern, skip it and mention it in a short note only if it appears relevant to the requested week.
 - **Year-boundary weeks** (e.g. `2026-W53`, `2027-W01`) - the resolver handles these correctly. Just enumerate the seven dates it returns and match timestamp prefixes against those dates.
