@@ -141,7 +141,7 @@ Codex hook 이벤트명은 Claude Code와 매우 가깝지만, 파일 편집 도
 | --- | --- | --- |
 | `PreToolUse` matcher `Bash` | `PreToolUse` matcher `Bash` | 대체로 유지 |
 | `PostToolUse` matcher `apply_patch\|Edit\|Write` | `PostToolUse` matcher `Edit\|Write\|MultiEdit` | Codex canonical `apply_patch`를 Claude edit tool 이름으로 변환 |
-| `UserPromptSubmit` | `UserPromptSubmit` | context injection hook은 대체로 유지 |
+| `Stop` | `Stop` | 양쪽 모두 `{decision:"block",reason}` + `.stop_hook_active` 가드로 동일 |
 | `$HOME/.codex/hooks/...` | `$HOME/.claude/hooks/...` | 설치 대상 변경 |
 
 Codex에서 MCP tool matcher를 쓰고 있었다면 Claude Code에서 같은 tool 이름과 이벤트 입력이 실제로 존재하는지 확인한다. 이름만 비슷하다는 이유로 무조건 복사하지 않는다.
@@ -150,7 +150,7 @@ Codex에서 MCP tool matcher를 쓰고 있었다면 Claude Code에서 같은 too
 
 - Codex와 Claude Code 모두 hook script는 stdin JSON을 받고 exit code와 stdout/stderr로 결과를 전달한다. 그래도 입력 필드가 완전히 같다고 가정하지 말고 실제 샘플 stdin으로 스모크 테스트한다.
 - Bash command 검사류는 `.tool_input.command`와 `.cwd` 사용 여부를 확인한다. Claude Code hook input에서 해당 필드가 들어오는 이벤트인지 확인하고, 없을 수 있는 이벤트에서는 안전하게 fallback한다.
-- `UserPromptSubmit`에서 context를 추가하는 hook은 `hookSpecificOutput.additionalContext` 구조를 유지한다.
+- `Stop` 훅은 양쪽 모두 `.stop_hook_active` 가드 + `{decision:"block",reason}` JSON 출력으로 에이전트를 재개한다. 스크립트 본문이 플랫폼 차이 없이 그대로 옮겨지는지 확인한다.
 - 차단은 exit code `2` + stderr 또는 JSON decision을 사용할 수 있다. 새로 작성한다면 구조화 JSON을 선호하되, 기존 스크립트가 exit code `2` + stderr 방식으로 잘 동작하면 불필요하게 바꾸지 않는다.
 - `PostToolUse`는 이미 실행된 side effect를 되돌리지 않는다. 포매터나 알림 용도로 쓰고, 실패가 agent에 어떻게 보이는지 확인한다.
 

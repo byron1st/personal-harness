@@ -88,7 +88,7 @@ Hooks migrate between Claude `settings.json`, Codex `hooks.json`, and Cursor `ho
 - `Codex -> Cursor`: remap the event model according to `MIGRATE_TO_CURSOR.md`; do not treat it as a simple word swap.
 - `Claude -> OpenCode`: convert the Claude shell-hook set into the OpenCode JS plugin according to `MIGRATE_TO_OPENCODE.md`; OpenCode does not use Claude/Codex/Cursor shell-hook JSON.
 - Cursor `hooks.json` needs `"version": 1` and relative `./hooks/...` commands.
-- Cursor doc-drift handling intentionally has one extra script, `doc-drift-flag.sh`; do not remove that asymmetry.
+- doc-drift is a single stop hook on every platform (Codex/Claude `Stop`, Cursor `stop`, OpenCode `session.idle`); `hooks/cursor/hooks/` no longer carries an extra `doc-drift-flag.sh`, so the Cursor script count matches Codex.
 
 ## Step 3 - Verify
 

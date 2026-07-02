@@ -2,10 +2,11 @@ import { existsSync, readFileSync } from "node:fs"
 import { dirname } from "node:path"
 import { spawnSync } from "node:child_process"
 
-const COMPLETION_PROMPT = /(끝났어|끝났다|마무리하|마무리할|wrap.?up|all done|ship it|이제 끝|모두 완료|finished up|\/request-merge|PR[\s]*(만들|올리|생성|요청|올려)|MR[\s]*(만들|올리|생성|요청|올려)|(pull|merge)[\s]?request)/i
 const RECURSIVE_GREP = /(^|[^a-zA-Z])grep\s+(-[a-zA-Z]*[rR][a-zA-Z]*|--include|--exclude|--exclude-dir)/
 const FIND_FILE_SEARCH = /(^|[^a-zA-Z])find\s+[^|;&]*\s(-iname|-name|-ipath|-path|-iregex|-regex)(\s|=|$)/
 const GIT_WRITE = /(^|[^a-zA-Z])git\s+(commit|push)/
+
+const reminded = new Set()
 
 function commandFromArgs(args) {
   return String(args?.command ?? args?.cmd ?? "")
@@ -122,47 +123,31 @@ function runAutoFormat(cwd) {
   }
 }
 
-function messageText(output) {
-  const parts = Array.isArray(output.parts) ? output.parts : []
-  return parts
-    .filter((part) => part && part.type === "text" && typeof part.text === "string")
-    .map((part) => part.text)
-    .join("\n")
-}
-
-function changedFiles(cwd) {
+function nonDocChangedFiles(cwd) {
   if (!isGitRepo(cwd)) return []
-
-  const upstream = ["@{u}", "origin/main", "origin/master"].find((ref) => {
-    return run("git", ["-C", cwd, "rev-parse", "--verify", "--quiet", ref], cwd).status === 0
-  })
-
-  const uncommitted = runText("git", ["-C", cwd, "diff", "--name-only", "HEAD"], cwd).split("\n")
-  const committed = upstream
-    ? runText("git", ["-C", cwd, "diff", "--name-only", `${upstream}...HEAD`], cwd).split("\n")
-    : []
-
-  return [...new Set([...uncommitted, ...committed].map((x) => x.trim()).filter(Boolean))].sort()
+  return runText("git", ["-C", cwd, "diff", "--name-only", "HEAD"], cwd)
+    .split("\n")
+    .map((x) => x.trim())
+    .filter((file) => file.length > 0 && !file.endsWith(".md"))
 }
 
-function maybeInjectDocDriftReminder(cwd, output) {
-  const prompt = messageText(output)
-  if (!COMPLETION_PROMPT.test(prompt)) return
+async function maybeRemindDocDrift(client, cwd, sessionID) {
+  if (!sessionID || reminded.has(sessionID)) return
 
-  const changed = changedFiles(cwd)
+  const changed = nonDocChangedFiles(cwd)
   if (changed.length === 0) return
 
-  const docsChanged = changed.some((file) => /(^|\/)(README|AGENTS|CLAUDE)\.md$/i.test(file))
-  const srcChanged = changed.filter((file) => !/(^|\/)(README|AGENTS|CLAUDE)\.md$/i.test(file) && !file.startsWith("docs/"))
-  if (srcChanged.length === 0 || docsChanged) return
+  reminded.add(sessionID)
 
-  output.parts.push({
-    type: "text",
-    text: `Doc-drift check: source files changed but README.md / AGENTS.md / legacy CLAUDE.md were NOT updated. Per global rule, verify whether these need syncing before wrapping up. Changed source files (truncated):\n${srcChanged.slice(0, 10).join("\n")}`,
+  const reason = `Code changes detected. Before finishing, review AGENTS.md, legacy CLAUDE.md (when present), and README.md for drift and update any outdated content — keep the existing section structure intact. Changed files:\n${changed.join("\n")}`
+
+  await client.session.prompt({
+    path: { id: sessionID },
+    body: { parts: [{ type: "text", text: reason }] },
   })
 }
 
-export const PersonalHarness = async ({ directory, worktree }, options = {}) => {
+export const PersonalHarness = async ({ directory, worktree, client }, options = {}) => {
   const fallbackCwd = worktree || directory
   const gitIdentity = options.gitIdentity ?? {}
 
@@ -181,8 +166,10 @@ export const PersonalHarness = async ({ directory, worktree }, options = {}) => 
       runAutoFormat(cwd)
     },
 
-    "chat.message": async (_input, output) => {
-      maybeInjectDocDriftReminder(fallbackCwd, output)
+    event: async ({ event }) => {
+      if (event.type !== "session.idle") return
+      const sessionID = event.properties?.sessionID
+      await maybeRemindDocDrift(client, fallbackCwd, sessionID)
     },
   }
 }

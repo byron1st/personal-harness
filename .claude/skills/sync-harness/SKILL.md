@@ -87,9 +87,9 @@ Hooks move among Claude `settings.json` (`hooks` block), Codex `hooks.json`, and
 
 - Claude → Codex: `settings.json` hooks block → `hooks.json`; path `$HOME/.claude/...` → `$HOME/.codex/...`; matcher `Edit|Write|MultiEdit` → `apply_patch|Edit|Write`.
 - Codex → Claude: `hooks.json` hooks block → `settings.json`; path `$HOME/.codex/...` → `$HOME/.claude/...`; matcher `apply_patch|Edit|Write` → `Edit|Write|MultiEdit`.
-- Codex → Cursor: event-model remap, not a word-swap: `PreToolUse`(Bash)→`beforeShellExecution`, `PostToolUse`→`afterFileEdit`, `UserPromptSubmit`→`beforeSubmitPrompt`+`stop`. Cursor `hooks.json` needs `"version": 1` and relative commands (`./hooks/...`).
-- Claude → OpenCode: shell hooks become the OpenCode JS plugin (`hooks/opencode/personal-harness.js`) rather than another shell-hook JSON file. Map Claude `PreToolUse`/`PostToolUse`/`UserPromptSubmit` to OpenCode plugin events per `MIGRATE_TO_OPENCODE.md`.
-- **doc-drift splits into two scripts on Cursor.** Because `beforeSubmitPrompt` can't inject context, the single Codex `doc-drift-reminder.sh` becomes `doc-drift-flag.sh` (flags on `beforeSubmitPrompt`) + `doc-drift-reminder.sh` (injects via `stop`/`followup_message`). So `hooks/cursor/hooks/` has one more script than `hooks/codex/hooks/`. Expect that asymmetry; don't "fix" it.
+- Codex → Cursor: event-model remap, not a word-swap: `PreToolUse`(Bash)→`beforeShellExecution`, `PostToolUse`→`afterFileEdit`, `Stop`→`stop`. Cursor `hooks.json` needs `"version": 1` and relative commands (`./hooks/...`). Codex `Stop` outputs `{decision:"block",reason}` with a `.stop_hook_active` guard; Cursor `stop` has no such field, so use the `.loop_count==0` guard and output `{followup_message:...}` instead.
+- Claude → OpenCode: shell hooks become the OpenCode JS plugin (`hooks/opencode/personal-harness.js`) rather than another shell-hook JSON file. Map Claude `PreToolUse`/`PostToolUse`/`Stop` to OpenCode plugin events per `MIGRATE_TO_OPENCODE.md`.
+- **doc-drift is a single `Stop`→`stop`/`session.idle` hook on every platform.** Codex/Claude use `stop_hook_active` + `{decision:"block",reason}`; Cursor uses `loop_count==0` + `{followup_message:...}`; OpenCode uses the `session.idle` event + `client.session.prompt` follow-up with a module-level `Set` for loop guarding. `hooks/cursor/hooks/` no longer has an extra `doc-drift-flag.sh`; the script count matches `hooks/codex/hooks/`.
 
 ## Step 3 — Verify
 

@@ -9,9 +9,6 @@
     "afterFileEdit": [
       { "command": "./hooks/auto-format.sh" }
     ],
-    "beforeSubmitPrompt": [
-      { "command": "./hooks/doc-drift-flag.sh" }
-    ],
     "stop": [
       { "command": "./hooks/doc-drift-reminder.sh" }
     ]

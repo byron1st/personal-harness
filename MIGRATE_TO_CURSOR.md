@@ -122,7 +122,7 @@ readonly: true
 
 ### Convert the hooks (Codex hooks.json → Cursor hooks.json)
 
-Codex hook은 Claude식 `hooks.json`(`PreToolUse`/`PostToolUse`/`UserPromptSubmit`)이지만 Cursor hook은 이벤트 이름·차단 방식·I/O 스키마가 근본적으로 다르다. 단순 치환이 아니라 이벤트 모델 재매핑이다.
+Codex hook은 Claude식 `hooks.json`(`PreToolUse`/`PostToolUse`/`Stop`)이지만 Cursor hook은 이벤트 이름·차단 방식·I/O 스키마가 근본적으로 다르다. 단순 치환이 아니라 이벤트 모델 재매핑이다.
 
 - **파일·경로**: `hooks.json`에 **`"version": 1` 필수**. 설치 대상은 전역 `~/.cursor/hooks.json` + `~/.cursor/hooks/`(프로젝트 범위면 `<repo>/.cursor/`). command는 상대경로 — 전역 훅은 `~/.cursor/`에서 실행되므로 `./hooks/foo.sh`로 적는다(codex의 절대경로 `$HOME/.codex/hooks/...` 대체). 스크립트는 `chmod +x` 필요.
 - **이벤트 매핑**: 도구 단위 matcher 대신 목적별 이벤트로 옮긴다.
@@ -131,13 +131,13 @@ Codex hook은 Claude식 `hooks.json`(`PreToolUse`/`PostToolUse`/`UserPromptSubmi
 | --- | --- | --- |
 | `PreToolUse` matcher `Bash` | `beforeShellExecution` | 입력에 `command`·`cwd` 제공 |
 | `PostToolUse` matcher `apply_patch\|Edit\|Write` | `afterFileEdit` | 입력에 `file_path`·`edits`; **관찰 전용** |
-| `UserPromptSubmit` | `beforeSubmitPrompt` + `stop` | 컨텍스트 주입 불가라 분리(아래) |
+| `Stop` | `stop` | Codex `Stop`의 `{decision:"block",reason}` → Cursor `{followup_message:...}`로 재매핑(아래) |
 
 - **I/O·차단**: stdin JSON → stdout JSON → exit code. 모든 agent 훅에 **공통 base 필드**(`conversation_id`·`generation_id`·`workspace_roots`·`hook_event_name` 등)가 들어오나 **`cwd`는 `beforeShellExecution`에만** 있다. 차단은 `{"permission":"deny","user_message":...,"agent_message":...}`(또는 exit 2). exit 0=stdout JSON 사용, exit 2=deny, 그 외=**fail-open** — 반드시 막아야 하는 가드는 entry에 `failClosed:true`를 둔다.
-- **입력 필드 변경**: `.tool_input.command`→`.command`; `.cwd`→이벤트별(`beforeShellExecution`만 `.cwd`, file/stop 계열은 `.workspace_roots[0]`); `.prompt`는 그대로(`beforeSubmitPrompt`).
+- **입력 필드 변경**: `.tool_input.command`→`.command`; `.cwd`→이벤트별(`beforeShellExecution`만 `.cwd`, file/stop 계열은 `.workspace_roots[0]`); `Stop`의 `.stop_hook_active`→`stop`의 `.loop_count`(루프 가드 용도).
 - **차단 메시지 이동**: codex의 `stderr`+`exit 2`를 `agent_message`(에이전트에 전달)로 옮긴다. 통과 시 `{"permission":"allow"}`+exit 0.
-- **능력 손실 주의**: `afterFileEdit`는 출력 무시·차단 불가 — 포매터는 돌리되 **실패를 에이전트에 surface 못 한다**(stderr 로그만, best-effort). `beforeSubmitPrompt`는 **컨텍스트 주입 수단이 없고**(차단만 가능) `cwd`도 없다.
-- **컨텍스트 주입이 필요한 훅(doc-drift류)은 `beforeSubmitPrompt`(플래그) + `stop`(주입)으로 분리한다**: ① `beforeSubmitPrompt`에서 트리거 구문을 `.prompt`로 감지하면 `conversation_id` 기준 임시 플래그 파일(`${TMPDIR:-/tmp}/...`)만 기록한다(출력이 무시될 수 있으므로 부수효과만 쓰고 차단하지 않음). ② `stop`에서 플래그가 있고 `loop_count==0`이며 조건 충족 시 `{"followup_message":...}`를 출력하면 Cursor가 다음 user 메시지로 자동 제출해 에이전트 루프에 주입한다. repo 경로는 `.workspace_roots[0]`로 얻는다. ③ 무한 루프 방지로 `loop_count==0` 가드 + 처리 후 플래그 삭제(1회성)를 두고, `loop_limit`(기본 5)를 백스톱으로 삼는다. 이 분리 때문에 `hooks/cursor`는 codex보다 스크립트가 하나 많다(`doc-drift-flag.sh` 추가).
+- **능력 손실 주의**: `afterFileEdit`는 출력 무시·차단 불가 — 포매터는 돌리되 **실패를 에이전트에 surface 못 한다**(stderr 로그만, best-effort).
+- **`Stop`→`stop` doc-drift 재매핑**: Codex `Stop`은 `.stop_hook_active` 가드 + `{decision:"block",reason}`로 에이전트를 재개하지만, Cursor `stop`은 `stop_hook_active` 필드가 없다. 대신 `loop_count==0`(첫 stop) 가드로 1회만 발화하고, `{followup_message:...}`를 출력하면 Cursor가 다음 user 메시지로 자동 제출한다. repo 경로는 `.workspace_roots[0]`, 변경 파일은 `git diff --name-only HEAD`에서 `.md`를 제외해 발화 조건으로 삼는다. `beforeSubmitPrompt` 플래그 분리는 더 이상 사용하지 않는다.
 - **matcher(선택)**: `beforeShellExecution`의 matcher는 *셸 명령 문자열* 정규식이다(`preToolUse`는 도구 이름). codex처럼 스크립트가 내부에서 필터하면 생략한다.
 
 대상 `hooks/cursor/hooks.json` 예시:
@@ -152,7 +152,6 @@ Codex hook은 Claude식 `hooks.json`(`PreToolUse`/`PostToolUse`/`UserPromptSubmi
       { "command": "./hooks/enforce-fd.sh" }
     ],
     "afterFileEdit": [{ "command": "./hooks/auto-format.sh" }],
-    "beforeSubmitPrompt": [{ "command": "./hooks/doc-drift-flag.sh" }],
     "stop": [{ "command": "./hooks/doc-drift-reminder.sh" }]
   }
 }
@@ -160,9 +159,9 @@ Codex hook은 Claude식 `hooks.json`(`PreToolUse`/`PostToolUse`/`UserPromptSubmi
 
 ### Verify
 
-- hooks 트리 대응: `hooks/codex/`와 `hooks/cursor/`의 스크립트가 매핑되는가(doc-drift는 `beforeSubmitPrompt`+`stop` 분리로 `doc-drift-flag.sh`가 추가됨).
+- hooks 트리 대응: `hooks/codex/`와 `hooks/cursor/`의 스크립트가 1:1로 매핑되는가(doc-drift는 양쪽 모두 단일 `stop` 훅).
 - `hooks/cursor/hooks.json`이 유효 JSON이고 `"version":1`이 있으며 command가 `./hooks/...` 상대경로인가; 스크립트가 `chmod +x`·`bash -n`을 통과하는가.
-- 샘플 stdin 스모크 테스트: 차단 케이스가 `{"permission":"deny"}`, 통과가 `{"permission":"allow"}`를 내는가; doc-drift는 플래그→`followup_message` 연동과 `loop_count` 가드가 동작하는가.
+- 샘플 stdin 스모크 테스트: 차단 케이스가 `{"permission":"deny"}`, 통과가 `{"permission":"allow"}`를 내는가; doc-drift는 `loop_count==0` 가드와 `followup_message` 출력이 동작하는가.
 - 입력 필드가 Cursor 스키마(`.command`/`.file_path`/`.workspace_roots[0]`)를 쓰는가 — 잔존 `.tool_input.command`나 무조건적 `.cwd` 의존이 없는가.
 
 ## Out of scope
