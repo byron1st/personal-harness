@@ -129,6 +129,7 @@ Codex hook은 Claude식 `hooks.json`(`PreToolUse`/`PostToolUse`/`Stop`)이지만
 
 | Codex | Cursor 이벤트 | 비고 |
 | --- | --- | --- |
+| `SessionStart` | `sessionStart` | `hookSpecificOutput.additionalContext` → Cursor `additional_context`로 재매핑 |
 | `PreToolUse` matcher `Bash` | `beforeShellExecution` | 입력에 `command`·`cwd` 제공 |
 | `PostToolUse` matcher `apply_patch\|Edit\|Write` | `afterFileEdit` | 입력에 `file_path`·`edits`; **관찰 전용** |
 | `Stop` | `stop` | Codex `Stop`의 `{decision:"block",reason}` → Cursor `{followup_message:...}`로 재매핑(아래) |
@@ -146,6 +147,9 @@ Codex hook은 Claude식 `hooks.json`(`PreToolUse`/`PostToolUse`/`Stop`)이지만
 {
   "version": 1,
   "hooks": {
+    "sessionStart": [
+      { "command": "./hooks/session-context.sh" }
+    ],
     "beforeShellExecution": [
       { "command": "./hooks/git-identity-guard.sh", "failClosed": true },
       { "command": "./hooks/enforce-rg.sh" },
@@ -161,7 +165,7 @@ Codex hook은 Claude식 `hooks.json`(`PreToolUse`/`PostToolUse`/`Stop`)이지만
 
 - hooks 트리 대응: `hooks/codex/`와 `hooks/cursor/`의 스크립트가 1:1로 매핑되는가(doc-drift는 양쪽 모두 단일 `stop` 훅).
 - `hooks/cursor/hooks.json`이 유효 JSON이고 `"version":1`이 있으며 command가 `./hooks/...` 상대경로인가; 스크립트가 `chmod +x`·`bash -n`을 통과하는가.
-- 샘플 stdin 스모크 테스트: 차단 케이스가 `{"permission":"deny"}`, 통과가 `{"permission":"allow"}`를 내는가; doc-drift는 `loop_count==0` 가드와 `followup_message` 출력이 동작하는가.
+- 샘플 stdin 스모크 테스트: session-context가 `additional_context`를 내는가; 차단 케이스가 `{"permission":"deny"}`, 통과가 `{"permission":"allow"}`를 내는가; doc-drift는 `loop_count==0` 가드와 `followup_message` 출력이 동작하는가.
 - 입력 필드가 Cursor 스키마(`.command`/`.file_path`/`.workspace_roots[0]`)를 쓰는가 — 잔존 `.tool_input.command`나 무조건적 `.cwd` 의존이 없는가.
 
 ## Out of scope

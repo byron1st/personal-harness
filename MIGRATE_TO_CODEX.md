@@ -104,6 +104,7 @@ Claude Code hook 설정은 `settings.json`의 `hooks` 블록으로 배포할 수
 - Codex hook 소스는 플랫폼별 디렉토리에 둔다. 예: `hooks/codex/hooks.json`, `hooks/codex/hooks/*.sh`.
 - 개인 전역 배포 대상은 `~/.codex/hooks.json`과 `~/.codex/hooks/`다. 프로젝트 범위 hook이면 `<repo>/.codex/hooks.json`과 `<repo>/.codex/hooks/`를 사용한다.
 - Claude Code의 command path가 `$HOME/.claude/hooks/...`이면 Codex용으로 `$HOME/.codex/hooks/...`로 바꾼다.
+- `SessionStart` 훅은 `matcher: "startup|resume|clear|compact"`와 `hookSpecificOutput.additionalContext`를 유지한다. `session-context.sh`는 `WORK_GITLAB_HOST`와 origin remote로 work/personal repo를 판별해 세션 컨텍스트에 넣는다.
 - `PreToolUse`의 `Bash` matcher와 `Stop` hook은 대체로 그대로 옮길 수 있다. Codex도 hook input JSON에서 `cwd`, `stop_hook_active`, `tool_input.command`를 제공하며, `{decision:"block",reason}` 출력 스키마가 Claude Code와 동일하다.
 - 파일 편집 hook은 Codex의 실제 tool 이름을 반영해 `apply_patch|Edit|Write` matcher를 사용한다. Codex 문서상 `apply_patch`가 canonical name이고 `Edit` / `Write`는 matcher alias다.
 - `PreToolUse`에서 차단하려면 exit code `2`와 `stderr` 메시지를 사용하거나, JSON의 `permissionDecision: "deny"` / legacy `decision: "block"`을 사용한다.

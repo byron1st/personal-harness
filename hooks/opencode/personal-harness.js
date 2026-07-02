@@ -7,6 +7,7 @@ const FIND_FILE_SEARCH = /(^|[^a-zA-Z])find\s+[^|;&]*\s(-iname|-name|-ipath|-pat
 const GIT_WRITE = /(^|[^a-zA-Z])git\s+(commit|push)/
 
 const reminded = new Set()
+const announced = new Set()
 
 function commandFromArgs(args) {
   return String(args?.command ?? args?.cmd ?? "")
@@ -31,6 +32,20 @@ function runText(command, args, cwd) {
 
 function isGitRepo(cwd) {
   return run("git", ["-C", cwd, "rev-parse", "--git-dir"], cwd).status === 0
+}
+
+function identityConfig(gitIdentity) {
+  return {
+    personal: {
+      email: gitIdentity?.personal?.email ?? process.env.PERSONAL_GIT_EMAIL ?? "",
+      name: gitIdentity?.personal?.name ?? process.env.PERSONAL_GIT_NAME ?? "",
+    },
+    work: {
+      email: gitIdentity?.work?.email ?? process.env.WORK_GIT_EMAIL ?? "",
+      name: gitIdentity?.work?.name ?? process.env.WORK_GIT_NAME ?? "",
+      gitlabHost: gitIdentity?.work?.gitlabHost ?? process.env.WORK_GITLAB_HOST ?? "",
+    },
+  }
 }
 
 function block(message) {
@@ -69,8 +84,7 @@ function guardGitIdentity(command, cwd, gitIdentity) {
   if (!GIT_WRITE.test(command) || !isGitRepo(cwd)) return
 
   const remote = runText("git", ["-C", cwd, "remote", "get-url", "origin"], cwd)
-  const personal = gitIdentity?.personal ?? {}
-  const work = gitIdentity?.work ?? {}
+  const { personal, work } = identityConfig(gitIdentity)
   const workHost = work.gitlabHost ?? ""
   const isWork = workHost.length > 0 && remote.includes(workHost)
   const expectedEmail = isWork ? work.email : personal.email
@@ -91,6 +105,58 @@ Fix with:
   git -C "${cwd}" config user.email "${expectedEmail}"
   git -C "${cwd}" config user.name  "${expectedName ?? ""}"`)
   }
+}
+
+function sessionIDFromEvent(event) {
+  const props = event?.properties ?? {}
+  return props.sessionID ?? props.sessionId ?? props.id ?? props.session?.id
+}
+
+function repoContext(cwd, gitIdentity) {
+  const { personal, work } = identityConfig(gitIdentity)
+  let remote = ""
+  let branch = ""
+  let actualEmail = ""
+  if (cwd && isGitRepo(cwd)) {
+    remote = runText("git", ["-C", cwd, "remote", "get-url", "origin"], cwd)
+    branch = runText("git", ["-C", cwd, "branch", "--show-current"], cwd)
+    actualEmail = runText("git", ["-C", cwd, "config", "user.email"], cwd)
+  }
+
+  const workHost = work.gitlabHost ?? ""
+  const isWork = workHost.length > 0 && remote.includes(workHost)
+  const repoType = isWork ? "work" : "personal"
+  let classificationRule = "origin remote did not match WORK_GITLAB_HOST"
+  if (isWork) {
+    classificationRule = "origin remote matched WORK_GITLAB_HOST"
+  } else if (!remote) {
+    classificationRule = "no origin remote; defaulted to personal"
+  } else if (!workHost) {
+    classificationRule = "WORK_GITLAB_HOST unset; defaulted to personal"
+  }
+
+  const identity = isWork ? work : personal
+
+  return `Session repository classification:
+- repo_type: ${repoType}
+- cwd: ${cwd || "<unknown>"}
+- origin: ${remote || "<none>"}
+- branch: ${branch || "<none>"}
+- classification_rule: ${classificationRule}
+- expected_commit_identity: ${identity.name || "<unset>"} <${identity.email || "<unset>"}>
+- current_git_email: ${actualEmail || "<unset>"}
+
+Use repo_type as session-scoped context. If you have not already done so, mention once to the user near the start of the session that this repository was detected as ${repoType}. When committing or using commit-code, follow the ${repoType} path: verify git user.name and user.email against the expected ${repoType} identity, extract a Jira key from the branch only for work repositories, and do not push unless the user explicitly asks.`
+}
+
+async function announceSessionContext(client, cwd, gitIdentity, sessionID) {
+  if (!client || !sessionID || announced.has(sessionID)) return
+  announced.add(sessionID)
+
+  await client.session.prompt({
+    path: { id: sessionID },
+    body: { parts: [{ type: "text", text: repoContext(cwd, gitIdentity) }] },
+  })
 }
 
 function findMakeDir(start) {
@@ -167,6 +233,10 @@ export const PersonalHarness = async ({ directory, worktree, client }, options =
     },
 
     event: async ({ event }) => {
+      if (event.type === "session.created") {
+        await announceSessionContext(client, fallbackCwd, gitIdentity, sessionIDFromEvent(event))
+        return
+      }
       if (event.type !== "session.idle") return
       const sessionID = event.properties?.sessionID
       await maybeRemindDocDrift(client, fallbackCwd, sessionID)

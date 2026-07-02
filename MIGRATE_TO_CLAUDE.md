@@ -139,6 +139,7 @@ Codex hook 이벤트명은 Claude Code와 매우 가깝지만, 파일 편집 도
 
 | Codex | Claude Code | 메모 |
 | --- | --- | --- |
+| `SessionStart` matcher `startup|resume|clear|compact` | `SessionStart` matcher `startup|resume|clear|compact` | work/personal session context 주입은 양쪽 모두 `hookSpecificOutput.additionalContext` 사용 |
 | `PreToolUse` matcher `Bash` | `PreToolUse` matcher `Bash` | 대체로 유지 |
 | `PostToolUse` matcher `apply_patch\|Edit\|Write` | `PostToolUse` matcher `Edit\|Write\|MultiEdit` | Codex canonical `apply_patch`를 Claude edit tool 이름으로 변환 |
 | `Stop` | `Stop` | 양쪽 모두 `{decision:"block",reason}` + `.stop_hook_active` 가드로 동일 |
@@ -158,6 +159,7 @@ Codex에서 MCP tool matcher를 쓰고 있었다면 Claude Code에서 같은 too
 
 - `hooks/claude/settings.json`이 유효 JSON이고 최상위에 `hooks` 블록이 있는가.
 - hook command가 `$HOME/.claude/hooks/...`를 가리키며 `$HOME/.codex`가 남아있지 않은가.
+- `SessionStart`가 `$HOME/.claude/hooks/session-context.sh`를 실행하고, `session-context.sh`가 `hookSpecificOutput.additionalContext`를 출력하는가.
 - 파일 편집 matcher에 `apply_patch`가 남아있지 않고 `Edit|Write|MultiEdit`를 쓰는가.
 - `hooks/claude/hooks/*.sh`가 `bash -n`을 통과하고 실행 권한이 필요한 배포 방식이면 `chmod +x` 되어 있는가.
 - 샘플 stdin 스모크 테스트로 차단/통과/추가 컨텍스트 경로가 의도대로 동작하는가.

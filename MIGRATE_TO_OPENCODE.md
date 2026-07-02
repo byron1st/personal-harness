@@ -195,7 +195,7 @@ Claude Code hook은 `settings.json`의 `hooks` 블록과 `hooks/*.sh` 스크립�
 - Claude Code 소스: `hooks/claude/settings.json` + `hooks/claude/hooks/*.sh`
 - OpenCode 대상: `hooks/opencode/<plugin-name>.js` (단일 JS 파일로 통합)
 - 설치 대상은 `~/.config/opencode/plugins/<plugin-name>.js`다.
-- personal harness에서는 Claude Code의 5개 hook script(`git-identity-guard.sh`, `enforce-rg.sh`, `enforce-fd.sh`, `auto-format.sh`, `doc-drift-reminder.sh`)를 **하나의 plugin 파일**로 통합한다. OpenCode plugin은 이벤트별 handler를 객체로 반환하므로, 여러 hook을 한 파일에서 처리하는 것이 자연스럽다.
+- personal harness에서는 Claude Code의 hook script(`session-context.sh`, `git-identity-guard.sh`, `enforce-rg.sh`, `enforce-fd.sh`, `auto-format.sh`, `doc-drift-reminder.sh`)를 **하나의 plugin 파일**로 통합한다. OpenCode plugin은 이벤트별 handler를 객체로 반환하므로, 여러 hook을 한 파일에서 처리하는 것이 자연스럽다.
 - plugin 설정(`gitIdentity` 등)은 `opencode.json`의 `plugin` 배열에서 plugin 경로와 함께 옵션 객체로 전달한다.
 
 ### Event mapping
@@ -204,6 +204,7 @@ Claude Code의 hook 이벤트를 OpenCode plugin 이벤트로 매핑한다:
 
 | Claude Code hook | OpenCode plugin event | 메모 |
 | --- | --- | --- |
+| `SessionStart` | `event` (filter `event.type === "session.created"`) | work/personal session context: `client.session.prompt`로 주입 |
 | `PreToolUse` matcher `Bash` | `tool.execute.before` (filter `input.tool === "bash"`) | 명령 검사·차단 |
 | `PostToolUse` matcher `Edit\|Write\|MultiEdit` | `tool.execute.after` (filter `["edit","write","apply_patch"].includes(input.tool)`) | auto-format |
 | `Stop` | `event` (filter `event.type === "session.idle"`) | doc-drift reminder: `client.session.prompt`로 follow-up 주입 |
@@ -211,6 +212,7 @@ Claude Code의 hook 이벤트를 OpenCode plugin 이벤트로 매핑한다:
 - `tool.execute.before` handler는 `(input, output)`를 받는다. `input.tool`로 도구를 식별하고, `output.args`에서 명령/인자를 읽는다. 차단은 `throw new Error(message)`로 한다. Claude Code의 `exit 2 + stderr`와 동일한 효과다.
 - `tool.execute.after` handler는 `(input)`을 받는다. `input.tool`과 `input.args`에서 파일 경로·cwd를 얻는다. side effect(auto-format)를 수행하고, 실패 시 `throw new Error`로 agent에 feedback을 전달한다. `PostToolUse`와 달리 이미 실행된 side effect를 되돌리지 않는다.
 - `event` handler는 `({ event })`를 받는다. `event.type === "session.idle"`일 때 `event.properties.sessionID`로 세션을 식별한다. OpenCode는 Claude Code의 `Stop` `{decision:"block",reason}`에 해당하는 차단-후-재개 API가 없으므로, 대신 `client.session.prompt({ path:{id}, body:{parts:[{type:"text",text:reason}]} })`로 follow-up user message를 직접 주입해 에이전트를 재개시킨다. 무한 루프 방지는 모듈 수준 `Set`에 sessionID를 기록해 1회만 발화하는 것으로 `stop_hook_active`를 대체한다.
+- `session.created`도 `event` handler에서 처리한다. `session-context.sh`의 work/personal 판별은 `repoContext()`로 옮기고, `client.session.prompt`로 세션 컨텍스트를 한 번 주입한다.
 
 ### Plugin structure
 
@@ -237,6 +239,10 @@ export const PersonalHarness = async ({ directory, worktree, client }, options =
     },
 
     event: async ({ event }) => {
+      if (event.type === "session.created") {
+        await announceSessionContext(client, fallbackCwd, gitIdentity, event.properties?.sessionID)
+        return
+      }
       if (event.type !== "session.idle") return
       await maybeRemindDocDrift(client, fallbackCwd, event.properties?.sessionID)
     },
@@ -279,6 +285,7 @@ Claude Code의 각 hook script를 OpenCode plugin function으로 매핑한다:
 
 | Claude Code script | OpenCode plugin function | 이벤트 |
 | --- | --- | --- |
+| `session-context.sh` | `repoContext(cwd, gitIdentity)` + `announceSessionContext(client, cwd, gitIdentity, sessionID)` | `event` (`session.created`) |
 | `git-identity-guard.sh` | `guardGitIdentity(command, cwd, gitIdentity)` | `tool.execute.before` |
 | `enforce-rg.sh` | `guardSearchCommands(command)` (rg 부분) | `tool.execute.before` |
 | `enforce-fd.sh` | `guardSearchCommands(command)` (fd 부분) | `tool.execute.before` |
@@ -293,6 +300,7 @@ Claude Code의 각 hook script를 OpenCode plugin function으로 매핑한다:
 
 - plugin 파일이 유효한 JS module이고 `export`로 hook handler 객체를 반환하는가.
 - `opencode.json`의 `plugin` 배열에 plugin 경로와 옵션이 등록되어 있는가.
+- `event` handler가 `event.type === "session.created"`를 필터링하고, work/personal context를 같은 sessionID에 한 번만 주입하는가.
 - `tool.execute.before` handler가 `input.tool === "bash"` 필터를 갖고, `guardSearchCommands`와 `guardGitIdentity`를 호출하는가.
 - `tool.execute.after` handler가 `["edit","write","apply_patch"].includes(input.tool)` 필터를 갖고, `runAutoFormat`을 호출하는가.
 - `event` handler가 `event.type === "session.idle"`를 필터링하고, `maybeRemindDocDrift`를 호출하는가.

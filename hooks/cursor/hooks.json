@@ -1,6 +1,9 @@
 {
   "version": 1,
   "hooks": {
+    "sessionStart": [
+      { "command": "./hooks/session-context.sh" }
+    ],
     "beforeShellExecution": [
       { "command": "./hooks/git-identity-guard.sh", "failClosed": true },
       { "command": "./hooks/enforce-rg.sh" },
