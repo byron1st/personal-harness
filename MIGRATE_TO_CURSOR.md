@@ -17,7 +17,7 @@ Cursor는 Claude Code처럼 subagent와 plan mode를 기본 지원하지만, 이
 - 소스 오브 트루스는 `skills/codex/<skill>`다. claude 변형(`skills/claude/<skill>`)은 항상 자동 위임을 전제로 하므로 Cursor 변형의 출발점으로 쓰지 않는다.
 - 트리 구조, 파일명, `references/`·`scripts/` 경로, frontmatter `name`은 그대로 둔다. Cursor도 동일한 `SKILL.md` 표준을 읽으며, `name`은 반드시 폴더명과 일치해야 한다.
 - skill-local `agents/openai.yaml`은 Codex/OpenAI UI 메타데이터이며 Cursor custom subagent 정의가 아니다. Codex 소스에 이 파일이 있어도 `skills/cursor/<skill>/agents/openai.yaml`로 복사하지 말고, Cursor 대상 스킬에는 필요한 `SKILL.md`, host-neutral `references/`, `scripts/`만 둔다.
-- 호스트 무관 스킬은 사실상 그대로 복사된다. 위임(subagent), plan mode, "Codex" 같은 표현이 본문에 없으면 바꿀 것이 없다. 예: `commit-code`, `request-merge`, `application-research-sync`, `summarize-week`, `test-dev`.
+- 호스트 무관 스킬은 사실상 그대로 복사된다. 위임(subagent), plan mode, "Codex" 같은 표현이 본문에 없으면 바꿀 것이 없다. 예: `commit-code`, `request-merge`, `application-research-sync`, `test-dev`.
 - 위임 게이팅("사용자가 명시적으로 요청했을 때만")은 Codex 변형 그대로 유지한다. Cursor가 자동 위임을 지원한다고 해서 always-on으로 바꾸지 않는다.
 - Cursor는 스킬을 `.cursor/skills/`, `.agents/skills/`, 그리고 레거시 `.codex/skills/`까지 읽는다.
 

@@ -36,7 +36,6 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 - `spec-creator`: 신규 소프트웨어 프로젝트의 요구사항을 단계적으로 정리해 한국어 SPEC.md 문서를 만든다.
 - `setup-initial-repo`: SPEC.md 문서를 기반으로 신규 프로젝트 저장소를 부트스트랩한다. CLAUDE.md/AGENTS.md, 언어별 컨벤션 docs, Makefile, .gitignore 생성 및 적절한 Git identity로 `git init`과 remote origin 연결까지 수행한다.
 - `application-research-sync`: 코드 변경 사항을 분석해 `docs/agents/research`의 Research 파일을 일괄 업데이트한다. Research 검색은 `docs/agents/research/index.md`의 메타데이터와 파일 링크를 먼저 읽고 필요한 본문만 여는 방식으로 수행한다.
-- `summarize-week`: `docs/agents/dev`의 플랜·구현 리포트와 `docs/agents/research/index.md` 및 관련 Research 문서를 읽어 주간 코딩 요약을 채팅에 출력한다.
 - `learn-from-manual-edits`: 에이전트가 작성한 코드 위에 사용자가 직접 수정한 부분을 식별해 각 수정 배경의 일반적인 선호(스타일·아키텍처·네이밍 등)를 추론하고, 프로젝트의 CLAUDE.md(Claude Code) 또는 AGENTS.md(Codex/Cursor/OpenCode)에 재사용 가능한 컨벤션으로 기록한다.
 
 ## 환경변수
