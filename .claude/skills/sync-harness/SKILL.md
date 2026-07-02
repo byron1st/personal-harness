@@ -14,7 +14,7 @@ The transform rules are **not** in this skill. They live in four checklists at t
 - `MIGRATE_TO_CODEX.md` — Claude → Codex
 - `MIGRATE_TO_CLAUDE.md` — Codex → Claude Code
 - `MIGRATE_TO_CURSOR.md` — Codex → Cursor
-- `MIGRATION_TO_OPENCODE.md` — Claude Code → OpenCode
+- `MIGRATE_TO_OPENCODE.md` — Claude Code → OpenCode
 
 These are the living authority. Read the sections relevant to what you're migrating and apply them faithfully — prefer them over anything summarized here, because they get updated and this skill must not drift from them.
 
@@ -88,7 +88,7 @@ Hooks move among Claude `settings.json` (`hooks` block), Codex `hooks.json`, and
 - Claude → Codex: `settings.json` hooks block → `hooks.json`; path `$HOME/.claude/...` → `$HOME/.codex/...`; matcher `Edit|Write|MultiEdit` → `apply_patch|Edit|Write`.
 - Codex → Claude: `hooks.json` hooks block → `settings.json`; path `$HOME/.codex/...` → `$HOME/.claude/...`; matcher `apply_patch|Edit|Write` → `Edit|Write|MultiEdit`.
 - Codex → Cursor: event-model remap, not a word-swap: `PreToolUse`(Bash)→`beforeShellExecution`, `PostToolUse`→`afterFileEdit`, `UserPromptSubmit`→`beforeSubmitPrompt`+`stop`. Cursor `hooks.json` needs `"version": 1` and relative commands (`./hooks/...`).
-- Claude → OpenCode: shell hooks become the OpenCode JS plugin (`hooks/opencode/personal-harness.js`) rather than another shell-hook JSON file. Map Claude `PreToolUse`/`PostToolUse`/`UserPromptSubmit` to OpenCode plugin events per `MIGRATION_TO_OPENCODE.md`.
+- Claude → OpenCode: shell hooks become the OpenCode JS plugin (`hooks/opencode/personal-harness.js`) rather than another shell-hook JSON file. Map Claude `PreToolUse`/`PostToolUse`/`UserPromptSubmit` to OpenCode plugin events per `MIGRATE_TO_OPENCODE.md`.
 - **doc-drift splits into two scripts on Cursor.** Because `beforeSubmitPrompt` can't inject context, the single Codex `doc-drift-reminder.sh` becomes `doc-drift-flag.sh` (flags on `beforeSubmitPrompt`) + `doc-drift-reminder.sh` (injects via `stop`/`followup_message`). So `hooks/cursor/hooks/` has one more script than `hooks/codex/hooks/`. Expect that asymmetry; don't "fix" it.
 
 ## Step 3 — Verify
@@ -101,7 +101,7 @@ python3 .claude/skills/sync-harness/scripts/verify-sync.py
 
 It mechanizes the Verify checklists from the MIGRATE docs where possible for the Claude/Codex/Cursor variants: tree parity, sub-agent frontmatter actually parsing as YAML, `readonly: true` present for Cursor reviewers, skill/agent `name` matching its directory or filename, the residual sweep for leftover Codex execution-model terms in Cursor variants, `hooks.json` shape, and `bash -n` on every hook script. It exits non-zero and prints what failed.
 
-The script catches mechanical regressions. You still own the judgment calls: read your regenerated files and confirm the meaning survived the transform. Codex → Claude and Claude → OpenCode especially require manual review because restoring or translating platform tool names, permission models, hook/plugin mechanics, plan-mode mechanics, and subagent dispatch policy is not fully mechanical. When the checker flags something, fix the file and re-run until it's clean. For OpenCode changes, manually verify the relevant `MIGRATION_TO_OPENCODE.md` checklist because OpenCode uses a different plugin and permission model.
+The script catches mechanical regressions. You still own the judgment calls: read your regenerated files and confirm the meaning survived the transform. Codex → Claude and Claude → OpenCode especially require manual review because restoring or translating platform tool names, permission models, hook/plugin mechanics, plan-mode mechanics, and subagent dispatch policy is not fully mechanical. When the checker flags something, fix the file and re-run until it's clean. For OpenCode changes, manually verify the relevant `MIGRATE_TO_OPENCODE.md` checklist because OpenCode uses a different plugin and permission model.
 
 ## Boundaries
 

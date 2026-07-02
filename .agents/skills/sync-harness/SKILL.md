@@ -14,7 +14,7 @@ The transform rules are not in this skill. They live in four checklists at the r
 - `MIGRATE_TO_CODEX.md` - Claude -> Codex
 - `MIGRATE_TO_CLAUDE.md` - Codex -> Claude
 - `MIGRATE_TO_CURSOR.md` - Codex -> Cursor
-- `MIGRATION_TO_OPENCODE.md` - Claude -> OpenCode
+- `MIGRATE_TO_OPENCODE.md` - Claude -> OpenCode
 
 Read the sections relevant to what you are migrating and apply them faithfully. Prefer those documents over this summary because they are the living authority.
 
@@ -65,7 +65,7 @@ Skills contain `SKILL.md` plus optional `references/` and `scripts/` subtrees.
 - `Claude -> Codex`: shorten descriptions, gate sub-agent use behind explicit user request when Codex requires it, replace Claude-specific tool names with Codex-safe wording, and map Claude persona agent wording to Codex agent concepts.
 - `Codex -> Claude`: preserve Codex's user-facing behavior while restoring Claude Code mechanics such as `Agent` tool dispatch, `subagent_type`, richer Claude descriptions when useful, `AskUserQuestion`, and `ExitPlanMode`.
 - `Codex -> Cursor`: apply the wording and execution-model changes in `MIGRATE_TO_CURSOR.md` while preserving Codex behavior. Delegation remains gated on explicit user request when that is the Work policy.
-- `Claude -> OpenCode`: apply the wording and execution-model changes in `MIGRATION_TO_OPENCODE.md`; replace Claude Code tool names with OpenCode-safe wording, map `Agent` tool dispatch to OpenCode's Task tool, and convert plan-mode instructions to OpenCode Plan/Build mode.
+- `Claude -> OpenCode`: apply the wording and execution-model changes in `MIGRATE_TO_OPENCODE.md`; replace Claude Code tool names with OpenCode-safe wording, map `Agent` tool dispatch to OpenCode's Task tool, and convert plan-mode instructions to OpenCode Plan/Build mode.
 - Host-neutral skills should stay near-identical. Do not manufacture platform differences when the body has no delegation, plan-mode, or platform-specific terms.
 
 ### Sub-agents
@@ -86,7 +86,7 @@ Hooks migrate between Claude `settings.json`, Codex `hooks.json`, and Cursor `ho
 - `Claude -> Codex`: `settings.json` hooks block becomes `hooks.json`; `$HOME/.claude/...` becomes `$HOME/.codex/...`; file edit matchers use Codex-safe matcher names.
 - `Codex -> Claude`: `hooks.json` hooks block goes into `settings.json`; `$HOME/.codex/...` becomes `$HOME/.claude/...`; `apply_patch|Edit|Write` becomes `Edit|Write|MultiEdit`.
 - `Codex -> Cursor`: remap the event model according to `MIGRATE_TO_CURSOR.md`; do not treat it as a simple word swap.
-- `Claude -> OpenCode`: convert the Claude shell-hook set into the OpenCode JS plugin according to `MIGRATION_TO_OPENCODE.md`; OpenCode does not use Claude/Codex/Cursor shell-hook JSON.
+- `Claude -> OpenCode`: convert the Claude shell-hook set into the OpenCode JS plugin according to `MIGRATE_TO_OPENCODE.md`; OpenCode does not use Claude/Codex/Cursor shell-hook JSON.
 - Cursor `hooks.json` needs `"version": 1` and relative `./hooks/...` commands.
 - Cursor doc-drift handling intentionally has one extra script, `doc-drift-flag.sh`; do not remove that asymmetry.
 
@@ -100,7 +100,7 @@ python3 .agents/skills/sync-harness/scripts/verify-sync.py
 
 It checks tree parity, frontmatter parsing, skill and agent names, residual platform-specific terms, hook JSON shape, and `bash -n` for hook scripts. It exits non-zero when failures remain.
 
-The script catches mechanical regressions for the Claude/Codex/Cursor variants. You still need to read the regenerated files and confirm the meaning survived the transform, especially for `Codex -> Claude` and `Claude -> OpenCode` because platform-specific tool, permission, hook, and plan-mode restoration requires judgment. If the checker flags something, fix the file and rerun until it is clean. For OpenCode changes, also manually verify the relevant `MIGRATION_TO_OPENCODE.md` checklist because OpenCode uses a different plugin and permission model.
+The script catches mechanical regressions for the Claude/Codex/Cursor variants. You still need to read the regenerated files and confirm the meaning survived the transform, especially for `Codex -> Claude` and `Claude -> OpenCode` because platform-specific tool, permission, hook, and plan-mode restoration requires judgment. If the checker flags something, fix the file and rerun until it is clean. For OpenCode changes, also manually verify the relevant `MIGRATE_TO_OPENCODE.md` checklist because OpenCode uses a different plugin and permission model.
 
 ## Boundaries
 

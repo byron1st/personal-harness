@@ -10,7 +10,7 @@
 - **instructions**: Claude Code, Codex, OpenCode 실행 시 사용할 전역 명령어와 개발 원칙을 정의하는 `AGENTS.md` 파일을 포함한다.
 - **scripts**: 스킬과 전역 명령어를 여러 에디터/에이전트에 설치·동기화하는 배포 스크립트를 포함한다.
 
-플랫폼 변형은 **Claude ↔ Codex**, **Codex → Cursor**, 그리고 **Claude → OpenCode** 토폴로지로 마이그레이션한다. Personal 환경의 중심은 Claude Code이고 Work 환경의 중심은 Codex이므로, Claude Code와 Codex 변형은 양방향으로 공유할 수 있다. Cursor는 Work의 하위 변형이므로 Codex에서만 파생되며 Cursor를 소스로 쓰는 역방향은 지원하지 않는다. OpenCode는 Personal의 하위 변형이므로 Claude Code에서만 파생되며 OpenCode를 소스로 쓰는 역방향은 지원하지 않는다. 각 단계의 변환 규칙은 [MIGRATE_TO_CODEX.md](MIGRATE_TO_CODEX.md)(Claude → Codex), [MIGRATE_TO_CLAUDE.md](MIGRATE_TO_CLAUDE.md)(Codex → Claude Code), [MIGRATE_TO_CURSOR.md](MIGRATE_TO_CURSOR.md)(Codex → Cursor), [MIGRATION_TO_OPENCODE.md](MIGRATION_TO_OPENCODE.md)(Claude → OpenCode)에 정리되어 있다.
+플랫폼 변형은 **Claude ↔ Codex**, **Codex → Cursor**, 그리고 **Claude → OpenCode** 토폴로지로 마이그레이션한다. Personal 환경의 중심은 Claude Code이고 Work 환경의 중심은 Codex이므로, Claude Code와 Codex 변형은 양방향으로 공유할 수 있다. Cursor는 Work의 하위 변형이므로 Codex에서만 파생되며 Cursor를 소스로 쓰는 역방향은 지원하지 않는다. OpenCode는 Personal의 하위 변형이므로 Claude Code에서만 파생되며 OpenCode를 소스로 쓰는 역방향은 지원하지 않는다. 각 단계의 변환 규칙은 [MIGRATE_TO_CODEX.md](MIGRATE_TO_CODEX.md)(Claude → Codex), [MIGRATE_TO_CLAUDE.md](MIGRATE_TO_CLAUDE.md)(Codex → Claude Code), [MIGRATE_TO_CURSOR.md](MIGRATE_TO_CURSOR.md)(Codex → Cursor), [MIGRATE_TO_OPENCODE.md](MIGRATE_TO_OPENCODE.md)(Claude → OpenCode)에 정리되어 있다.
 
 ## Skills
 
