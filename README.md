@@ -12,6 +12,28 @@
 
 플랫폼 변형은 **Claude ↔ Codex**, **Codex → Cursor**, 그리고 **Claude → OpenCode** 토폴로지로 마이그레이션한다. Personal 환경의 중심은 Claude Code이고 Work 환경의 중심은 Codex이므로, Claude Code와 Codex 변형은 양방향으로 공유할 수 있다. Cursor는 Work의 하위 변형이므로 Codex에서만 파생되며 Cursor를 소스로 쓰는 역방향은 지원하지 않는다. OpenCode는 Personal의 하위 변형이므로 Claude Code에서만 파생되며 OpenCode를 소스로 쓰는 역방향은 지원하지 않는다. `loki-log-search`는 Work-only 스킬이므로 `skills/codex/`와 `skills/cursor/`에만 두고 Claude Code/OpenCode 같은 personal 변형으로 전파하지 않는다. 각 단계의 변환 규칙은 [MIGRATE_TO_CODEX.md](MIGRATE_TO_CODEX.md)(Claude → Codex), [MIGRATE_TO_CLAUDE.md](MIGRATE_TO_CLAUDE.md)(Codex → Claude Code), [MIGRATE_TO_CURSOR.md](MIGRATE_TO_CURSOR.md)(Codex → Cursor), [MIGRATE_TO_OPENCODE.md](MIGRATE_TO_OPENCODE.md)(Claude → OpenCode)에 정리되어 있다.
 
+## Prerequisites
+
+이 harness의 skills·hooks·설치 스크립트가 정상 동작하려면 아래 CLI 도구들이 PATH에 설치되어 있어야 한다. 플랫폼별로 일부 도구는 필수가 아닐 수 있으므로 각 항목의 적용 범위를 확인한다.
+
+| 도구 | 적용 범위 | 용도 | 설치 |
+| --- | --- | --- | --- |
+| `jq` | 전체(Claude/Codex/Cursor shell hook + `apply-to-personal.sh`) | hook 입력 파싱, `settings.json` 머지, `loki-log-search`의 LogQL URL 인코딩 | `brew install jq` |
+| `git` | 전체 shell hook | 세션 컨텍스트 분류, git identity 검증, doc-drift 변경 파일 감지 | `brew install git` |
+| `make` | 전체 `auto-format` hook | 프로젝트 Makefile의 `fmt`/`format` 타겟 실행 | macOS: Xcode Command Line Tools, Linux: `build-essential` |
+| `rg` (ripgrep) | 전체 `enforce-rg` hook + AGENTS.md | 재귀 `grep` 대신 코드 검색 강제 | `brew install ripgrep` |
+| `fd` | 전체 `enforce-fd` hook + AGENTS.md | 파일명/경로 검색용 `find` 대체 강제 | `brew install fd` |
+| `node` | OpenCode plugin(`hooks/opencode/personal-harness.js`) | OpenCode용 JS plugin 실행 | `brew install node` 또는 Node Version Manager |
+| `ctx7` | AGENTS.md context7 룰 + `scripts/setup-ctx7.sh` | 라이브러리/프레임워크 공식 문서 fetch | `npm install -g ctx7` 후 `ctx7 login`(또는 `CONTEXT7_API_KEY` 설정) |
+| `gh` | `request-merge`(personal), `setup-initial-repo`(personal 원격 생성) | GitHub PR 생성/업데이트, 개인 private repo 자동 생성 | `brew install gh` 후 `gh auth login` |
+| `glab` | `request-merge`(work) | GitLab MR 생성/업데이트 | `brew install glab` 후 `glab auth login` |
+| `gcx` | `loki-log-search`(work-only) | Grafana Loki 로그 조회용 `gcx api` passthrough | `gcx` 배포본 설치 후 `gcx config current-context`로 컨텍스트 구성 |
+
+참고:
+- `rg`/`fd`는 이미 폴더 구조 설명의 `hooks` 항목에서 언급한 대로 hook이 사용을 강제하므로 반드시 설치해야 한다.
+- `gh`·`glab`·`gcx`는 각각 personal/work 저장소에서만 호출되므로, 사용하지 않는 저장소 유형의 도구는 생략 가능하다.
+- 프로젝트 템플릿(`references/go-makefile.md`, `references/go-convention.md`)이 `setup-initial-repo`로 복사될 때 함께 따라가는 `go`, `golangci-lint`, `mockery`, `gremlins`, `swag` 등은 생성되는 프로젝트의 빌드 도구이지 이 harness 자체의 prerequisite은 아니다.
+
 ## Skills
 
 ### Core Development Process
