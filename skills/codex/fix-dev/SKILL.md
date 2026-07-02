@@ -38,7 +38,6 @@ The main session is the only place that has the surrounding context — which pl
 - **Plan context** — absolute paths to the plan file (and the `-STEP-N.md` sub-plan, if multi-steps), plus which step the fix relates to. This lets the executor see the original intent without the main session paraphrasing it.
 - **Implementation Report path** — absolute path to the existing report under `docs/agents/dev/` that this fix amends. For single-step, the single report; for a multi-steps step, the `{timestamp}_{Jira}_IMPL_{title}-STEP-N.md` per-step report; for fixes raised after the final summary already exists, still amend the relevant `-STEP-N` report (the per-step report is closer to the change set than the summary). If no report exists yet (e.g. the fix is unrelated to a recent `implement-dev` run), pass `none` — the executor will skip the report update.
 - **Current branch** — the branch name the main session is on. The executor must stay on this branch (do not create a new branch, do not switch).
-- **Commit policy** — `commit-on-success` only if the user explicitly asked for a commit in this turn. Otherwise `no-commit`. When in doubt, choose `no-commit`.
 - **Verification commands** — the lint/format/test/build commands extracted from `Makefile`, `AGENTS.md`, `CLAUDE.md`, or `README.md`. If they were already gathered in the current session (e.g. by an earlier `implement-dev` call), pass them through; otherwise extract them once before dispatching.
 - **Project conventions** — a directive that the executor must read `AGENTS.md` / `CLAUDE.md` before editing so it inherits project-specific rules.
 
@@ -81,9 +80,7 @@ When using a worker, its prompt must specify the following sequence. When not de
 
 6. **Branch** — stay on the branch given in the brief. Do not create branches, switch branches, or merge.
 
-7. **Commit (only if policy is `commit-on-success`)** — stage the changed files, excluding `docs/agents/dev/*_PLAN_*.md`, `docs/agents/dev/*_IMPL_*.md`, `docs/agents/research/*.md`, and any accidentally built binaries. Use `git commit` with a message following the `commit-code` skill's conventions (i.e. `fix: {title}` for personal repos, or `fix: [{JIRA-123}] {title}` for work repos where a Jira ticket number can be extracted from the branch name). Do **not** add a `Co-Authored-By` trailer. Do **not** push. If commit policy is `no-commit`, leave the working tree as-is so the user can commit later.
-
-8. **Append a `## Fix` entry to the Implementation Report** — open the report at the path given in the brief and append (do not overwrite anything) a Fix entry per "Fix section format" below. If the report does not yet contain a `## Fix` heading, create it at the very end of the file. If multiple Fix entries already exist, append the new one beneath them in chronological order. If the brief's `Implementation Report path` is `none`, skip this step entirely (do not create a new report file). Section titles in English, body content in Korean — this matches the existing Implementation Report convention.
+7. **Append a `## Fix` entry to the Implementation Report** — open the report at the path given in the brief and append (do not overwrite anything) a Fix entry per "Fix section format" below. If the report does not yet contain a `## Fix` heading, create it at the very end of the file. If multiple Fix entries already exist, append the new one beneath them in chronological order. If the brief's `Implementation Report path` is `none`, skip this step entirely (do not create a new report file). Section titles in English, body content in Korean — this matches the existing Implementation Report convention.
 
 ## Fix section format
 
@@ -99,7 +96,6 @@ Append using exactly this shape. Heading and field labels in English; the prose 
   - `path/to/file1`
   - `path/to/file2`
 - **Verification**: 실행한 명령과 결과 (예: `make lint` ✅, `make test` ✅, `make build` ✅).
-- **Commit**: `{SHA}` 또는 `not committed (per policy)` / `not committed (no changes)`.
 - **Notes**: 사용자가 알아야 할 후속/주변 사항. 없으면 줄 자체를 생략.
 ```
 
@@ -114,7 +110,6 @@ Return a **single concise message** containing the fields below. The full diff l
 - **Fix summary**: one paragraph describing the change applied and why it is the smallest correct fix. Omit if status ≠ `success`.
 - **Files changed**: bullet list of paths (no diffs). Omit if status ≠ `success`.
 - **Verification**: which lint/format/test/build commands ran and their pass/fail outcome. Omit when no verification was performed (scope-guard or blocked returns).
-- **Commit**: commit SHA if a commit was made, otherwise one of `not committed (per policy)`, `not committed (no changes)`. Omit if status ≠ `success`.
 - **Report update**: absolute path of the Implementation Report that was amended and the heading of the new entry (e.g. `Fix 2 — 2026-05-18 14:30 — …`). Use `skipped (no report)` when the brief passed `Implementation Report path: none`. Omit if status ≠ `success`.
 - **Notes**: anything else the user should see — adjacent bugs the executor suspects but deliberately did not touch, follow-ups worth filing, unrelated cleanups intentionally skipped, etc. Omit if there is nothing.
 
@@ -123,7 +118,7 @@ The worker must **not** dump file contents, full diffs, or full test output into
 ## Anti-patterns
 
 - **Do not re-read the changed files in the main session "just to be sure" after a worker returns** — that defeats the entire purpose of delegation.
-- **Do not commit silently** — only commit when the user explicitly asked in the message that triggered this skill. Silence means `no-commit`.
+- **Do not commit** — this skill never commits. Leave the working tree as-is so the user can commit later.
 - **Do not expand scope inside the worker** — if the needed fix grows beyond the boundary in "Scope of this skill", return `needs-confirmation` and let the main session ask the user.
 - **Do not create a new branch** — the main session's branch is the right one. Branch creation belongs to `implement-dev`, not here.
 - **Do not create a new report file** — this skill only **appends** a `## Fix` entry to the existing Implementation Report. If no report exists (`Implementation Report path: none`), skip the update; do not invent a new file.
