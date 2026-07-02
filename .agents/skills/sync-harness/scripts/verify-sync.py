@@ -4,7 +4,8 @@
 Mechanizes the "Verify" checklists from MIGRATE_TO_CODEX.md and
 MIGRATE_TO_CURSOR.md so a migration can be checked without eyeballing:
 
-  - tree parity across claude/ codex/ cursor/ (skills, agents, hooks)
+  - tree parity across claude/ codex/ cursor/ (skills, agents, hooks),
+    with explicit work-only skill exceptions
   - sub-agent frontmatter parses as YAML (the colon-space trap) and carries
     readonly: true with name == filename
   - skill / agent `name` matches its directory or filename across variants
@@ -26,6 +27,7 @@ from pathlib import Path
 
 FAILURES: list[tuple[str, str]] = []
 WARNINGS: list[tuple[str, str]] = []
+WORK_ONLY_SKILLS = {"loki-log-search"}
 
 
 def fail(section: str, msg: str) -> None:
@@ -149,11 +151,25 @@ def check_skills(root: Path) -> None:
     cl, cx, cu = root / "skills/claude", root / "skills/codex", root / "skills/cursor"
     if not cl.is_dir():
         return
+    op = root / "skills/opencode"
     sc, sx, su = skill_dirs(cl), skill_dirs(cx), skill_dirs(cu)
-    if not (sc == sx == su):
-        fail("skills/tree-parity", f"skill sets differ: claude={sc} codex={sx} cursor={su}")
+    so = skill_dirs(op)
 
-    for name in sorted(sc & sx & su):
+    for name in sorted(WORK_ONLY_SKILLS):
+        if name in sc:
+            fail("skills/work-only", f"{name} must not exist in skills/claude")
+        if name in so:
+            fail("skills/work-only", f"{name} must not exist in skills/opencode")
+        if name not in sx:
+            fail("skills/work-only", f"{name} missing from skills/codex")
+        if name not in su:
+            fail("skills/work-only", f"{name} missing from skills/cursor")
+
+    common_sc, common_sx, common_su = sc - WORK_ONLY_SKILLS, sx - WORK_ONLY_SKILLS, su - WORK_ONLY_SKILLS
+    if not (common_sc == common_sx == common_su):
+        fail("skills/tree-parity", f"shared skill sets differ: claude={common_sc} codex={common_sx} cursor={common_su}")
+
+    for name in sorted(common_sc & common_sx & common_su):
         # name frontmatter must match dir across all three variants
         for plat, base in (("claude", cl), ("codex", cx), ("cursor", cu)):
             sk = base / name / "SKILL.md"
@@ -170,6 +186,22 @@ def check_skills(root: Path) -> None:
             t = {plat: subtree(base / name / sub) for plat, base in (("claude", cl), ("codex", cx), ("cursor", cu))}
             if not (t["claude"] == t["codex"] == t["cursor"]):
                 fail("skills/subtree-parity", f"{name}/{sub} trees differ: {t}")
+
+    for name in sorted(WORK_ONLY_SKILLS & sx & su):
+        for plat, base in (("codex", cx), ("cursor", cu)):
+            sk = base / name / "SKILL.md"
+            if not sk.exists():
+                fail("skills/structure", f"{plat}/{name} missing SKILL.md")
+                continue
+            data, err = load_frontmatter(sk)
+            if err:
+                fail(f"skills/{plat}", f"{name}/SKILL.md frontmatter: {err}")
+            elif data and str(data.get("name")) != name:
+                fail(f"skills/{plat}", f"{name}/SKILL.md name `{data.get('name')}` != dir `{name}`")
+        for sub in ("references", "scripts"):
+            t = {plat: subtree(base / name / sub) for plat, base in (("codex", cx), ("cursor", cu))}
+            if t["codex"] != t["cursor"]:
+                fail("skills/subtree-parity", f"{name}/{sub} work trees differ: {t}")
 
 
 # Cursor variants must be free of Codex-execution-model leftovers. Per-skill

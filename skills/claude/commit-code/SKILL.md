@@ -11,8 +11,11 @@ This skill explains how to make a commit based on current modified files.
 
 ### 1. Gather modified files and Jira ticket number
 
-- If the url of the repository's origin starts with `$WORK_GITLAB_HOST*`, this is a work repository.
-- If not, this is a personal repository.
+- Use the session-scoped repository context provided by the SessionStart hook.
+  - If the context says `repo_type: work`, this is a work repository.
+  - If the context says `repo_type: personal`, this is a personal repository.
+  - Do not reclassify the repository from the origin URL inside this skill.
+  - If the session context is missing, unclear, or contradictory, use `AskUserQuestion` to explicitly ask the user whether this is a work or personal repository before continuing.
 - You should check the email and name of a committer:
   - A committer for a work repository should be a user whose email and name are `$WORK_GIT_EMAIL` and `$WORK_GIT_NAME`.
   - A committer for a personal repository should be a user whose email and name are `$PERSONAL_GIT_EMAIL` and `$PERSONAL_GIT_NAME`.`.

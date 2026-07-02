@@ -12,6 +12,11 @@ Cursor는 Claude Code처럼 subagent와 plan mode를 기본 지원하지만, 이
 
 `skills/codex/<skill>`를 `skills/cursor/<skill>`로 옮길 때의 규칙이다.
 
+### Include Work-only skills
+
+- `loki-log-search`는 Work-only 스킬이다. `skills/codex/loki-log-search`를 소스로 삼아 `skills/cursor/loki-log-search`로 전파하며, Claude Code/OpenCode 같은 personal 변형으로는 전파하지 않는다.
+- 이 스킬은 Codex와 Cursor의 Work 환경에만 존재해야 한다. 검증 시 shared skill parity와 별도로 Codex/Cursor 양쪽에 있고 Claude/OpenCode에는 없는지 확인한다.
+
 ### Start from the Codex variant and keep its behavior
 
 - 소스 오브 트루스는 `skills/codex/<skill>`다. claude 변형(`skills/claude/<skill>`)은 항상 자동 위임을 전제로 하므로 Cursor 변형의 출발점으로 쓰지 않는다.

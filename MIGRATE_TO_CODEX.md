@@ -10,6 +10,11 @@
 
 `skills/claude/<skill>`를 `skills/codex/<skill>`로 옮길 때의 규칙이다.
 
+### Preserve Work-only skill exceptions
+
+- `loki-log-search`는 Work-only 스킬이다. `skills/codex/loki-log-search`와 `skills/cursor/loki-log-search`에만 존재해야 하며, Claude Code/OpenCode 같은 personal 변형으로 만들지 않는다.
+- Claude → Codex 동기화 중 Claude 소스에 `loki-log-search`가 없더라도 Codex 대상에서 삭제하지 않는다. 이 스킬을 갱신할 때는 Codex를 소스로 삼아 [MIGRATE_TO_CURSOR.md](MIGRATE_TO_CURSOR.md)에 따라 Cursor로만 전파한다.
+
 ### Keep frontmatter descriptions short and trigger-focused
 
 Codex는 시작 시 각 Skill의 `name`, `description`, 경로만 먼저 본다. 초기 Skill 목록에는 예산이 있으므로 Skill이 많거나 description이 길면 description이 축약되거나 일부 Skill이 초기 목록에서 빠질 수 있다.

@@ -10,7 +10,7 @@
 - **instructions**: Claude Code, Codex, OpenCode 실행 시 사용할 전역 명령어와 개발 원칙을 정의하는 `AGENTS.md` 파일을 포함한다.
 - **scripts**: 스킬과 전역 명령어를 여러 에디터/에이전트에 설치·동기화하는 배포 스크립트를 포함한다.
 
-플랫폼 변형은 **Claude ↔ Codex**, **Codex → Cursor**, 그리고 **Claude → OpenCode** 토폴로지로 마이그레이션한다. Personal 환경의 중심은 Claude Code이고 Work 환경의 중심은 Codex이므로, Claude Code와 Codex 변형은 양방향으로 공유할 수 있다. Cursor는 Work의 하위 변형이므로 Codex에서만 파생되며 Cursor를 소스로 쓰는 역방향은 지원하지 않는다. OpenCode는 Personal의 하위 변형이므로 Claude Code에서만 파생되며 OpenCode를 소스로 쓰는 역방향은 지원하지 않는다. 각 단계의 변환 규칙은 [MIGRATE_TO_CODEX.md](MIGRATE_TO_CODEX.md)(Claude → Codex), [MIGRATE_TO_CLAUDE.md](MIGRATE_TO_CLAUDE.md)(Codex → Claude Code), [MIGRATE_TO_CURSOR.md](MIGRATE_TO_CURSOR.md)(Codex → Cursor), [MIGRATE_TO_OPENCODE.md](MIGRATE_TO_OPENCODE.md)(Claude → OpenCode)에 정리되어 있다.
+플랫폼 변형은 **Claude ↔ Codex**, **Codex → Cursor**, 그리고 **Claude → OpenCode** 토폴로지로 마이그레이션한다. Personal 환경의 중심은 Claude Code이고 Work 환경의 중심은 Codex이므로, Claude Code와 Codex 변형은 양방향으로 공유할 수 있다. Cursor는 Work의 하위 변형이므로 Codex에서만 파생되며 Cursor를 소스로 쓰는 역방향은 지원하지 않는다. OpenCode는 Personal의 하위 변형이므로 Claude Code에서만 파생되며 OpenCode를 소스로 쓰는 역방향은 지원하지 않는다. `loki-log-search`는 Work-only 스킬이므로 `skills/codex/`와 `skills/cursor/`에만 두고 Claude Code/OpenCode 같은 personal 변형으로 전파하지 않는다. 각 단계의 변환 규칙은 [MIGRATE_TO_CODEX.md](MIGRATE_TO_CODEX.md)(Claude → Codex), [MIGRATE_TO_CLAUDE.md](MIGRATE_TO_CLAUDE.md)(Codex → Claude Code), [MIGRATE_TO_CURSOR.md](MIGRATE_TO_CURSOR.md)(Codex → Cursor), [MIGRATE_TO_OPENCODE.md](MIGRATE_TO_OPENCODE.md)(Claude → OpenCode)에 정리되어 있다.
 
 ## Skills
 
@@ -37,6 +37,7 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 - `setup-initial-repo`: SPEC.md 문서를 기반으로 신규 프로젝트 저장소를 부트스트랩한다. CLAUDE.md/AGENTS.md, 언어별 컨벤션 docs, Makefile, .gitignore 생성 및 적절한 Git identity로 `git init`과 remote origin 연결까지 수행한다.
 - `application-research-sync`: 코드 변경 사항을 분석해 `docs/agents/research`의 Research 파일을 일괄 업데이트한다. Research 검색은 `docs/agents/research/index.md`의 메타데이터와 파일 링크를 먼저 읽고 필요한 본문만 여는 방식으로 수행한다.
 - `learn-from-manual-edits`: 에이전트가 작성한 코드 위에 사용자가 직접 수정한 부분을 식별해 각 수정 배경의 일반적인 선호(스타일·아키텍처·네이밍 등)를 추론하고, 프로젝트의 CLAUDE.md(Claude Code) 또는 AGENTS.md(Codex/Cursor/OpenCode)에 재사용 가능한 컨벤션으로 기록한다.
+- `loki-log-search`: Grafana Loki 로그를 `gcx api` 경유로 조회한다. Work-only 스킬이며 Codex와 Cursor에만 설치·동기화한다.
 
 ## 환경변수
 

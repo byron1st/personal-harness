@@ -12,6 +12,11 @@
 
 `skills/codex/<skill>`를 `skills/claude/<skill>`로 옮길 때의 규칙이다.
 
+### Exclude Work-only skills
+
+- `loki-log-search`는 Work-only 스킬이다. Codex → Claude Code 동기화 대상에서 제외하며 `skills/claude/loki-log-search`를 만들지 않는다.
+- 이 스킬이 Codex에서 변경되면 personal 변형으로 가져오지 말고 [MIGRATE_TO_CURSOR.md](MIGRATE_TO_CURSOR.md)에 따라 Cursor로만 전파한다.
+
 ### Start from the Codex behavior, then restore Claude Code mechanics
 
 - 먼저 Codex 변형이 실제로 바꾼 사용자-facing 의미를 식별한다. 단순히 Claude 원본을 다시 복사하면 Codex에서 추가된 동작·문구·검증 규칙을 잃을 수 있다.

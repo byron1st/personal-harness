@@ -12,6 +12,11 @@ OpenCode는 Claude Code 호환 모드를 기본 제공하여 `~/.claude/skills/`
 
 `skills/claude/<skill>`를 `skills/opencode/<skill>`로 옮길 때의 규칙이다.
 
+### Exclude Work-only skills
+
+- `loki-log-search`는 Work-only 스킬이다. OpenCode는 Personal 하위 변형이므로 `skills/opencode/loki-log-search`를 만들지 않는다.
+- Codex 쪽 변경 묶음에 `loki-log-search`가 포함되어 있으면 OpenCode로 직접 가져오지 말고, Work 경로인 Codex → Cursor로만 전파한다.
+
 ### Start from the Claude variant
 
 - 소스 오브 트루스는 `skills/claude/<skill>`다. Claude Code가 Personal의 대표이고 OpenCode는 그 하위 변형이므로, OpenCode 변형은 Claude 변형에서 파생한다.

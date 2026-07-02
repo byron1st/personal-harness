@@ -37,7 +37,7 @@ Cursor and OpenCode are never sources. If the user asks for `Cursor -> Codex` or
 
 ## Scope
 
-Sync all artifacts by default: every skill, all reviewer sub-agents, and the hook set. If the user names specific artifacts, limit the work to those. Paths are relative to the repo root:
+Sync all shared artifacts by default: every shared skill, all reviewer sub-agents, and the hook set. If the user names specific artifacts, limit the work to those. Paths are relative to the repo root:
 
 | Artifact | `claude/` | `codex/` | `cursor/` | `opencode/` |
 | --- | --- | --- | --- | --- |
@@ -52,6 +52,10 @@ For `Claude -> Codex`, `claude/` is the source and `codex/` is the target. For `
 Cursor variants are Work subvariants derived from Codex, not from Claude. When a Claude change needs Cursor, regenerate Codex first, then derive Cursor from the freshly regenerated Codex. When a Codex change needs both Claude and Cursor, derive both targets from the same Codex source.
 
 OpenCode variants are Personal subvariants derived from Claude Code, not from Codex or Cursor. When a Codex change needs OpenCode, regenerate Claude first, then derive OpenCode from the refreshed Claude variant. When a Claude change needs OpenCode, derive OpenCode directly from Claude.
+
+## Work-only skill exceptions
+
+`loki-log-search` is Work-only. It must exist only under `skills/codex/loki-log-search` and `skills/cursor/loki-log-search`, and must not be propagated to Claude Code or OpenCode. When this skill changes, use `Codex -> Cursor` only. Do not force shared tree parity by creating `skills/claude/loki-log-search` or `skills/opencode/loki-log-search`.
 
 ## Step 2 - Migrate per artifact
 

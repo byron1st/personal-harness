@@ -9,7 +9,11 @@ This skill explains how to create or update a Merge Request (GitLab) or Pull Req
 
 ## Determine repository type and gather information
 
-- Check the url of a repository's origin. If the url starts with `$WORK_GITLAB_HOST*`, this is a work repository. If not, this is a personal repsitory.
+- Use the session-scoped repository context provided by the SessionStart hook.
+  - If the context says `repo_type: work`, this is a work repository.
+  - If the context says `repo_type: personal`, this is a personal repository.
+  - Do not reclassify the repository from the origin URL inside this skill.
+  - If the session context is missing, unclear, or contradictory, use `AskUserQuestion` to explicitly ask the user whether this is a work or personal repository before continuing.
 - Gather all commits from the current branch to the target branch. If the target branch is not mentioned, the `main` branch is the` target branch.
 
 ## Make a title
