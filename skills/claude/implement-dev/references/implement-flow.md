@@ -27,8 +27,10 @@ Testing rules:
 - Test **public/exported** methods and functions. Do not write tests for internal/private helpers.
 - Exception to TDD: pure documentation, configuration, or trivially obvious one-line changes. When in doubt, write the test.
 
-Deviations:
-- If you must diverge from the plan (missing detail, incorrect assumption, better approach surfaced during work), proceed but record the deviation for the completion report.
+Deviations - resolve details, escalate direction:
+- **Detail-level** - a helper / type / signature the plan did not spell out, a library quirk, an edge case, a local naming or structure choice: the *how* of a TODO whose *what* is unchanged. Resolve it yourself, TDD-first, and record it in the report's `## Deviations from Plan` (cross-reference a `## Red Flags` entry if it widened scope). This is the discretion the coarse plan deliberately left you.
+- **Direction-level** - the change contradicts the plan's `## Goal` / chosen approach / `## Key decisions`, requires touching something the plan put in `## Non-goals`, reverses a decision the plan made, or reveals the plan's premise is unworkable: the *what* is wrong, not just the *how*. **Stop and ask the user before writing code for it.** Changing direction silently voids the review the user gave the plan; do not decide it yourself and log it after the fact.
+- **When unsure which side**, treat it as direction-level and ask - but only for genuine direction conflicts. Do not escalate ordinary mechanics, or the gate becomes noise the user rubber-stamps.
 
 ## 3. Final verification
 

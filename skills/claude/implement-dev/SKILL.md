@@ -27,6 +27,10 @@ After the happy-path is green, add edge-case tests (boundary values, error paths
 
 **Exception**: pure documentation, configuration, or trivially obvious one-line changes where a test would add no signal. When in doubt, write the test.
 
+### 3. Deviations: resolve details, escalate direction
+
+The plan is a coarse, human-approved **direction**. Detail-level obstacles it deliberately left open - a helper, an edge case, the *how* of a TODO - are yours to resolve, TDD-first, and record. A **direction-level** conflict - the plan's goal, chosen approach, key decisions, or non-goals turn out wrong or unworkable - **stops work and goes back to the user** before code is written for it, because changing direction silently voids the review the plan received. This is distinct from the stuck-after-3-attempts escalation in Error Recovery: that one fires when you are technically blocked, this one fires when the plan's direction is wrong even though the code would compile. The buckets and the escalation trigger are detailed in [references/implement-flow.md](references/implement-flow.md).
+
 ## Prepare
 
 1. **Plan file**: the user provides the plan path. If the prompt omits it, ask.
