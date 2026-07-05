@@ -20,6 +20,8 @@ Each step is a complete "develop -> test -> build" cycle. After finishing step N
 
 - Section structure inside the bodies of the main plan and sub-plans. Sections 4 and 5 below show a suggested default. Drop sections that do not apply, add ones that do, reorder freely. The cross-checks in section 7 still need to be satisfiable, but how you arrange the body is your call.
 
+Plan granularity (see SKILL.md) applies here too: keep step-internal mechanics coarse and defer them to the step's sub-agent. The one place multi-steps demands precision is the **contract between steps** - what one step exposes to the next - because each step is implemented by an isolated sub-agent that cannot negotiate with the others (see section 6).
+
 ## 1. File names
 
 Main plan: `{timestamp}_{Jira}_PLAN_{title}.md`
@@ -169,9 +171,9 @@ Which Functional Requirements (FR-N) from SPEC.md this step covers, fully or par
 List prior steps that must be completed first (or "None" for the first step).
 
 ## Tasks
-Checkbox list of concrete tasks. Each task specifies what to do, which file(s), key implementation details, and applicable conventions.
+Checkbox list of tasks. Each task names an outcome, where it lands, and the conventions that apply - enough direction for the step's sub-agent (which runs isolated, without this session's context) to start without re-deciding the approach. Leave line-level mechanics to the sub-agent's TDD discretion; see Plan granularity in SKILL.md.
 
-- [ ] Task 1 - {what} in `path/to/file` ({key detail or convention})
+- [ ] Task 1 - {what} in `path/to/file` ({applicable convention or constraint})
 - [ ] Task 2 - ...
 
 ## Affected Files
@@ -212,6 +214,7 @@ The `## Tasks` checkbox list pairs well with `implement-dev`, which ticks each b
 - **Incrementality**: each step must leave the project compiling and tests passing. Foundation first, then dependent behavior.
 - **Right-sized steps**: a good step takes 1-4 hours of focused work. If a step has more than about 10 tasks, consider splitting.
 - **Test-first thinking**: if you cannot define clear tests for a step, the step's scope is probably wrong.
+- **Explicit step contracts**: because each step is implemented by an isolated sub-agent that cannot negotiate with the others, whatever a step exposes to later steps (interfaces, types, schemas, function signatures) must be stated precisely in the plan. This is the one place detail is required - step-internal mechanics stay coarse, but the seams between steps do not.
 - **Common first step**: project scaffold: module/package init, directory structure, linting/formatting config, CI setup, convention infrastructure (error types, logger setup, response helpers).
 
 Adapt the breakdown to the project's nature. TUI, backend service, CLI, library, and full-stack apps each have different natural decomposition patterns. Do not force a one-size-fits-all structure.

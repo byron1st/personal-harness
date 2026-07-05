@@ -43,6 +43,17 @@ Body shape differs by mode:
 
 File naming, storage location, and (for multi-steps) Markdown link conventions in the references *are* enforced. Those are structural metadata, not content format.
 
+## Plan granularity
+
+A plan is a **goal-oriented, coarse-grained overview**, not a mechanical build script. Its job is to lock direction that a human can review quickly and that `implement-dev` can execute without second-guessing the approach, while leaving how-level details to be resolved at implementation time, where TDD and real environment feedback (compiler errors, failing tests, actual code state) settle those decisions better than read-only plan mode can.
+
+Decide altitude by what the information *is*, not by how much of it you happen to have:
+
+- **Coarse - defer to `implement-dev`'s discretion**: line-level edits, exact code sketches, helper signatures, pre-enumerated edge cases, library quirks. These are cheaper and more correct to settle against a running codebase than to guess in plan mode. Over-specifying them also makes the plan long and low-signal, which degrades how reliably an executor follows *any* single instruction and makes the plan too heavy for a human to actually review.
+- **Sharp - specify precisely**: the goal, the chosen approach and why, module/area boundaries, non-goals, and - for multi-steps - the contract between steps (the interfaces, types, and schemas one step exposes to the next). This is information the implementer cannot recover from environment feedback; if it is wrong or missing, the result is a direction-level error the executor cannot self-correct, not a detail it can.
+
+Deep investigation during planning is still encouraged - but its detailed findings belong in **research files**, not the plan body. Research holds the depth; the plan holds the direction distilled from it.
+
 ## Modes
 
 - **single-step** (default) - a single plan file. Use this for most tasks: features, refactors, bug fixes, small-to-medium work.
@@ -124,7 +135,7 @@ Review the draft for:
 
 - **Completeness** - every intent from the context is addressed. For multi-steps with SPEC.md input, every FR-N is covered by at least one step.
 - **Correctness** - technical decisions are consistent with project constraints and conventions.
-- **Actionability** - each task / step can be executed without re-investigating the codebase.
+- **Actionability** - `implement-dev` can start each task / step without having to re-decide the approach. It may still work out how-level details against the codebase; what it must not have to do is re-derive the direction. Do not inflate tasks with mechanics to hit this bar (see Plan granularity).
 - **Multi-steps integrity** - each step keeps the project compiling and tests passing when completed; step dependencies form a sensible DAG.
 
 Highlight risks, edge cases, and remaining assumptions. Present the plan to the user. This is the content passed to `ExitPlanMode` after final refinement.
