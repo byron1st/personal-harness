@@ -1,6 +1,6 @@
-# Single-step implementation
+# Implementation flow
 
-Use this reference when `implement-dev` is operating in **single-step** mode: one plan file describing the full implementation, executed in one pass.
+`implement-dev` always takes one plan file describing the full implementation and executes it in one pass.
 
 ## 1. Read the plan
 

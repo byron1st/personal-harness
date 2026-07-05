@@ -1,6 +1,6 @@
 # Implementation report file
 
-A completion report is a **thin review overlay** on an AI-written change: it states what was implemented and why, points the reviewer at the diff rather than copying it, surfaces where to be suspicious, and orders the reading so the code can be checked against its intent quickly. The goal is that a reviewer, armed with this overlay plus the diff, catches more and faster than with a flat diff alone. Reports are produced by `implement-dev` in both modes and stored under `docs/agents/dev`.
+A completion report is a **thin review overlay** on an AI-written change: it states what was implemented and why, points the reviewer at the diff rather than copying it, surfaces where to be suspicious, and orders the reading so the code can be checked against its intent quickly. The goal is that a reviewer, armed with this overlay plus the diff, catches more and faster than with a flat diff alone. Reports are produced by `implement-dev` and stored under `docs/agents/dev`.
 
 ## 1. Storage location
 
@@ -8,11 +8,7 @@ Always store the report in `docs/agents/dev/` under the project root. Create the
 
 ## 2. File name
 
-The report's base filename mirrors the corresponding plan file so pairs are trivially discoverable:
-
-- **single-step**: `{timestamp}_{Jira}_IMPL_{title}.md` - same timestamp, Jira ticket, and title as the plan, with `PLAN` changed to `IMPL`.
-- **multi-steps, per-step**: `{timestamp}_{Jira}_IMPL_{title}-STEP-N.md` - same timestamp, Jira ticket, title, and step suffix as the sub-plan, with `PLAN` changed to `IMPL`.
-- **multi-steps, final summary** (optional): `{timestamp}_{Jira}_IMPL_{title}.md` - same timestamp, Jira ticket, and title as the main plan, with `PLAN` changed to `IMPL`.
+The report's base filename mirrors the corresponding plan file so pairs are trivially discoverable: `{timestamp}_{Jira}_IMPL_{title}.md` - the same timestamp, Jira ticket, and title as the plan, with `PLAN` changed to `IMPL`. When the plan is a `-STEP-N` sub-plan, its stem already carries that suffix, so the report mirrors it as `{timestamp}_{Jira}_IMPL_{title}-STEP-N.md`.
 
 The plan's `{timestamp}_{Jira}_{title}` stem is determined when the plan was created; reuse it exactly.
 
@@ -20,9 +16,6 @@ The plan's `{timestamp}_{Jira}_{title}` stem is determined when the plan was cre
 
 - The report file links to its plan at the top using a Markdown link, e.g. `Plan: [20260622153045_PROJ-42_PLAN_title.md](./20260622153045_PROJ-42_PLAN_title.md)`.
 - The plan file must also link to its report: add `Report: [20260622153045_PROJ-42_IMPL_title.md](./20260622153045_PROJ-42_IMPL_title.md)` near the top of the plan (below frontmatter or top heading). This edit happens after the report is written.
-- For multi-steps:
-  - Each per-step report links to its sub-plan; each sub-plan links to its report.
-  - The optional final summary report links to the main plan, to each per-step report, and the main plan links to the summary report.
 
 ## 4. Content format
 
@@ -36,11 +29,10 @@ The plan's `{timestamp}_{Jira}_{title}` stem is determined when the plan was cre
 ---
 Application: {Application}
 JiraTicket: {Jira ticket number}
-ReportType: single-step | multi-steps-step | multi-steps-summary
+ReportType: single-step
 Timestamp: {timestamp}
 Title: {title}
-Step: {N}   # only for multi-steps-step
-ReviewBase: {command or commit range that reproduces the reviewed snapshot, e.g. `git diff develop...feature/step-3` or `git diff <base-sha> <head-sha>`}
+ReviewBase: {command or commit range that reproduces the reviewed snapshot, e.g. `git diff <base-sha> <head-sha>`}
 ---
 
 # [Feature / Step Title]
@@ -94,7 +86,7 @@ The detailed walk, in the same order as the Review Map. One subsection per group
 - `path/to/test2` - ...
 
 ## Manual Verification
-(Required for multi-steps-step reports. Lists checks the user must perform before approving the merge to `develop`. Write `None` if there is nothing to verify manually.)
+(Optional. Lists checks the user must perform by hand - UI behavior, external side effects, data migrations, visual regressions - before trusting the change. Omit the section if there is nothing to verify manually.)
 - [ ] What to check, where to check it, and the expected outcome
 - [ ] ...
 
@@ -102,41 +94,4 @@ The detailed walk, in the same order as the Review Map. One subsection per group
 (Optional) Coverage summary if tooling is available.
 ```
 
-`## Red Flags` and `## Open Questions` are **never omitted**. Write `None` when empty because "nothing to flag" is itself a signal the reviewer needs. Omit `## Key Decisions` and `## Deviations from Plan` when there are none, and `## Coverage` when not measured. `## Manual Verification` is **required** for `multi-steps-step` reports (write `None` if empty) and **optional** for `single-step` reports.
-
-## 5. Final summary report (multi-steps only, optional)
-
-When all steps are merged, a top-level summary report may be written at `{timestamp}_{Jira}_IMPL_{title}.md`. Its structure:
-
-```markdown
----
-Application: {Application}
-JiraTicket: {Jira ticket number}
-ReportType: multi-steps-summary
-Timestamp: {timestamp}
-Title: {title}
-ReviewBase: {cumulative diff on develop, e.g. git diff main...develop}
----
-
-# [Project / Initiative Name] - Implementation Summary
-
-Plan: [{main plan filename}](./{main plan filename})
-
-## Step Reports
-- [Step 1 report](./{timestamp}_{Jira}_IMPL_{title}-STEP-1.md) - {step 1 title}
-- [Step 2 report](./{timestamp}_{Jira}_IMPL_{title}-STEP-2.md) - {step 2 title}
-- ...
-
-## Overall Outcome
-Short narrative of what was delivered end-to-end.
-
-## Outstanding Red Flags & Open Questions
-Aggregated from the per-step reports: only those still unresolved after all merges. Reference each by step and id (e.g. `STEP-2 RF1`, `STEP-3 OQ2`). Write `None` if every flag and question was resolved at its step's review gate.
-- {STEP-N RFx / OQx} `path:line` - {the still-open concern}
-
-## Cross-step Deviations
-Aggregated deviations that changed the shape of the plan across multiple steps.
-
-## Coverage / Verification
-Summary of final test coverage and verification results on `develop`.
-```
+`## Red Flags` and `## Open Questions` are **never omitted**. Write `None` when empty because "nothing to flag" is itself a signal the reviewer needs. Omit `## Key Decisions` and `## Deviations from Plan` when there are none, `## Coverage` when not measured, and `## Manual Verification` when there is nothing for the user to check by hand.
