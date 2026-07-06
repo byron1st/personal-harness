@@ -126,8 +126,8 @@ Every technical decision must be consistent with the key requirements in `AGENTS
 
 Compose plan file content in memory according to the chosen mode's reference:
 
-- single-step -> [references/single-step-plan.md](references/single-step-plan.md). Frontmatter, research file links (when applicable), and the final `## TODOs` checklist are enforced. The body in between is free-form; when the plan came from a planning agent, copy its output verbatim instead of reshaping it.
-- multi-steps -> [references/multi-steps-plan.md](references/multi-steps-plan.md). Frontmatter and language must follow the reference. Section structure is your call. Draft the main plan and every sub-plan in memory; verify link targets match the sub-plan filenames you intend to use.
+- single-step -> [references/single-step-plan.md](references/single-step-plan.md). Frontmatter, the **strengthened research file links** (one-line summary + `**TODO N·M**` tags per research), and the final `## TODOs` checklist (with `(→ research: …)` hints where relevant) are enforced. The body in between is free-form; when the plan came from a planning agent, copy its output verbatim instead of reshaping it. For each research file you link, record which TODOs / areas it applies to - the Worker (when delegation is requested) starts cold and relies on this annotation to read the right research for the right TODO without re-exploration. Even in direct main-session execution, this annotation keeps the implementer honest about which research informed which TODO.
+- multi-steps -> [references/multi-steps-plan.md](references/multi-steps-plan.md). Frontmatter and language must follow the reference. Section structure is your call. Draft the main plan and every sub-plan in memory; verify link targets match the sub-plan filenames you intend to use. Each sub-plan inherits the strengthened research links, TODO hints, and (when non-trivial) `## Non-goals` / `## Key decisions` anchors, because each sub-plan is itself a cold-handoff implementation unit.
 
 ### 8. Review
 
@@ -137,6 +137,7 @@ Review the draft for:
 - **Correctness** - technical decisions are consistent with project constraints and conventions.
 - **Actionability** - `implement-dev` can start each task / step without having to re-decide the approach. It may still work out how-level details against the codebase; what it must not have to do is re-derive the direction. Do not inflate tasks with mechanics to hit this bar (see Plan granularity).
 - **Multi-steps integrity** - each step keeps the project compiling and tests passing when completed; step dependencies form a sensible DAG.
+- **Cold hand-off gate (approval-blocking)** - the default execution path in Cursor is interactive main-session execution, but when the user requests delegation the Worker subagent has zero memory of this planning session. Before approving, ask: *Can an `implement-dev` Worker, given only this plan plus the linked research files, (1) recover the direction without re-deriving it, (2) pick exactly the research files it needs for each TODO from the strengthened links, and (3) not misread the approach?* If not, strengthen the research links (add the missing one-line summary or `**TODO N·M**` tag), or thicken `## Key decisions` / `## Non-goals` to remove the ambiguity. Do not present the plan for the user to build in Cursor while the answer is "no" for any TODO.
 
 Highlight risks, edge cases, and remaining assumptions. Present the plan to the user. This is the content the user reviews before approving Cursor to leave plan mode and proceed with writes.
 

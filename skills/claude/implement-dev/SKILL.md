@@ -1,6 +1,6 @@
 ---
 name: implement-dev
-description: Execute a plan-dev implementation plan with TDD, verification, TODO updates, and repository-local implementation reports under docs/agents. By default runs as the Dispatcher (main session): it launches one Worker subagent that owns the actual code/test/report edits and returns a fixed-heading status the Dispatcher collapses to a short chat summary. Use when the user asks to implement a saved plan.
+description: "Execute a plan-dev implementation plan with TDD, verification, TODO updates, and repository-local implementation reports under docs/agents. By default runs as the Dispatcher (main session): it launches one Worker subagent that owns the actual code/test/report edits and returns a fixed-heading status the Dispatcher collapses to a short chat summary. Use when the user asks to implement a saved plan."
 ---
 
 # Implement Dev

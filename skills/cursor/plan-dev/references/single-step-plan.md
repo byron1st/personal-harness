@@ -10,20 +10,21 @@ A single-step plan is one markdown file describing the full implementation of a 
 - Storage location (section 2)
 - Frontmatter fields (section 3)
 - Body language: Korean
-- Research file links at the top of the body when research files were created or consulted (section 4)
-- A `## TODOs` checkbox list at the end of the body for progress tracking (section 5)
+- Research file links at the top of the body when research files were created or consulted, in the strengthened format with per-TODO tags (section 4)
+- A `## TODOs` checkbox list at the end of the body for progress tracking (section 5); when a TODO consults research, append the `(→ research: {file-stem})` hint
+- `## Non-goals` and `## Key decisions` direction anchors, **required when the plan is non-trivial** (the cold-handoff anchors the Worker needs to not re-derive a different direction)
 
 **Flexible**:
 
 - Everything else inside the body. Do NOT force the plan into a fixed section template (Goal / Technical Approach / Affected Files / Risks / Tradeoffs / Verification / ...). When the plan was produced by a planning agent, copy its output **verbatim** into the body between the research links and the TODO checklist. Squeezing a rich agent-generated plan into a normalized template loses fidelity; preserve it as-is.
 - The verbatim rule preserves the agent's structure and reasoning; it is not a license to keep mechanics-level detail. Plan granularity (see SKILL.md) still governs: keep the direction, and push line-level edits / code sketches down into research files or drop them.
 
-Two body elements are **recommended** (not required) because a coarse plan gives the implementer wide discretion and these are the cheapest way to bound it - both are information `implement-dev` cannot recover from environment feedback:
+Two body elements bound a coarse plan's implementer discretion cheaply - both are information `implement-dev` cannot recover from environment feedback and, because **delegation is the default** (the implementer is a fresh subagent with no memory of this planning session), they are the **cold-handoff anchors that stop the Worker from re-deriving a different direction**:
 
-- `## Non-goals` - a few lines on what this change explicitly does *not* touch.
-- `## Key decisions` - the chosen approach and, where it matters, the alternatives you rejected and why (so the implementer does not re-pick a discarded path under its own discretion).
+- `## Non-goals` - what this change explicitly does *not* touch. A Worker that re-derives the scope will re-discover these by guessing; write the exclusion here.
+- `## Key decisions` - the chosen approach and, where it matters, the alternatives you rejected and why (so the Worker does not re-pick a discarded path under its own discretion).
 
-Keep both short. Omit either when the plan is trivial enough not to need it.
+These are **required when the plan is non-trivial**. Omit either only when the plan is trivial enough that a Worker cannot plausibly misread the direction from the plan body alone. Trivial = a single obvious change with no real alternative approach.
 
 ## 1. File name
 
@@ -53,13 +54,22 @@ Title: {title}
 
 These keys are required. Add other keys (e.g., `Tags`, `Status`) only when useful.
 
-## 4. Research file links
+## 4. Research file links (strengthened)
 
-When research files were created or consulted during planning, list them at the top of the body, immediately after the H1 heading. Use plain Markdown links. If no research files exist, omit this block entirely.
+When research files were created or consulted during planning, list them at the top of the body, immediately after the H1 heading. The Worker (`implement-dev`) starts cold - no memory of the planning session - so each link must carry enough context for it to pick the right research files for the right TODOs without re-exploring. Each link is one bullet with three parts:
+
+1. the Markdown link to the file,
+2. a one-line summary of **what current-code understanding** that research captures (the *why* exists; it is an anchor, not a duplicate of the body),
+3. the TODOs that should consult it, as `**TODO N·M**`.
+
+If no research files exist, omit this block entirely.
 
 ```markdown
-Please refer to the research documents for detailed information about the related code and execution flow.
-- [Research title](../research/research-title.md)
+## 참고 Research
+- [auth-flow](../research/auth-flow.md) — 로그인 요청의 현재 실행 경로(handler→service→repo).
+  **TODO 2·3** 구현 전 참조.
+- [module-dependencies](../research/module-dependencies.md) — service 계층의 현재 의존 방향.
+  **TODO 5**의 대상 구조.
 ```
 
 ## 5. TODO checklist
@@ -71,10 +81,13 @@ Every plan ends with a `## TODOs` section: a checkbox list of tasks. Each item i
 
 The second bakes in mechanics the implementer should decide against the running code, and inflates the plan past the point a human will actually review it. This pairs with `implement-dev`, which ticks each box as it completes a task.
 
+**Research hint**: when a TODO should consult a linked research file before being implemented, append `(→ research: {file-stem})` to the end of the item. This pairs with section 4's `**TODO N·M**` tagging - bidirectional, so the Worker reads research exactly once and exactly for the TODO that needs it, with no guesswork. Keep the hint terse; do not paraphrase the research in the TODO line.
+
 ```markdown
 ## TODOs
-- [ ] Task 1
-- [ ] Task 2
+- [ ] Add rate-limiting to the public API layer (token-bucket per API key) (→ research: rate-limit-capacity)
+- [ ] Wire the limiter into the API entrypoints (→ research: api-entrypoints)
+- [ ] Update the docs page for rate limits
 ```
 
 If the agent-generated plan already contains its own task list, normalize it into this section's checkbox format and place it at the end. The rest of its content stays where it was.
@@ -92,15 +105,15 @@ Title: {title}
 
 # [Feature / Change Name]
 
-<!-- Section 4: research file links, when applicable -->
+<!-- Section 4: research file links (strengthened), when applicable -->
 
 <!-- Agent-generated plan body, copied verbatim. Keep whatever sections / ordering the agent produced. -->
 
-<!-- Recommended direction anchors (section 5), when not trivial: -->
+<!-- Direction anchors - required when non-trivial, omitted only when the plan is truly trivial: -->
 <!-- ## Non-goals -->
 <!-- ## Key decisions -->
 
 ## TODOs
 - [ ] Task 1
-- [ ] Task 2
+- [ ] Task 2  (→ research: relevant-file)
 ```

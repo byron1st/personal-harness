@@ -1,6 +1,6 @@
 # Implementation report file
 
-A completion report is a **thin review overlay** on an AI-written change: it states what was implemented and why, points the reviewer at the diff rather than copying it, surfaces where to be suspicious, and orders the reading so the code can be checked against its intent quickly. The goal is that a reviewer, armed with this overlay plus the diff, catches more and faster than with a flat diff alone. Reports are produced by `implement-dev` and stored under `docs/agents/dev`.
+A completion report is a **thin review overlay** on an AI-written change: it states what was implemented and why, points the reviewer at the diff rather than copying it, surfaces where to be suspicious, and orders the reading so the code can be checked against its intent quickly. The report's spine is per-TODO fulfillment - the reviewer answers "for each plan TODO, where was it implemented, what tests pin it, and where did it diverge from the plan?" - not a foundation-first walk of every touched symbol. Foundation-first reading survives only as an optional `## Deep Reading Order` for genuinely high-risk changes that need that ordering on top. Reports are produced by `implement-dev` (the Worker, in delegation mode) and stored under `docs/agents/dev`.
 
 ## 1. Storage location
 
@@ -10,7 +10,7 @@ Always store the report in `docs/agents/dev/` under the project root. Create the
 
 The report's base filename mirrors the corresponding plan file so pairs are trivially discoverable: `{timestamp}_{Jira}_IMPL_{title}.md` - the same timestamp, Jira ticket, and title as the plan, with `PLAN` changed to `IMPL`. When the plan is a `-STEP-N` sub-plan, its stem already carries that suffix, so the report mirrors it as `{timestamp}_{Jira}_IMPL_{title}-STEP-N.md`.
 
-The plan's `{timestamp}_{Jira}_{title}` stem is determined when the plan was created; reuse it exactly.
+Reuse the **plan's** `{timestamp}_{Jira}_{title}` stem exactly - the plan's actual creation timestamp, not a fresh one at write time - so the plan/report pair stays linkable across runs.
 
 ## 3. Link convention - bidirectional
 
@@ -22,8 +22,8 @@ The plan's `{timestamp}_{Jira}_{title}` stem is determined when the plan was cre
 - Section titles in English; body content in Korean.
 - The report is an **overlay, not a copy**. Reference the change through `ReviewBase` (how to see the diff) and `file:line` anchors; never paste diffs or file bodies into the report. This keeps it small, avoids staleness, and anchors every position to one frozen revision.
 - Separate the deterministic from the narrative honestly. The implementer just wrote this code, so intent, risk, and red flags are cheap and trustworthy, but nothing here is statically verified. Anything you are unsure of belongs in `## Open Questions`, not asserted as fact.
-- Order `## Change Walkthrough` **foundation-first** (types & contracts -> core logic -> wiring -> tests) so the reviewer never meets a symbol before its definition. Tag every group with a risk level and a recommended review lens, and concentrate explanation where risk is high. Do not spread attention uniformly.
-- The completion chat output must not paste report sections verbatim. After saving the report, the skill sends a short summary (2-4 bullets or 2-3 sentences) plus a link/path to the full report. Keep `## Review Map`, `## Red Flags`, `## Open Questions`, `## Change Walkthrough`, and all lower sections in the report file for on-demand reading.
+- The spine of the report is **`## TODO Fulfillment`**: one sub-section per plan TODO, each carrying what was implemented (`path:line` + symbol + why), the test that pins that TODO's behavior (`path:line` + test name + what behavior it pins as the executable spec for this change), and any deviation specific to that TODO. The risk/lens metadata from the old `## Review Map` has been folded into the per-TODO sub-sections as an optional `Risk / Lens` line - include it only when a single TODO is high-risk and the reviewer would benefit from being told to read it line-by-line.
+- The completion chat output (② in delegation mode, or the direct chat summary in interactive mode) must not paste report sections verbatim. After saving the report, the implementer/dispatcher sends a short summary, not the body. Keep `## TODO Fulfillment`, `## Red Flags`, `## Open Questions`, `## Plan Divergence`, and all lower sections in the report file for on-demand reading.
 
 ```markdown
 ---
@@ -37,61 +37,58 @@ ReviewBase: {command or commit range that reproduces the reviewed snapshot, e.g.
 
 # [Feature / Step Title]
 
-Plan: [{plan or sub-plan filename}](./{plan or sub-plan filename})
+Plan: [{plan filename}](./{plan filename})
 
 ## Summary
 2-3 sentences: what was implemented **and why** - the intent the reviewer should judge the code against. Lead with the goal, not the mechanics.
 
-## Review Map
-- **See the change**: `{ReviewBase}`. Every `file:line` anchor in this report is valid against that snapshot.
-- **Reading order** - foundation-first; read top to bottom and you never meet a symbol before its definition:
+## TODO Fulfillment
+See the change: `{ReviewBase}`. Every `path:line` anchor in this report is valid against that snapshot.
 
-| # | Group | Risk | Lens | Intent (one line) |
-|---|-------|------|------|-------------------|
-| 1 | {types & contracts} | low | skim | {why this group exists} |
-| 2 | {core logic} | high | line-by-line | {...} |
-| 3 | {wiring / glue} | medium | top-down | {...} |
-| 4 | {tests} | low | test-as-spec | {...} |
+### TODO 1: {the matching item from the plan's `## TODOs`} - done | partial | blocked
+- Risk / Lens: {high / line-by-line} (optional; only when this TODO is high-risk and needs that lens)
+- 구현: `path:line` `symbol` - what was changed and why
+- 테스트: `path:line` `TestName` - which behavior it pins (this TODO's executable spec)
+- 편차: {how this TODO diverged from the plan; "none" when it did not}
 
-Risk: low / medium / high. Lens: line-by-line / top-down / bottom-up+flow / test-as-spec / skim.
+### TODO 2: ...
+- ...
 
 ## Red Flags
 AI-specific signals the reviewer should distrust on sight: new dependencies, possibly-hallucinated or unverified APIs, over-engineering, scope beyond the plan, swallowed errors, hardcoded values or secrets. Each gets a stable id and a `file:line` anchor. Write `None` if there are genuinely none; never omit the section.
 - **RF1** `path:line` - {signal}: {what, and why it deserves a look}
 
 ## Open Questions
-Points the implementer is **not confident** about, surfaced here, never hidden behind plausible-looking code. Each gets a stable id and anchor so the reviewer can answer by id. Write `None` if none.
+Points the implementer is **not confident** about, surfaced here, never hidden behind plausible-looking code. Each gets a stable id and anchor so the reviewer can answer by id. Write `None` if none; never omit the section.
 - **OQ1** `path:line` - {the uncertainty, and why it matters}
 
-## Change Walkthrough (foundation-first)
-The detailed walk, in the same order as the Review Map. One subsection per group; within a group, list symbols in dependency order (definition before use). For each symbol state what changed **and why**: the reasoning that is invisible from the code alone.
-
-### 1. {Group name} [risk / lens]
-{Group intent: why this group exists, one or two lines.}
-- `path:line` `symbolName` - what changed + why
-- `path:line` `symbolName` - ...
-
-### 2. {Group name} [risk / lens]
-...
+## Plan Divergence
+Plan-vs-implementation deltas, sorted into three buckets so the reviewer can tell "this was different" from "this was more than the plan asked" from "this got skipped". Never omit the section; write `None` in each bucket where there is nothing.
+### Changed - details that differ from the plan
+- what: why the plan was adjusted
+### Added - implemented but absent from the plan
+- what: why it was needed (when an Added item widened scope, cross-reference the matching **RF** by id here, do not duplicate its content)
+### Deferred - planned but not implemented (deferred)
+- what: why / what follow-up is needed
 
 ## Key Decisions
-(Optional) Cross-cutting decisions not tied to a single group, e.g. choosing one library or pattern over another. Omit when the group intent already carries the reasoning.
+(Optional) Cross-cutting decisions not tied to a single TODO, e.g. choosing one library or pattern over another. Omit when individual TODO rationales already carry the reasoning.
 - decision: why this approach over alternatives
 
-## Deviations from Plan
-- what changed: why the plan was adjusted. If a deviation widened scope, cross-reference the matching **RF**.
-
-## Testing
-- `path/to/test1` - what it tests; **which behavior it pins** (read these as the executable spec for this change).
-- `path/to/test2` - ...
+## Deep Reading Order
+(Optional. Include only for genuinely high-risk changes where the reviewer benefits from a foundation-first walk on top of the per-TODO sub-sections - not as a default.) foundation-first order: types & contracts -> core logic -> wiring -> tests.
+1. `path:line` group - why this is read first
+2. ...
 
 ## Manual Verification
-(Optional. Lists checks the user must perform by hand - UI behavior, external side effects, data migrations, visual regressions - before trusting the change. Omit the section if there is nothing to verify manually.)
+(Optional. Lists checks the user must perform by hand - UI behavior, external side effects, data migrations, visual regressions - before trusting the change. Omit when there is nothing to verify manually.)
 - [ ] What to check, where to check it, and the expected outcome
 - [ ] ...
 
 ## Coverage
-(Optional) Coverage summary if tooling is available.
+(Optional. Coverage summary when tooling is available. Omit when not measured.)
 ```
 
-`## Red Flags` and `## Open Questions` are **never omitted**. Write `None` when empty because "nothing to flag" is itself a signal the reviewer needs. Omit `## Key Decisions` and `## Deviations from Plan` when there are none, `## Coverage` when not measured, and `## Manual Verification` when there is nothing for the user to check by hand.
+`## Red Flags`, `## Open Questions`, and `## Plan Divergence` are **never omitted** - write `None` (or an empty bucket line) when they are empty, because "nothing to flag / nothing deferred" is itself a signal the reviewer needs. Omit `## Key Decisions`, `## Deep Reading Order`, `## Manual Verification`, and `## Coverage` when the corresponding content does not apply.
+
+Red deduplication rule: the **Added** bucket of `## Plan Divergence` is the primary record for "implemented but not in plan". Only when an Added item is risky on its own do you also add a Red Flag and cross-reference it from the Added line by id - never duplicate the same risk in both sections.

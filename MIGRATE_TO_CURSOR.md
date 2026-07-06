@@ -73,7 +73,7 @@ Cursor Plan Mode는 Shift+Tab(또는 복잡한 작업에서 자동 제안)으로
 - 트리 패리티: 대상 skill에 `SKILL.md`가 있고, host-neutral `references/`·`scripts/` 트리가 Codex 소스와 동일한가.
 - skill-local `agents/openai.yaml`이 Cursor 대상에 복사되지 않았는가. Cursor custom subagent는 repo-level `agents/cursor/*.md`로만 관리한다.
 - 각 `SKILL.md`의 `name:`이 디렉터리명과 일치하는가.
-- 잔존 스윕(`rg`): `Codex`, 단어 `worker`, `sandbox and approval`, 소문자 `explorer`, Claude식 `Agent` tool / `subagent_type`, `ExitPlanMode`, `MCP`가 남아있지 않은가. 의도적 예외만 허용한다 — `setup-initial-repo`의 "Codex" 예시, `spec-creator`의 런타임 "worker process" 용어.
+- 잔존 스윕(`rg`): `Codex`, 단어 `worker`, `sandbox and approval`, 소문자 `explorer`, Claude식 `Agent` tool / `subagent_type`, `ExitPlanMode`, `MCP`가 남아있지 않은가. 의도적 예외만 허용한다 — `setup-initial-repo`의 "Codex" 예시, `spec-creator`의 런타임 "worker process" 용어, `implement-dev`의 "Worker" 위임 롤과 `worker-contract.md` 참조 파일명(cross-platform 동일 스템).
 - bulk 치환 후 어색한 중복(`subagent agent`, `subagent subagent` 등)이 없는가.
 - `description`이 짧고 trigger 중심인가(Cursor도 description으로 동적 로딩). 치환 과정에서 trigger 문구가 손상되지 않았는가.
 

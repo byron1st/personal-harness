@@ -23,6 +23,7 @@ Each step is a complete "develop -> test -> build" cycle. After finishing step N
 - Markdown link conventions (section 3)
 - Frontmatter fields for both main and sub-plans (sections 4 and 5)
 - Body language: Korean
+- Each sub-plan inherits single-step enforcement: strengthened research links with per-TODO tags, `## TODOs` with `(→ research: …)` hints when applicable, and `## Non-goals` / `## Key decisions` anchors **required when the sub-plan is non-trivial** (the same cold-handoff rationale as single-step - the Worker running this sub-plan has no memory of the planning session)
 
 **Flexible**:
 
@@ -83,8 +84,8 @@ Main plan. Sub-plans:
 - [Step 1](./{timestamp}_{Jira}_PLAN_{title}-STEP-1.md)
 - [Step 2](./{timestamp}_{Jira}_PLAN_{title}-STEP-2.md)
 
-Related research:
-- [Research title](../research/research-title.md)
+Related research (optional; the Worker reads research from each sub-plan, not here - keep entries short summaries):
+- [Research title](../research/research-title.md) — {한 줄 요약: 이 리서치가 담은 현재-코드 이해}
 
 ## Goal
 One-paragraph summary of what we're building and why.
@@ -134,9 +135,11 @@ graph LR
 - [Step 2](./{timestamp}_{Jira}_PLAN_{title}-STEP-2.md) - {title}
 ```
 
+The main plan's `Related research` block is optional - the Worker reads research from each sub-plan (the implementation unit), not the main plan, so the strengthened per-TODO tagging and `(→ research: …)` hints live in sub-plans. When the main plan only needs to point at the existence of research, a plain link list is fine; do not duplicate the per-TODO annotation here.
+
 ## 5. Sub-plan (`-STEP-N.md`)
 
-A sub-plan **is a single-step plan**. Follow [single-step-plan.md](single-step-plan.md) in full: frontmatter, research links at the top when applicable, the free-form body, the recommended `## Non-goals` / `## Key decisions` anchors, the `## TODOs` checklist, and the outcome-level granularity rules. `implement-dev` runs it exactly as it runs any single-step plan.
+A sub-plan **is a single-step plan**. Follow [single-step-plan.md](single-step-plan.md) in full: frontmatter, **strengthened research links** (one-line summary + `**TODO N·M**` tags) at the top when applicable, the free-form body, the **`## Non-goals` / `## Key decisions` anchors required when the sub-plan is non-trivial** (the cold-handoff anchors the Worker running this sub-plan needs; recommended only when the sub-plan is genuinely trivial), the `## TODOs` checklist **with `(→ research: …)` hints** on items that consult research, and the outcome-level granularity rules. A sub-plan is itself the implementation unit the Worker executes, so the strengthened rules matter here, not at the main-plan level. `implement-dev` runs it exactly as it runs any single-step plan.
 
 A sub-plan differs from a lone single-step plan in only three ways, all of which serve the parent's organization:
 
@@ -173,7 +176,7 @@ Step: {N}
 
 Part of main plan: [{timestamp}_{Jira}_PLAN_{title}.md](./{timestamp}_{Jira}_PLAN_{title}.md)
 
-<!-- Research file links, when applicable (see single-step-plan.md) -->
+<!-- Research file links (strengthened: summary + **TODO N·M** tags), when applicable (see single-step-plan.md) -->
 
 ## Depends On
 Prior steps that must be completed first, or "None".
@@ -183,13 +186,14 @@ Prior steps that must be completed first, or "None".
 
 <!-- Free-form plan body - written exactly like a single-step plan. -->
 
-<!-- Recommended direction anchors (see single-step-plan.md), when not trivial: -->
+<!-- Direction anchors - required when this sub-plan is non-trivial (see single-step-plan.md); -->
+<!-- omitted only when the sub-plan is genuinely trivial: -->
 <!-- ## Non-goals -->
 <!-- ## Key decisions -->
 
 ## TODOs
 - [ ] Task 1
-- [ ] Task 2
+- [ ] Task 2  (→ research: relevant-file)
 ```
 
 ## 6. Step decomposition guidance
