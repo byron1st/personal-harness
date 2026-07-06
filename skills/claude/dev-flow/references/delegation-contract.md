@@ -4,33 +4,11 @@ Use these templates verbatim except for replacing placeholders. If a placeholder
 
 ## Implementation Subagent Prompt
 
-```text
-Use the `implement-dev` skill to execute this existing plan-dev plan: {PLAN_PATH}
+The implementation stage shares the worker-delegation contract owned by `implement-dev` instead of restating it here. Launch one general-purpose subagent and hand it the **Dispatch prompt** in [`skills/claude/implement-dev/references/worker-contract.md`](../../implement-dev/references/worker-contract.md), with `{PLAN_PATH}` replaced by the absolute path to the plan file. The subagent sees the `You are running as the implementation Worker subagent.` line and runs the `implement-dev` Worker flow directly (no re-dispatch, no double-nesting).
 
-You are running as the implementation subagent in a larger delegated dev flow. You own only the implementation stage. Do not run test-dev or review-code. Do not revert edits made by others. Follow the repository's AGENTS.md / CLAUDE.md / README.md / Makefile instructions.
+The Worker must return the **fixed-heading Markdown** from section C of `worker-contract.md`: `## Implementation Status`, `## TODO Status`, `## Implementation Report`, `## Changed Files`, `## Verification`, `## Red Flags`, `## Open Questions`, and `## Decision Needed`. Parse these headings by exact name; do not invent or rename them.
 
-At the end, return a structured summary with exactly these headings:
-
-## Implementation Status
-pass | blocked | failed
-
-## Implementation Report
-absolute path or "none"
-
-## Changed Files
-one absolute path per line
-
-## Verification
-commands run and pass/fail result
-
-## Red Flags
-bullets, or "none"
-
-## Open Questions
-bullets, or "none"
-```
-
-Stop the whole flow if this stage returns `blocked` or `failed`, unless the result is explicitly safe to review only.
+Stop the whole flow if this stage returns `blocked` or `failed`. `blocked` specifically means the Worker hit a direction-level conflict and expects the user to resolve `## Decision Needed`; do not auto-retry or self-decide it from the orchestrator.
 
 ## Test-Hardening Subagent Prompt
 
@@ -120,6 +98,11 @@ Show this Markdown directly in the chat. Do not write it to a file.
 ## Implementation
 - Status: {status}
 - Report: {path}
+- TODO status (from Worker `## TODO Status`):
+  - {TODO1: done}
+  - {TODO2: done}
+  - {TODOn: blocked - {decision needed one-liner}}   (only when any TODO is blocked)
+- Decision needed (surface first when status is `blocked`): {the direction conflict + choices, or "none"}
 - Changed files:
   - {path}
 - Verification:

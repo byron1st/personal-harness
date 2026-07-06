@@ -16,8 +16,8 @@ Require one input: the path to an existing `plan-dev` plan file. If the user omi
 Act only as the orchestrator:
 
 1. Resolve the plan path to an absolute path, confirm it exists, and identify the repository root.
-2. Dispatch one implementation subagent with the `Agent` tool (`subagent_type: general-purpose`) and instruct it to use `implement-dev` on the plan path.
-3. Wait for the implementation subagent to finish and parse its structured summary.
+2. Dispatch one implementation subagent with the `Agent` tool (`subagent_type: general-purpose`), using the shared worker-delegation contract in [implement-dev's `references/worker-contract.md`](../implement-dev/references/worker-contract.md) (see [references/delegation-contract.md](references/delegation-contract.md)) to construct the prompt. The subagent sees the Worker signal in the prompt and runs `implement-dev` directly.
+3. Wait for the implementation subagent to finish and parse its fixed-heading return (`## Implementation Status`, `## TODO Status`, `## Decision Needed`, etc.).
 4. Dispatch one test-hardening subagent with the `Agent` tool (`subagent_type: general-purpose`) and instruct it to use `test-dev`, scoped to the implementation output.
 5. Wait for the test subagent to finish and parse its structured summary.
 6. Dispatch one review subagent with the `Agent` tool (`subagent_type: general-purpose`) and instruct it to use `review-code` with delegated reviewer agents against the final diff.
@@ -29,7 +29,7 @@ Do not edit production code, tests, or implementation reports directly from the 
 
 ## Delegation Contract
 
-Use the exact stage prompt templates and final chat output schema in [references/delegation-contract.md](references/delegation-contract.md). Each subagent must be explicitly told which skill to use and must return the required machine-readable headings.
+Use the stage prompt templates and final chat output schema in [references/delegation-contract.md](references/delegation-contract.md). The implementation stage does **not** restate its prompt here - it references the contract `implement-dev` owns at [`references/worker-contract.md`](../implement-dev/references/worker-contract.md). Each subagent must be explicitly told which skill to use and must return the required machine-readable headings.
 
 If a subagent returns an incomplete structure, request the missing headings from that same subagent once. If the structure is still missing or ambiguous, mark that stage `failed`, show a partial flow summary in chat, and stop according to the failure policy.
 
@@ -45,7 +45,8 @@ Run stages serially:
 
 - If the plan path is missing, ask for it and do nothing else.
 - If the plan file does not exist, report `failed` and do not dispatch subagents.
-- If implementation returns `blocked` or `failed`, stop before `test-dev` and show a partial flow summary in chat.
+- If implementation returns `blocked` (a direction-level conflict - the Worker surfaced `## Decision Needed`), stop before `test-dev` and show a partial flow summary in chat that surfaces `## Decision Needed` prominently so the user can resolve it. Do not auto-retry or self-decide the conflict from the orchestrator.
+- If implementation returns `failed`, stop before `test-dev` and show a partial flow summary in chat.
 - If test hardening returns `blocked` or `failed`, stop before `review-code` and show a blocked or failed flow summary in chat.
 - If test hardening returns `pass-with-suspected-defects`, continue to review but mark the final status `blocked`.
 - If review returns `blocked`, `failed`, `incorrect`, `Overall Correctness: Incorrect`, or any `[CRITICAL]` or `[HIGH]` finding, mark the final status `blocked` unless the review stage itself failed, in which case mark it `failed`.
