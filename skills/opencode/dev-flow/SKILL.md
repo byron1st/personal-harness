@@ -1,6 +1,6 @@
 ---
 name: dev-flow
-description: "Run an existing plan-dev plan through a delegated Claude Code development flow using subagents: implement with implement-dev, strengthen tests with test-dev, review final changes with review-code, and return a final session flow summary in chat. Use when the user asks to execute an already-written plan-dev plan end-to-end through implementation, test hardening, and code review, especially when they request subagents, delegation, orchestration, or a thin wrapper around the existing development skills."
+description: "Run an existing plan-dev plan through a delegated OpenCode development flow using subagents (Task tool): implement with implement-dev, strengthen tests with test-dev, review final changes with review-code, and return a final session flow summary in chat. Use when the user asks to execute an already-written plan-dev plan end-to-end through implementation, test hardening, and code review, especially when they request subagents, delegation, orchestration, or a thin wrapper around the existing development skills."
 ---
 
 # Dev Flow

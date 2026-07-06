@@ -48,7 +48,7 @@ Tick the `## Verification` checklist items in the plan file as each command pass
 
 ## 4. Refresh project docs (if affected)
 
-If the implementation changed public APIs, commands, architecture, or setup steps, update `AGENTS.md` / `CLAUDE.md` / `README.md`. Preserve existing section structure; update only content that is now stale.
+If the implementation changed public APIs, commands, architecture, or setup steps, update `AGENTS.md` and legacy `CLAUDE.md` when present / `README.md`. Preserve existing section structure; update only content that is now stale.
 
 ## 5. Write the completion report
 

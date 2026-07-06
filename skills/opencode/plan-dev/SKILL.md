@@ -17,7 +17,7 @@ Steps 1-9 below MUST run with read-only tools only (`Read`, `Grep`, `Glob`, the 
 
 When the final plan is ready, present the reviewed plan in chat. The user switches from Plan mode to Build mode by pressing Tab, then replies with a continuation cue (e.g., "continue"); the agent then runs persistence in the first Build-mode turn.
 
-The first tool calls after the user has approved the plan and Claude Code is allowed to write MUST be the persistence steps in step 11, in this exact order: research files -> plan file(s). Only after those writes are done may any further follow-up work begin.
+The first tool calls after the user has approved the plan and OpenCode is allowed to write MUST be the persistence steps in step 11, in this exact order: research files -> plan file(s). Only after those writes are done may any further follow-up work begin.
 
 ## Language Rule
 
@@ -49,6 +49,17 @@ File naming, storage location, and (for multi-steps) Markdown link conventions i
   - Frontmatter, naming, required anchors (research links + TODOs): [references/single-step-plan.md](references/single-step-plan.md)
 - **multi-steps** (explicit opt-in) - one main plan file + multiple `-STEP-N` sub-plan files, connected via Markdown links. Use when the user explicitly asks for a multi-step breakdown (e.g. "여러 단계로 나눠서 플래닝 해줘", "multi-step plan", "단계별로", "PLAN-STEP", "증분 개발"). Typical for new projects or large initiatives that should be delivered as incremental build-test cycles.
   - Frontmatter, naming, link rules, suggested structure: [references/multi-steps-plan.md](references/multi-steps-plan.md)
+
+## Plan granularity
+
+A plan is a **goal-oriented, coarse-grained overview**, not a mechanical build script. Its job is to lock direction that a human can review quickly and that `implement-dev` can execute without second-guessing the approach, while leaving how-level details to be resolved at implementation time, where TDD and real environment feedback (compiler errors, failing tests, actual code state) settle those decisions better than read-only plan mode can.
+
+Decide altitude by what the information *is*, not by how much of it you happen to have:
+
+- **Coarse - defer to `implement-dev`'s discretion**: line-level edits, exact code sketches, helper signatures, pre-enumerated edge cases, library quirks. These are cheaper and more correct to settle against a running codebase than to guess in plan mode. Over-specifying them also makes the plan long and low-signal, which degrades how reliably an executor follows *any* single instruction and makes the plan too heavy for a human to actually review.
+- **Sharp - specify precisely**: the goal, the chosen approach and why, module/area boundaries, non-goals, and - for multi-steps - the contract between steps (the interfaces, types, and schemas one step exposes to the next). This is information the implementer cannot recover from environment feedback; if it is wrong or missing, the result is a direction-level error the executor cannot self-correct, not a detail it can.
+
+Deep investigation during planning is still encouraged - but its detailed findings belong in **research files**, not the plan body. Research holds the depth; the plan holds the direction distilled from it.
 
 ## Arguments / Inputs
 
@@ -124,7 +135,7 @@ Review the draft for:
 
 - **Completeness** - every intent from the context is addressed. For multi-steps with SPEC.md input, every FR-N is covered by at least one step.
 - **Correctness** - technical decisions are consistent with project constraints and conventions.
-- **Actionability** - each task / step can be executed without re-investigating the codebase.
+- **Actionability** - `implement-dev` can start each task / step without having to re-decide the approach. It may still work out how-level details against the codebase; what it must not have to do is re-derive the direction. Do not inflate tasks with mechanics to hit this bar (see Plan granularity).
 - **Multi-steps integrity** - each step keeps the project compiling and tests passing when completed; step dependencies form a sensible DAG.
 
 Highlight risks, edge cases, and remaining assumptions. Present the plan to the user. This is the content the user will read in chat before pressing Tab to switch to Build mode, after final refinement.
@@ -141,7 +152,7 @@ Persistence steps are skill mechanics, not part of the plan content the user rev
 
 ### 11. Persist (first actions in build/execute mode)
 
-These are the very first tool calls after Claude Code transitions out of plan mode, before any other follow-up:
+These are the very first tool calls after OpenCode transitions out of Plan mode, before any other follow-up:
 
 1. **Write research files** (if any were drafted in step 4). Ensure `docs/agents/research/` exists, then save each file per [references/research-file.md](references/research-file.md). After writing or updating research files, ensure `docs/agents/research/index.md` exists, creating it when no index.md was present beforehand, then update it so it contains the current metadata and links for every research file.
 2. **Write plan file(s)**. Ensure `docs/agents/dev/` exists, then save the plan file(s) per the chosen mode's reference. For multi-steps, write the main plan and every sub-plan, then verify each Markdown link in the main plan resolves to an existing sub-plan filename.

@@ -16,6 +16,14 @@ A single-step plan is one markdown file describing the full implementation of a 
 **Flexible**:
 
 - Everything else inside the body. Do NOT force the plan into a fixed section template (Goal / Technical Approach / Affected Files / Risks / Tradeoffs / Verification / ...). When the plan was produced by a planning agent, copy its output **verbatim** into the body between the research links and the TODO checklist. Squeezing a rich agent-generated plan into a normalized template loses fidelity; preserve it as-is.
+- The verbatim rule preserves the agent's structure and reasoning; it is not a license to keep mechanics-level detail. Plan granularity (see SKILL.md) still governs: keep the direction, and push line-level edits / code sketches down into research files or drop them.
+
+Two body elements are **recommended** (not required) because a coarse plan gives the implementer wide discretion and these are the cheapest way to bound it - both are information `implement-dev` cannot recover from environment feedback:
+
+- `## Non-goals` - a few lines on what this change explicitly does *not* touch.
+- `## Key decisions` - the chosen approach and, where it matters, the alternatives you rejected and why (so the implementer does not re-pick a discarded path under its own discretion).
+
+Keep both short. Omit either when the plan is trivial enough not to need it.
 
 ## 1. File name
 
@@ -56,7 +64,12 @@ Please refer to the research documents for detailed information about the relate
 
 ## 5. TODO checklist
 
-Every plan ends with a `## TODOs` section: a checkbox list of concrete, executable tasks. Each item should be specific enough that another agent can execute it without re-investigating the codebase. This pairs with `implement-dev`, which ticks each box as it completes a task.
+Every plan ends with a `## TODOs` section: a checkbox list of tasks. Each item is an **outcome** the implementer owns, not a keystroke-level edit: name what to achieve and where, with enough direction that `implement-dev` knows the approach, then let it resolve the mechanics itself (TDD-first). Aim for outcome-level, not edit-level:
+
+- Outcome-level (good): `- [ ] Add rate-limiting to the public API layer (token-bucket per API key)`
+- Edit-level (avoid): `- [ ] In ratelimit.go create a TokenBucket struct with fields capacity, tokens, refillRate and a Take() method`
+
+The second bakes in mechanics the implementer should decide against the running code, and inflates the plan past the point a human will actually review it. This pairs with `implement-dev`, which ticks each box as it completes a task.
 
 ```markdown
 ## TODOs
@@ -82,6 +95,10 @@ Title: {title}
 <!-- Section 4: research file links, when applicable -->
 
 <!-- Agent-generated plan body, copied verbatim. Keep whatever sections / ordering the agent produced. -->
+
+<!-- Recommended direction anchors (section 5), when not trivial: -->
+<!-- ## Non-goals -->
+<!-- ## Key decisions -->
 
 ## TODOs
 - [ ] Task 1

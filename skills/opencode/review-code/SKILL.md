@@ -1,6 +1,6 @@
 ---
 name: review-code
-description: Review code changes for bugs, security, reliability, maintainability, and missing tests. Use for diff, PR, branch, or file reviews; dispatches four parallel reviewer agents in Claude Code.
+description: Review code changes for bugs, security, reliability, maintainability, and missing tests. Use for diff, PR, branch, or file reviews; dispatches four parallel reviewer subagents via OpenCode's Task tool.
 ---
 
 # Review Code
@@ -9,7 +9,7 @@ You are the orchestrator. Gather context once, dispatch four parallel reviewer a
 
 ## Reviewer roles
 
-Four review axes. Dispatch one Claude Code custom subagent per axis:
+Four review axes. Dispatch one OpenCode custom subagent (Task tool) per axis:
 
 - `security-reviewer` — adversarial. Authn/authz, secret handling, injection, crypto misuse, malicious-input resistance, TOCTOU.
 - `reliability-reviewer` — failure-mode imaginer. Error handling, resource lifecycle, concurrency, idempotency, timeouts, partial failure, boundary conditions.

@@ -1,16 +1,15 @@
-# Single-step implementation
+# Implementation flow
 
-Use this reference when `implement-dev` is operating in **single-step** mode: one plan file describing the full implementation, executed in one pass.
+`implement-dev` always takes one plan file describing the full implementation and executes it in one pass.
 
 ## 1. Read the plan
 
-Read the plan file end-to-end. In particular:
+Read the plan file end-to-end. The plan is a coarse-grained **direction** - it locks what and why, not how. Its structure:
 
-- `## Goal`, `## Technical Approach` - the intent.
-- `## Affected Files` - the scope of changes.
-- `## Verification` - commands that must pass at the end.
-- `## TODOs` - the atomic work items to execute and check off.
-- Any linked research files near the top of the plan - read these if the change touches code paths you have not already investigated.
+- **Frontmatter** (`Application`, `JiraTicket`, `PlanType`, `Timestamp`, `Title`) - metadata; the Jira ticket and title flow into the report filename.
+- **Research file links** at the top of the body (when present) - read these if the change touches code paths you have not already investigated. Detailed findings live in research files, not the plan body; the plan holds the direction distilled from them.
+- **Free-form body** - the agent-generated direction, copied verbatim. It typically carries the goal, the chosen approach and why, and the affected area, but its section names are not fixed - do not expect a rigid `## Goal` / `## Technical Approach` / `## Affected Files` template. Recommended anchors (when not trivial) are `## Non-goals` and `## Key decisions`; the plan-internal mechanics are deliberately coarse and deferred to your discretion (TDD-first, against the running code).
+- **`## TODOs`** - the outcome-level work items to execute and check off. Each item names *what* to achieve and where, with enough direction that you know the approach; the *how* is yours to resolve.
 
 ## 2. Implement task-by-task with TDD
 
@@ -27,8 +26,10 @@ Testing rules:
 - Test **public/exported** methods and functions. Do not write tests for internal/private helpers.
 - Exception to TDD: pure documentation, configuration, or trivially obvious one-line changes. When in doubt, write the test.
 
-Deviations:
-- If you must diverge from the plan (missing detail, incorrect assumption, better approach surfaced during work), proceed but record the deviation for the completion report.
+Deviations - resolve details, escalate direction:
+- **Detail-level** - a helper / type / signature the plan did not spell out, a library quirk, an edge case, a local naming or structure choice: the *how* of a TODO whose *what* is unchanged. Resolve it yourself, TDD-first, and record it in the report's `## Deviations from Plan` (cross-reference a `## Red Flags` entry if it widened scope). This is the discretion the coarse plan deliberately left you.
+- **Direction-level** - the change contradicts the plan's `## Goal` / chosen approach / `## Key decisions`, requires touching something the plan put in `## Non-goals`, reverses a decision the plan made, or reveals the plan's premise is unworkable: the *what* is wrong, not just the *how*. **Stop and ask the user before writing code for it.** Changing direction silently voids the review the user gave the plan; do not decide it yourself and log it after the fact.
+- **When unsure which side**, treat it as direction-level and ask - but only for genuine direction conflicts. Do not escalate ordinary mechanics, or the gate becomes noise the user rubber-stamps.
 
 ## 3. Final verification
 

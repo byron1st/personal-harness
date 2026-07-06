@@ -77,10 +77,10 @@ Move to Stage 3 when:
 
 ## Stage 3: Draft
 
-Generate the complete SPEC.md following the template below. In Claude Code:
+Generate the complete `SPEC.md` using the template below.
 
-1. Write the draft directly to `./SPEC.md` in the current working directory using the `Write` tool. If `./SPEC.md` already exists, ask the developer whether to overwrite or choose a different path before writing.
-2. Do **not** paste the entire document into the chat. Instead, report a short summary: which sections you filled, which used assumptions (marked `[ASSUMED]` inline), and which remaining items went into `Open Questions`.
+1. Write the draft directly to `./SPEC.md` in the current working directory. If `./SPEC.md` already exists, ask the developer whether to overwrite it or choose a different path before writing.
+2. Do not paste the entire document into the chat. Instead, report a short summary: which sections you filled, which used assumptions marked `[ASSUMED]` inline, and which remaining items went into `Open Questions`.
 3. Invite the developer to open the file and review.
 
 ### SPEC.md Template

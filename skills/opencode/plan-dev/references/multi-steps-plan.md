@@ -1,10 +1,18 @@
 # Multi-steps plan files
 
-A multi-steps plan is one **main plan file** plus one or more **sub-plan files**, each describing a single incremental step. The sub-plans are linked from the main plan via Markdown links. Use this format when `plan-dev` is operating in **multi-steps** mode (user explicitly requested a multi-step breakdown).
+A multi-steps plan is a set of **standalone single-step plans** organized by one **main plan** (the parent). Each sub-plan is a complete [single-step plan](single-step-plan.md) in its own right - same frontmatter, same free-form body, same research links, same `## TODOs`, same granularity rules - and is executed **individually** by `implement-dev` in single-step mode. The main plan adds nothing to any step's implementation; its only job is to **organize the relationship between the sub-plans**: their order, dependencies, shared conventions, and how they compose into the whole.
+
+Use this format when `plan-dev` is operating in **multi-steps** mode (user explicitly requested a multi-step breakdown), typically for new projects or large initiatives delivered as incremental build-test cycles.
 
 ## Core principle
 
-Each step is a complete "develop -> test -> build" cycle. After finishing step N, the project compiles and all tests pass. This is non-negotiable because it enables incremental development where confidence grows with each step, and any collaborator (human or AI agent) can pick up from the last completed step.
+Each step is a complete "develop -> test -> build" cycle. After finishing step N, the project compiles and all tests pass. This is non-negotiable: it is what lets each sub-plan be planned, implemented, and reviewed on its own, and lets any collaborator (human or agent) pick up from the last completed step.
+
+## Execution model
+
+- Each sub-plan is run by `implement-dev` **individually, as a single-step plan**, in the dependency order the main plan lays out.
+- The **main plan is not implemented directly** - it is the map, not a step. Point `implement-dev` at a sub-plan, not at the main plan.
+- Because steps are planned together but implemented in separate runs, whatever seam one step exposes to later steps must live in the plan artifacts (see "Explicit step contracts" in section 6), not in a shared session.
 
 ## What is enforced vs. flexible
 
@@ -19,6 +27,8 @@ Each step is a complete "develop -> test -> build" cycle. After finishing step N
 **Flexible**:
 
 - Section structure inside the bodies of the main plan and sub-plans. Sections 4 and 5 below show a suggested default. Drop sections that do not apply, add ones that do, reorder freely. The cross-checks in section 7 still need to be satisfiable, but how you arrange the body is your call.
+
+Plan granularity (see SKILL.md) applies to each sub-plan exactly as it does to any single-step plan: keep step-internal mechanics coarse and defer them to `implement-dev`. The one place multi-steps demands extra precision is the **contract between steps** - what one step exposes to the next - because each sub-plan is planned and implemented separately (section 6).
 
 ## 1. File names
 
@@ -126,28 +136,34 @@ graph LR
 
 ## 5. Sub-plan (`-STEP-N.md`)
 
+A sub-plan **is a single-step plan**. Follow [single-step-plan.md](single-step-plan.md) in full: frontmatter, research links at the top when applicable, the free-form body, the recommended `## Non-goals` / `## Key decisions` anchors, the `## TODOs` checklist, and the outcome-level granularity rules. `implement-dev` runs it exactly as it runs any single-step plan.
+
+A sub-plan differs from a lone single-step plan in only three ways, all of which serve the parent's organization:
+
+1. **Frontmatter** carries a `Step: {N}` key. `PlanType` stays `single-step`, so the file is detected and executed identically to any single-step plan.
+2. **A back-link to the main plan** sits in the header area, so the step is navigable from its parent.
+3. **A `## Depends On`** line names the prior steps it builds on (or "None" for the first). When SPEC.md is an input, an optional `## Implements` note maps the FR-N this step covers.
+
 ### Required frontmatter
 
 ```yaml
 ---
 Application: {Application}
 JiraTicket: {Jira ticket number}
-PlanType: multi-steps-sub
+PlanType: single-step
 Timestamp: {timestamp}
 Title: {title}
 Step: {N}
 ---
 ```
 
-### Suggested body structure
-
-Each sub-plan should leave a future executor (human or agent) with enough context to start without re-investigating. The shape below is a starting point; collapse, expand, reorder as needed.
+### Body skeleton
 
 ```markdown
 ---
 Application: {Application}
 JiraTicket: {Jira ticket number}
-PlanType: multi-steps-sub
+PlanType: single-step
 Timestamp: {timestamp}
 Title: {title}
 Step: {N}
@@ -157,61 +173,32 @@ Step: {N}
 
 Part of main plan: [{timestamp}_{Jira}_PLAN_{title}.md](./{timestamp}_{Jira}_PLAN_{title}.md)
 
-## Goal
-What this step achieves and why it matters in the overall plan.
-
-## Implements
-Which Functional Requirements (FR-N) from SPEC.md this step covers, fully or partially. Omit if SPEC.md is not an input or this step implements no specific FR (e.g., project scaffold).
-- FR-1: {brief description of what aspect is implemented in this step}
-- FR-3: {brief description} (partial - remaining in Step 5)
+<!-- Research file links, when applicable (see single-step-plan.md) -->
 
 ## Depends On
-List prior steps that must be completed first (or "None" for the first step).
+Prior steps that must be completed first, or "None".
 
-## Tasks
-Checkbox list of concrete tasks. Each task specifies what to do, which file(s), key implementation details, and applicable conventions.
+<!-- Optional when SPEC.md is an input: -->
+<!-- ## Implements - the FR-N this step covers -->
 
-- [ ] Task 1 - {what} in `path/to/file` ({key detail or convention})
-- [ ] Task 2 - ...
+<!-- Free-form plan body - written exactly like a single-step plan. -->
 
-## Affected Files
-| Action | Path | Description |
-|--------|------|-------------|
-| Create | `path/to/file` | Brief purpose |
-| Modify | `path/to/existing` | What changes and why |
+<!-- Recommended direction anchors (see single-step-plan.md), when not trivial: -->
+<!-- ## Non-goals -->
+<!-- ## Key decisions -->
 
-## Tests
-- What to test (unit / integration)
-- Which test files to create
-- Key test scenarios derived from FR Input/Output and Business rules where applicable
-- Edge cases to cover
-
-## Build Verification
-Commands to confirm this step is complete:
-
-```bash
-# Adapt to the project's tech stack:
-# Go:    go build ./... && go test ./... && go vet ./...
-# Node:  npm run build && npm test && npm run lint
-# Rust:  cargo build && cargo test && cargo clippy
+## TODOs
+- [ ] Task 1
+- [ ] Task 2
 ```
-
-## Completion Checklist
-- [ ] All tasks completed
-- [ ] All tests written and passing
-- [ ] Build verification passes
-- [ ] No regressions from previous steps
-- [ ] Conventions followed
-```
-
-The `## Tasks` checkbox list pairs well with `implement-dev`, which ticks each box as it completes a task. If you keep that pattern, the items should be concrete enough that another agent can execute them without re-investigating the codebase.
 
 ## 6. Step decomposition guidance
 
 - **FR-driven decomposition** (when SPEC.md is input): each FR-N already has Input, Output, Business rules, Edge cases; these map directly to a step's tasks and test scenarios. Group related FRs into a single step when they share dependencies; split a large FR across multiple steps when it is too big.
 - **Incrementality**: each step must leave the project compiling and tests passing. Foundation first, then dependent behavior.
-- **Right-sized steps**: a good step takes 1-4 hours of focused work. If a step has more than about 10 tasks, consider splitting.
+- **Right-sized steps**: a good step is a single-step plan's worth of focused work. If a step's `## TODOs` grow much past about 10 items, consider splitting it into two steps.
 - **Test-first thinking**: if you cannot define clear tests for a step, the step's scope is probably wrong.
+- **Explicit step contracts**: because steps are planned together but implemented in separate `implement-dev` runs, whatever a step exposes to later steps (interfaces, types, schemas, function signatures) must be stated precisely in the plan, so later sub-plans can be written against a stable seam and a reader can see how the steps compose. This is the one place detail is required - step-internal mechanics stay coarse, but the seams between steps do not.
 - **Common first step**: project scaffold: module/package init, directory structure, linting/formatting config, CI setup, convention infrastructure (error types, logger setup, response helpers).
 
 Adapt the breakdown to the project's nature. TUI, backend service, CLI, library, and full-stack apps each have different natural decomposition patterns. Do not force a one-size-fits-all structure.
@@ -222,4 +209,4 @@ Before finalizing (still inside plan mode, in the Review step):
 
 - "If I completed only steps 1 through N, does the project compile and do all tests pass?" If not, restructure.
 - "Does every FR-N (when SPEC.md is an input) appear in at least one step?" If not, add the missing coverage.
-- "Do the main plan's Markdown links match the sub-plan filenames I will write?" Verify each link before presenting the plan in chat for the user to review. After writing the files in the persistence step, double-check that every link resolves.
+- "Do the main plan's Markdown links match the sub-plan filenames I will write?" Verify each link before presenting the plan for the user to switch to Build mode. After writing the files in the persistence step, double-check that every link resolves.
