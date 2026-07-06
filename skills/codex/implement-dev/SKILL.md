@@ -11,7 +11,7 @@ Execute an implementation plan by writing code test-first, validating via automa
 
 `implement-dev` runs in one of two delegated modes, detected from the invoking prompt (the **worker signal**). In Codex, subagent dispatch (Worker) requires the user to explicitly request delegation, subagent, or parallel agent work - auto-dispatch is not assumed.
 
-- **Worker (delegation, subagent - opt-in)** - A session invoked with `You are running as the implementation Worker subagent.` in its prompt. It runs the implementation flow directly ([references/implement-flow.md](references/implement-flow.md)), does not re-dispatch, and returns the fixed-heading Markdown from [references/worker-contract.md](references/worker-contract.md). The dispatcher hands the Worker a self-contained prompt and asks Codex to spawn it as a `worker` agent; the Worker starts cold.
+- **Worker (delegation, subagent - opt-in)** - A session invoked with `You are running as the implementation Worker subagent.` in its prompt. It runs Prepare and the implementation flow directly ([references/implement-flow.md](references/implement-flow.md)), does not re-dispatch, and returns the fixed-heading Markdown from [references/worker-contract.md](references/worker-contract.md). The dispatcher hands the Worker a self-contained prompt and asks Codex to spawn it as a `worker` agent; the Worker starts cold.
 - **Dispatcher (opt-in, main session)** - When the user explicitly requests delegation, the main `implement-dev` session acts as the Dispatcher. The Dispatcher does **not** edit production code, tests, or the report itself; it launches exactly **one** Worker using the prompt, return schema, and chat-summary shape in [references/worker-contract.md](references/worker-contract.md), then parses the Worker's fixed-heading return and renders a short chat summary (what changed / verification / red flags / TODO status) plus a clickable link to the on-disk report. The Dispatcher does not re-dispatch another Worker once one is running.
 
 Interactive (the **default** in Codex): when a session runs `implement-dev` directly in the main session without the user requesting delegation (or when subagent dispatch is not available on the host), the implementation flow ([references/implement-flow.md](references/implement-flow.md)) runs in-place. Follow the Worker rules except that a direction-level conflict goes back to the user interactively rather than being returned as `blocked`. A user simply invoking `implement-dev` from the main chat gets interactive direct execution; Worker dispatch requires explicit opt-in.
@@ -51,7 +51,14 @@ The Dispatcher itself never makes direction decisions for the Worker; if the Wor
 
 1. **Plan file**: the user (Dispatcher / interactive) or the dispatch prompt (Worker) provides the plan path. If the prompt omits it, ask the user (interactive) or surface in `## Open Questions` / `## Decision Needed` (Worker).
 2. **Verification commands**: extract lint, format, test, and build commands from `Makefile`, `AGENTS.md`, `CLAUDE.md`, or `README.md`. If none are found, ask the user (interactive) or surface in `## Open Questions` / `## Decision Needed` (Worker).
-3. **Project conventions**: read `AGENTS.md` / `CLAUDE.md`; their constraints apply to every implementation decision.
+3. **Project conventions**: read `AGENTS.md` / `CLAUDE.md`; their constraints apply to every implementation decision. Treat bundled conventions as defaults only where the repository's own instructions and existing code are silent.
+   - **Language conventions**: detect the implementation language/framework from the plan and repository files. Read every matching convention file.
+
+     | Language / framework | Read when | Convention reference |
+     | --- | --- | --- |
+     | Go | The plan or changed files involve Go code. | [references/go-convention.md](references/go-convention.md) |
+     | Swift / macOS | The plan or changed files involve Swift, SwiftUI, AppKit, or macOS app code. | [references/swift-convention.md](references/swift-convention.md) |
+     | TypeScript / Next.js | The plan or changed files involve TypeScript, React, or Next.js code. | [references/ts-nextjs-convention.md](references/ts-nextjs-convention.md) |
 
 ## Execute
 

@@ -32,7 +32,7 @@
 참고:
 - `rg`/`fd`는 이미 폴더 구조 설명의 `hooks` 항목에서 언급한 대로 hook이 사용을 강제하므로 반드시 설치해야 한다.
 - `gh`·`glab`·`gcx`는 각각 personal/work 저장소에서만 호출되므로, 사용하지 않는 저장소 유형의 도구는 생략 가능하다.
-- 프로젝트 템플릿(`references/go-makefile.md`, `references/go-convention.md`)이 `setup-initial-repo`로 복사될 때 함께 따라가는 `go`, `golangci-lint`, `mockery`, `gremlins`, `swag` 등은 생성되는 프로젝트의 빌드 도구이지 이 harness 자체의 prerequisite은 아니다.
+- 프로젝트 템플릿(`references/go-makefile.md`)이 `setup-initial-repo`로 복사될 때 함께 따라가는 `go`, `golangci-lint`, `mockery`, `gremlins`, `swag` 등은 생성되는 프로젝트의 빌드 도구이지 이 harness 자체의 prerequisite은 아니다.
 
 ## Skills
 
