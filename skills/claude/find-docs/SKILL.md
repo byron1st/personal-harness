@@ -1,20 +1,6 @@
 ---
 name: find-docs
-description: >-
-  Retrieves up-to-date documentation, API references, and code examples for any
-  developer technology. Use this skill whenever the user asks about a specific
-  library, framework, SDK, CLI tool, or cloud service -- even for well-known ones
-  like React, Next.js, Prisma, Express, Tailwind, Django, or Spring Boot. Your
-  training data may not reflect recent API changes or version updates.
-
-  Always use for: API syntax questions, configuration options, version migration
-  issues, "how do I" questions mentioning a library name, debugging that involves
-  library-specific behavior, setup instructions, and CLI tool usage.
-
-  Use even when you think you know the answer -- do not rely on training data
-  for API details, signatures, or configuration options as they are frequently
-  outdated. Always verify against current docs. Prefer this over web search for
-  library documentation and API details.
+description: "Use Context7 via ctx7 to fetch current documentation, API references, version-aware examples, configuration details, upgrade notes, and troubleshooting guidance for a specific library, framework, SDK, CLI, or cloud service. Prefer this skill over model memory or generic web search whenever the answer depends on exact APIs, signatures, flags, schemas, commands, setup steps, release changes, or library-specific behavior, because those details often change after training. Use it for how-to questions, migrations, deprecations, auth setup, environment variables, CLI usage, debugging SDK errors, and concrete examples for tools like React, Next.js, Prisma, Tailwind, Django, Terraform, AWS, or Kubernetes. Resolve the library to a Context7 ID first, then query docs with ctx7; if the user already provides a /org/project or /org/project/version ID, use it directly."
 ---
 
 # Documentation Lookup
