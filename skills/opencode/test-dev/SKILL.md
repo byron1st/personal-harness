@@ -1,11 +1,22 @@
 ---
 name: test-dev
-description: Strengthen tests by filling unit/e2e gaps and reducing LIVED mutation survivors. Use after implementation or when asked to improve coverage, harden tests, or kill mutants.
+description: "Strengthen tests by filling unit/e2e gaps and reducing LIVED mutation survivors against a git-defined scope. By default runs as the Dispatcher (main session): it resolves the review scope, then launches one Worker subagent via OpenCode's Task tool and returns a fixed-heading status the Dispatcher collapses to a short chat summary. Use after implementation or when asked to improve coverage, harden tests, or kill mutants."
 ---
 
 # Test Dev
 
-Harden the project's test suite in three sequential phases — unit-test gap filling, e2e-test gap filling, and mutation-test LIVED elimination — and report the result inline in the chat. No file artifacts are produced.
+Harden the project's test suite against a **git-defined scope** in three sequential phases — unit-test gap filling, e2e-test gap filling, and mutation-test LIVED elimination — and report the result inline in the chat. No file artifacts are produced.
+
+`test-dev` reads changed code with the same **fresh, unanchored perspective** as `review-code`: the scope is a diff (or the whole tree), never the author's session narrative. This is deliberate — an agent that did not write the code spots the untested branch the author's mental model skips over.
+
+## Execution modes
+
+`test-dev` runs in one of two delegated modes, detected from the invoking prompt (the **worker signal**). OpenCode can automatically dispatch the Worker, but a user instruction like "main session only" or "no subagents" overrides that and forces interactive execution.
+
+- **Dispatcher (default, main session)** — the session that is *not* told it is the Worker. The Dispatcher does **not** edit tests itself; it resolves the review scope ([Determine Scope](#determine-scope)), gathers verification commands and conventions once, then launches exactly **one** Worker subagent via OpenCode's Task tool (`subagent_type: general`) using the prompt, return schema, and chat-summary shape in [references/worker-contract.md](references/worker-contract.md), and renders a short chat summary from the Worker's fixed-heading return. The Dispatcher does not re-dispatch another Worker once one is running.
+- **Worker (delegation, subagent)** — a session invoked with `You are running as the test-hardening Worker subagent.` in its prompt. It runs the three-phase flow directly against the scope handed to it, does not re-dispatch, and returns the fixed-heading Markdown from [references/worker-contract.md](references/worker-contract.md).
+
+Interactive (a third, opt-in mode, **not** the default): when a session runs `test-dev` directly in the main session without dispatching a Worker — either because the user explicitly opts for direct execution, asks for the main session only, or because subagent dispatch is not available on the host — the three-phase flow runs in-place; follow the Worker rules except that a blocking obstacle (missing verification command, absent mutation tooling) goes back to the user interactively rather than being returned as `blocked`. A user simply invoking `test-dev` from the main chat still gets Dispatcher mode and Worker delegation; interactive opt-in must be explicit (or forced by host capability).
 
 ## Global Rules
 
@@ -51,20 +62,26 @@ If keeping the failing test red blocks the rest of the run (e.g. it hangs the su
 
 ## Determine Scope
 
-Decide which code is in scope before any analysis:
+The **Dispatcher** (or the interactive main session) resolves the scope in git terms **before dispatching** — the same grammar as `review-code`. The Worker never re-derives scope from conversation; it receives the resolved scope in its prompt.
 
-1. **Session has `implement-dev` results** — check the conversation for an `implement-dev` invocation, an Implementation Report content, or files modified during this session. If yes, the scope is the files added/modified by that run.
-   - Prefer the report's `## Implementation Flow` section as the file list when it is available.
-   - Otherwise diff against the pre-`implement-dev` state (e.g. `git diff develop...HEAD`, or stash/log inspection) to recover the file list.
-2. **No `implement-dev` results in session** → scope is the entire codebase.
+By default, the scope is the diff between the current branch and `main` (or `origin/main`), including uncommitted and unstaged edits. The user can override:
 
-State the decided scope to the user in one sentence before proceeding (e.g. "Scope: 4 files modified by this session's implement-dev run." / "Scope: entire codebase — no implement-dev result detected in this session.").
+- "test the latest commit" → `git show HEAD` / `git diff HEAD~1...HEAD`.
+- "test uncommitted changes" → `git diff HEAD` plus untracked files.
+- "test this file" → only the file they point at.
+- "test the whole codebase" → treat the entire tree as in scope.
+
+If the current branch *is* `main`, only staged and unstaged edits are in scope.
+
+Capture the scope once (mirroring `review-code`'s gather step): the diff, the touched files with absolute paths, and the language(s) involved. State the decided scope to the user in one sentence before dispatching (e.g. "Scope: 4 files changed vs `main`." / "Scope: entire codebase.").
+
+If an `implement-dev` report exists for the change, the Dispatcher may pass its path to the Worker as an **optional intent hint** — never as the scope definition. Scope is always the git diff. Keeping the Worker's brief lean (diff + conventions, not the author's narrative) preserves the fresh-eyes advantage that makes gap analysis worth isolating.
 
 ## Prepare
 
-1. **Verification commands**: extract lint, unit, e2e, and mutation commands from `Makefile`, `AGENTS.md` (and legacy `CLAUDE.md` when present), or `README.md`. If any required command is missing, ask the user.
+1. **Verification commands**: extract lint, unit, e2e, and mutation commands from `Makefile`, `AGENTS.md` (and legacy `CLAUDE.md` when present), or `README.md`. The Dispatcher resolves any missing required command before dispatch; a Worker that still finds one missing returns `blocked` with `## Decision Needed` (interactive execution asks the user).
 2. **E2E layout**: locate where e2e tests live (see [references/e2e-gap-analysis.md](references/e2e-gap-analysis.md) for common conventions). If the project has no e2e suite at all, note this and skip Phase 2 with a single-line justification in the final summary.
-3. **Mutation tooling**: find the project's mutation target (typical: `make test-mutation`). If no tooling is configured, ask the user with the question tool how to proceed (skip Phase 3 / nominate a command / install a standard tool).
+3. **Mutation tooling**: find the project's mutation target (typical: `make test-mutation`). If no tooling is configured, the Dispatcher decides before dispatch; a Worker returns `blocked` with the options (skip Phase 3 / nominate a command / install a standard tool), and interactive execution asks the user with the question tool.
 
 ## Phase 1 — Unit test gaps
 
@@ -118,20 +135,16 @@ Run the full lint + unit + e2e suites once more.
 - All previously-green tests must remain green. If a pre-existing test broke during the run, it points to a problem the skill caused — investigate by reverting the most recent test change rather than touching production code.
 - Newly added tests that surfaced suspected business-logic defects may legitimately remain red (or skipped per Global Rule 6). They do not block completion — they are reported to the user.
 
-If a pre-existing test is red and reverting recent test changes does not restore it, stop and surface the failure to the user with what was tried.
+If a pre-existing test is red and reverting recent test changes does not restore it, stop and surface the failure with what was tried — Worker mode returns `## Test Status: failed`; interactive execution surfaces it to the user.
 
-## Output (chat only)
+## Output
 
-Print a brief summary in the chat — no file artifacts:
+The result is delivered as two artifacts, defined in [references/worker-contract.md](references/worker-contract.md):
 
-- **Scope**: the decided scope and the file list.
-- **Phase 1 (Unit)**: number of tests added, key file paths, final pass/fail.
-- **Phase 2 (E2E)**: number of tests added, key file paths, final pass/fail (or "skipped — no e2e harness").
-- **Phase 3 (Mutation)**: starting efficacy → final efficacy, starting LIVED count → final LIVED count, pre-threshold iterations + post-threshold iterations performed (e.g. `pre 4 / post 3`), or "skipped (reason)". Note explicitly whether the 80% threshold was reached.
-- **Remaining attention items**: any LIVED mutants left unresolved with the reason (equivalent mutant, infeasible distinguishing test, refactor needed, etc.).
-- **Suspected business-logic defects**: the running list collected per Global Rule 6. For each entry: file:line, the test path that surfaced it (Phase 1/2/3), observed vs expected behavior in one sentence, and whether the test was left red or skipped. This list is the most important attention item — flag it prominently in the summary.
+- **Worker return (②)** — the fixed-heading Markdown the Worker hands back (`## Test Status` … `## Remaining Attention Items`, plus `## Decision Needed` when blocked). No file artifact is written, so the return **is** the deliverable: the Worker must emit the `## Suspected Business Logic Defects` list **verbatim**, never summarised or dropped.
+- **Dispatcher chat summary (③)** — the Dispatcher renders a short summary for the user: scope, per-phase one-liners (unit added/result, e2e added/result or skipped, mutation start→final efficacy and whether the 80% threshold was reached), and the suspected-defects list surfaced **prominently and verbatim** as the most important attention item. If the Worker returns `blocked`, surface `## Decision Needed` first and stop. Translate to Korean if the Worker returned English; keep paths and identifiers as-is.
 
-Keep the summary tight. Do not write a separate report file. Do not modify `docs/agents/dev` implementation reports.
+In interactive (non-delegated) execution, the same shape is the final chat output. Do not write a separate report file. Do not modify `docs/agents/dev` implementation reports.
 
 ## Error Recovery
 
@@ -142,4 +155,4 @@ This skill is test-code-only (Global Rule 6). Production code is **never** edite
 3. **If the test correctly expresses the intended behavior but production code disagrees** — this is a suspected business-logic defect. Do **not** edit production code. Add it to the running defect list (see Global Rule 6), leave the test red (or skip with annotation if it blocks the suite), and continue.
 4. **If a previously-green test broke** because of changes made by this skill — the most recent test-code change is the suspect. Revert the test change and re-evaluate. Do not touch production code to make a previously-green test pass under a new test infrastructure.
 5. **Never weaken tests to make them pass** — see Global Rule 3.
-6. **Stop after 3 failed attempts on the same error** — record what was tried, what was observed, and add it to the defect list. Continue to the next gap; the user gets the full picture in the final summary.
+6. **Stop after 3 failed attempts on the same error** — record what was tried, what was observed, and add it to the defect list. Continue to the next gap; the user gets the full picture in the final summary. If the error is irrecoverable or a previously-green test cannot be restored, Worker mode sets `## Test Status` to `failed` and returns; interactive execution asks the user for guidance. Suspected business-logic defects are never a `failed` condition — they go to the defect list and are reported.
