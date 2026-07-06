@@ -12,7 +12,7 @@ Execute an implementation plan by writing code test-first, validating via automa
 `implement-dev` runs in one of two delegated modes, detected from the invoking prompt (the **worker signal**):
 
 - **Dispatcher (default, main session)** - The session that is *not* told it is the Worker. The Dispatcher does **not** edit production code, tests, or the report itself; it launches exactly **one** general-purpose subagent (the Worker) using the prompt, return schema, and chat-summary shape in [references/worker-contract.md](references/worker-contract.md), then parses the Worker's fixed-heading return and renders a short chat summary (what changed / verification / red flags / TODO status) plus a clickable link to the on-disk report. The Dispatcher does not re-dispatch another Worker once one is running.
-- **Worker (delegation, subagent)** - A session invoked with `You are running as the implementation Worker subagent.` in its prompt. It runs the implementation flow directly ([references/implement-flow.md](references/implement-flow.md)), does not re-dispatch, and returns the fixed-heading Markdown from [references/worker-contract.md](references/worker-contract.md). `dev-flow`'s implementation stage launches the same Worker using the same signal, so there is no double-nesting.
+- **Worker (delegation, subagent)** - A session invoked with `You are running as the implementation Worker subagent.` in its prompt. It runs the implementation flow directly ([references/implement-flow.md](references/implement-flow.md)), does not re-dispatch, and returns the fixed-heading Markdown from [references/worker-contract.md](references/worker-contract.md).
 
 Interactive (a third, opt-in mode, **not** the default): when a session runs `implement-dev` directly in the main session without dispatching a Worker - either because the user explicitly opts for direct execution, or because subagent dispatch is not available on the host - the implementation flow ([references/implement-flow.md](references/implement-flow.md)) runs in-place; follow the Worker rules except that a direction-level conflict goes back to the user interactively rather than being returned as `blocked`. A user simply invoking `implement-dev` from the main chat still gets Dispatcher mode and Worker delegation; interactive opt-in must be explicit (or forced by host capability).
 
@@ -63,7 +63,7 @@ The implementation produces three artifacts, defined in [references/report-file.
 
 - **① Report file** - the on-disk body under `docs/agents/dev/`, spine `## TODO Fulfillment`. File naming, content format, and the bidirectional plan/report Markdown link convention are in [references/report-file.md](references/report-file.md).
 - **② Worker return** - the fixed-heading Markdown the Worker hands back to the Dispatcher. Never paste ① sections into ② - link the report by absolute path under `## Implementation Report`.
-- **③ Chat summary** - the Dispatcher renders a short summary (2-4 bullets + clickable report link) for the user, never pasting ① or ② verbatim. `dev-flow` substitutes its own final flow summary for ③ at the end of the flow.
+- **③ Chat summary** - the Dispatcher renders a short summary (2-4 bullets + clickable report link) for the user, never pasting ① or ② verbatim.
 
 In interactive (non-delegated) execution, the same shape applies as the final chat output: short bullets + report link, with report sections kept in the file.
 

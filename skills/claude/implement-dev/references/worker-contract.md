@@ -1,8 +1,8 @@
 # Worker delegation contract
 
-`implement-dev`'s **Dispatch mode** (the main session, default) and `dev-flow`'s implementation stage both delegate the actual implementation to a single general-purpose subagent (the **Worker**). This file is the **single source of truth** for that delegation: the prompt the dispatcher hands the Worker, the structured Markdown the Worker must return (② in [report-file.md](report-file.md)'s terminology - ① is the on-disk report, ② is the Worker's return message, ③ is the dispatcher's chat summary), and the chat summary the dispatcher owes the user.
+`implement-dev`'s **Dispatch mode** (the main session, default) delegates the actual implementation to a single general-purpose subagent (the **Worker**). This file is the **single source of truth** for that delegation: the prompt the dispatcher hands the Worker, the structured Markdown the Worker must return (② in [report-file.md](report-file.md)'s terminology - ① is the on-disk report, ② is the Worker's return message, ③ is the dispatcher's chat summary), and the chat summary the dispatcher owes the user.
 
-Both `implement-dev` Dispatch and `dev-flow` reference this contract instead of restating it. Do not duplicate these templates elsewhere; update them here.
+`implement-dev` Dispatch references this contract instead of restating it. Do not duplicate these templates elsewhere; update them here.
 
 ## A. Worker signal
 
@@ -10,7 +10,7 @@ The Worker detects it is a Worker (not a Dispatcher) from the dispatch prompt it
 
 ## B. Dispatch prompt
 
-The dispatcher (the main `implement-dev` session, or `dev-flow`'s main session) hands the Worker this prompt, replacing placeholders:
+The dispatcher (the main `implement-dev` session) hands the Worker this prompt, replacing placeholders:
 
 ```text
 You are running as the implementation Worker subagent.
@@ -76,4 +76,4 @@ When `implement-dev` runs interactively (not via dispatch), the same shape appli
 
 ## E. Boundary
 
-This contract covers only implementation delegation. `test-dev` and `review-code` keep their own prompts and return schemas (see `dev-flow/references/delegation-contract.md`); they do not duplicate the implementation-stage contract above.
+This contract covers only implementation delegation. `test-dev` and `review-code` keep their own prompts and return schemas; they do not duplicate the implementation-stage contract above.
