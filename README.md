@@ -32,7 +32,7 @@
 참고:
 - `rg`/`fd`는 이미 폴더 구조 설명의 `hooks` 항목에서 언급한 대로 hook이 사용을 강제하므로 반드시 설치해야 한다.
 - `gh`·`glab`·`gcx`는 각각 personal/work 저장소에서만 호출되므로, 사용하지 않는 저장소 유형의 도구는 생략 가능하다.
-- 프로젝트 템플릿(`references/go-makefile.md`)이 `setup-initial-repo`로 복사될 때 함께 따라가는 `go`, `golangci-lint`, `mockery`, `gremlins`, `swag` 등은 생성되는 프로젝트의 빌드 도구이지 이 harness 자체의 prerequisite은 아니다.
+- 프로젝트 템플릿(`skills/*/setup-initial-repo/references/{go-makefile.md,swift-makefile.md,ts-nextjs-packagejson.md}`)이 `setup-initial-repo`로 참조될 때 함께 따라가는 `go`, `golangci-lint`, `mockery`, `gremlins`, `swag`, `swiftlint`, `swiftformat`, `eslint`, `vitest`, `playwright`, `stryker` 등은 생성되는 프로젝트의 빌드 도구이지 이 harness 자체의 prerequisite은 아니다.
 
 ## Skills
 
@@ -55,7 +55,7 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 ### Misc
 
 - `spec-creator`: 신규 소프트웨어 프로젝트의 요구사항을 단계적으로 정리해 한국어 SPEC.md 문서를 만든다.
-- `setup-initial-repo`: SPEC.md 문서를 기반으로 신규 프로젝트 저장소를 부트스트랩한다. CLAUDE.md/AGENTS.md, 언어별 컨벤션 docs, Makefile, .gitignore 생성 및 적절한 Git identity로 `git init`과 remote origin 연결까지 수행한다.
+- `setup-initial-repo`: SPEC.md 문서를 기반으로 신규 프로젝트 저장소를 부트스트랩한다. CLAUDE.md/AGENTS.md, Makefile 또는 package.json scripts, .gitignore 생성 및 적절한 Git identity로 `git init`과 remote origin 연결까지 수행한다.
 - `application-research-sync`: 코드 변경 사항을 분석해 `docs/agents/research`의 Research 파일을 일괄 업데이트한다. Research 검색은 `docs/agents/research/index.md`의 메타데이터와 파일 링크를 먼저 읽고 필요한 본문만 여는 방식으로 수행한다.
 - `learn-from-manual-edits`: 에이전트가 작성한 코드 위에 사용자가 직접 수정한 부분을 식별해 각 수정 배경의 일반적인 선호(스타일·아키텍처·네이밍 등)를 추론하고, 프로젝트의 CLAUDE.md(Claude Code) 또는 AGENTS.md(Codex/Cursor/OpenCode)에 재사용 가능한 컨벤션으로 기록한다.
 - `loki-log-search`: Grafana Loki 로그를 `gcx api` 경유로 조회한다. Work-only 스킬이며 Codex와 Cursor에만 설치·동기화한다.

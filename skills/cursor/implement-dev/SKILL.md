@@ -51,7 +51,14 @@ The Dispatcher itself never makes direction decisions for the Worker; if the Wor
 
 1. **Plan file**: the user (Dispatcher / interactive) or the dispatch prompt (Worker) provides the plan path. If the prompt omits it, ask the user (interactive) or surface in `## Open Questions` / `## Decision Needed` (Worker).
 2. **Verification commands**: extract lint, format, test, and build commands from `Makefile`, `AGENTS.md`, `CLAUDE.md`, or `README.md`. If none are found, ask the user (interactive) or surface in `## Open Questions` / `## Decision Needed` (Worker).
-3. **Project conventions**: read `AGENTS.md` / `CLAUDE.md`; their constraints apply to every implementation decision.
+3. **Project conventions**: read `AGENTS.md` / `CLAUDE.md`; their constraints apply to every implementation decision. Treat bundled conventions as defaults only where the repository's own instructions and existing code are silent.
+   - **Language conventions**: detect the implementation language/framework from the plan and repository files. Read every matching convention file.
+
+     | Language / framework | Read when | Convention reference |
+     | --- | --- | --- |
+     | Go | The plan or changed files involve Go code. | [references/go-convention.md](references/go-convention.md) |
+     | Swift / macOS | The plan or changed files involve Swift, SwiftUI, AppKit, or macOS app code. | [references/swift-convention.md](references/swift-convention.md) |
+     | TypeScript / Next.js | The plan or changed files involve TypeScript, React, or Next.js code. | [references/ts-nextjs-convention.md](references/ts-nextjs-convention.md) |
 
 ## Execute
 

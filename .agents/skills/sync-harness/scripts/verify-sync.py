@@ -215,6 +215,7 @@ CURSOR_FORBIDDEN = {
     r"\bexplorer\b": "explorer",  # lowercase Codex agent; Cursor builtin is `Explore`
 }
 ALLOW = {  # skill name -> tokens that are intentional there
+    "implement-dev": {"worker"},
     "setup-initial-repo": {"Codex"},
     "spec-creator": {"worker"},
 }

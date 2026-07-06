@@ -1,6 +1,6 @@
 ---
 name: setup-initial-repo
-description: Bootstrap a brand-new project repository from a SPEC.md document — create CLAUDE.md or AGENTS.md, copy language-specific conventions into docs/, generate a Makefile and .gitignore, run `git init` with the right identity (personal vs. work), and wire up the remote origin (an existing URL, or a fresh private repo via `gh`). Use this skill whenever the user wants to initialize a new project, scaffold a fresh repo, set up the first commit infrastructure, or says things like "프로젝트 초기 셋업", "새 레포 셋업", "initialize new project", "set up the repo", "bootstrap project", or right after they finished a SPEC.md and need the project skeleton. Trigger on any wording that implies turning a SPEC into a working repo, even when the user does not explicitly mention every artifact (Makefile, .gitignore, etc.).
+description: Bootstrap a brand-new project repository from a SPEC.md document — create CLAUDE.md or AGENTS.md, generate command targets/scripts and .gitignore, run `git init` with the right identity (personal vs. work), and wire up the remote origin (an existing URL, or a fresh private repo via `gh`). Use this skill whenever the user wants to initialize a new project, scaffold a fresh repo, set up the first commit infrastructure, or says things like "프로젝트 초기 셋업", "새 레포 셋업", "initialize new project", "set up the repo", "bootstrap project", or right after they finished a SPEC.md and need the project skeleton. Trigger on any wording that implies turning a SPEC into a working repo, even when the user does not explicitly mention every artifact (Makefile, package.json, .gitignore, etc.).
 ---
 
 # Setup Initial Repo
@@ -8,8 +8,8 @@ description: Bootstrap a brand-new project repository from a SPEC.md document �
 Bootstrap a new project repository from a `SPEC.md` document. This skill produces the minimum scaffolding an AI coding agent and a developer need to start working immediately:
 
 - `CLAUDE.md` or `AGENTS.md` (depending on the agent in use)
-- `docs/` with the language-specific conventions file
-- `Makefile` whose targets back every command referenced from the agent file
+- `docs/` for SPEC.md and project-local references when needed
+- `Makefile` or `package.json` scripts whose targets back every command referenced from the agent file
 - `.gitignore`
 - An initialized git repository with the right user identity (personal or work)
 - A remote `origin` (existing URL, or a freshly-created private repo via `gh`)
@@ -39,15 +39,17 @@ Different coding agents read different filenames. Pick one — never both — to
 
 Hold the chosen path as `${AGENT_FILE}` for the rest of the run.
 
-### Step 3: Detect the language and pick the conventions file
+### Step 3: Detect the project type and pick the command reference
 
-Read the Tech Stack section from SPEC.md and detect the primary language. Only the conventions file is language-specific; the Makefile and `.gitignore` templates are common and the agent fills in language-specific details from the conventions and project state.
+Read the Tech Stack section from SPEC.md and detect the primary project type. The command surface is language-specific; `.gitignore` still starts from the common baseline and then adds project-specific entries.
 
-| Detected language | Conventions reference |
+| Detected project type | Command surface | Reference |
 |---|---|
-| Go | [references/go.md](references/go.md) |
+| Go | `Makefile` | [references/go-makefile.md](references/go-makefile.md) |
+| Swift / macOS | `Makefile` | [references/swift-makefile.md](references/swift-makefile.md) |
+| TypeScript / Next.js | `package.json` scripts | [references/ts-nextjs-packagejson.md](references/ts-nextjs-packagejson.md) |
 
-If the language has no matching conventions file, tell the user and ask whether to proceed without copying conventions (the agent file will skip the language-specific link) or to stop and add support first.
+If the project type has no matching command reference, tell the user and ask whether to proceed with a minimal custom command surface or to stop and add support first.
 
 ### Step 4: Determine identity (personal vs. work)
 
@@ -97,37 +99,38 @@ Start from the common baseline in [references/gitignore.md](references/gitignore
 
 If `.gitignore` already exists, diff it against the result — if the user has custom entries, ask before overwriting; otherwise overwrite cleanly.
 
-### Step 8: Copy the language conventions into `docs/`
+### Step 8: Generate the command surface
 
-1. Create `docs/` if it does not exist.
-2. Copy the reference file into `docs/` using the canonical name `docs/{language}-conventions.md` (e.g., `docs/go-conventions.md`).
-3. If the file already exists, diff the contents — if there are user-authored sections, ask before overwriting; otherwise overwrite cleanly.
+The command surface is the single source of truth for executable commands. Every command quoted from `${AGENT_FILE}` later must exist as a Makefile target or `package.json` script — no bare `go test ./...`, `swift test`, or `vitest run` in the agent file.
 
-This copy is what the agent file links to, so the agent reads project-local conventions, not the skill's references.
+Use the selected reference from Step 3. It lists the default target/script shape for the project type:
 
-### Step 9: Generate the Makefile
+- Go: [references/go-makefile.md](references/go-makefile.md)
+- Swift / macOS: [references/swift-makefile.md](references/swift-makefile.md)
+- TypeScript / Next.js: [references/ts-nextjs-packagejson.md](references/ts-nextjs-packagejson.md)
 
-The Makefile is the single source of truth for executable commands. Every command quoted from `${AGENT_FILE}` later must exist as a Makefile target — no bare `go test ./...` in the agent file.
+Include the applicable common operations and omit impossible placeholders:
 
-Use the target checklist in [references/makefile.md](references/makefile.md). The reference lists which targets must exist; the agent fills in each recipe based on the project's language, conventions, and state:
+- `format`, `lint`, and grouped `check`
+- `gen`, backed by real generation tasks such as `mockgen`, `modelgen` for `sqlc`, and `docsgen` for Swagger
+- `test`, Go-only `race`, `test-e2e`, `test-mutation`, `test-mutation-pkg`, and `coverage`
+- Go-only `outdated` for direct dependency update checks
+- `build` and `run`
 
-- Pick the idiomatic CLI for the language (e.g., `go test -race ./...` vs `pytest -v`).
-- Decide variables to lift to the top (binary name, main package path, build dir, etc.) so future edits stay in one place.
-- Drop targets that do not apply (e.g., `build`/`run` for library-only projects, `lint-fix` if the linter has no fix mode).
-- Add project-specific targets only when they earn their place — never as filler.
+Decide variables to lift to the top (binary name, scheme, package manager, main package path, generated output dirs, etc.) so future edits stay in one place. Add project-specific targets only when they earn their place — never as filler.
 
-### Step 10: Generate `${AGENT_FILE}`
+### Step 9: Generate `${AGENT_FILE}`
 
-Use the section structure in [references/agent-md-template.md](references/agent-md-template.md). The reference lists which sections to include and the constraints; the agent writes the actual content using SPEC.md, project state, and the language conventions file.
+Use the section structure in [references/agent-md-template.md](references/agent-md-template.md). The reference lists which sections to include and the constraints; the agent writes the actual content using SPEC.md, project state, and the selected command surface.
 
 Key requirements (the reference covers them in detail):
 
-- Every Core Commands entry must back to a Makefile target. If one is missing, add it to the Makefile first.
-- The Code Conventions section includes only 3–5 highlights; the full list lives in `docs/{language}-conventions.md` and is linked from References.
+- Every Core Commands entry must back to a Makefile target or `package.json` script. If one is missing, add it to the command surface first.
+- The Code Conventions section includes only 3–5 highlights from SPEC.md and the detected stack. Link to project-local convention docs only when they actually exist.
 - Boundaries are NEVER rules with concrete alternatives.
 - The file is **English-only** and **under 150 lines**, regardless of conversation or SPEC.md language.
 
-### Step 11: Review, confirm, and commit
+### Step 10: Review, confirm, and commit
 
 Before the first commit, present a summary to the user:
 
@@ -135,8 +138,7 @@ Before the first commit, present a summary to the user:
 ✓ Initialized git repo (or detected existing)
 ✓ Set local user.email = <email>, user.name = <name>
 ✓ Remote origin: <URL>
-✓ Created: ${AGENT_FILE}, .gitignore, Makefile
-✓ Created: docs/{language}-conventions.md
+✓ Created: ${AGENT_FILE}, .gitignore, <Makefile or package.json scripts>
 ✓ Updated: <list any other modifications>
 ```
 
@@ -152,9 +154,9 @@ Do **not** push automatically. Tell the user to push manually with `git push -u 
 ## Writing Rules
 
 - The agent file (`CLAUDE.md` / `AGENTS.md`) is in **English**, regardless of conversation language.
-- Every executable command quoted from the agent file must exist as a Makefile target.
+- Every executable command quoted from the agent file must exist as a Makefile target or `package.json` script.
 - The agent file stays under 150 lines — push deeper detail into `docs/` references.
 - Identity setup is **always local** to the repo (`git config` without `--global`).
 - The skill **never** runs `git push` automatically.
 - The skill **never** auto-creates remote repos for work contexts.
-- For overwriting existing files (`.gitignore`, `${AGENT_FILE}`, `Makefile`), always show a diff or ask first.
+- For overwriting existing files (`.gitignore`, `${AGENT_FILE}`, `Makefile`, `package.json`), always show a diff or ask first.

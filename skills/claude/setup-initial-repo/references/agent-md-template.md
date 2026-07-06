@@ -1,6 +1,6 @@
 # Agent File Section Structure
 
-Required sections, in order, for `CLAUDE.md` / `AGENTS.md`. The agent fills in each section's content using SPEC.md, project state, and the language conventions in `docs/`.
+Required sections, in order, for `CLAUDE.md` / `AGENTS.md`. The agent fills in each section's content using SPEC.md, project state, and the generated command surface.
 
 This file lists **which sections to include**. It does not provide content — that is the agent's job.
 
@@ -16,8 +16,8 @@ This file lists **which sections to include**. It does not provide content — t
   - ALWAYS add `Minimal Dependencies: Prefer the standard library over external ones.`
 
 3. **Core Commands**
-   - List every common operation as a `make ...` invocation. The Makefile is the source of truth — never quote a bare `go test ./...` or `npm test` here.
-   - At minimum: `build`, `test`, `test-single`, `lint`, `lint-fix`, `run` (drop the ones the Makefile does not expose).
+   - List every common operation through the generated command surface. For Makefile projects, use `make ...`; for `package.json` projects, use the detected package manager command such as `pnpm check` or `npm run check`.
+   - At minimum: `format`, `lint`, `check`, `test`, `coverage`, `build`, and `run` when exposed. Add `gen`, `race`, `test-e2e`, `test-mutation`, `test-mutation-pkg`, and `outdated` only when the command surface exposes them.
 
 4. **Architecture Overview**
    - Module-level responsibilities. One bullet per package or top-level directory, format: `path/: one-line responsibility`.
@@ -25,7 +25,7 @@ This file lists **which sections to include**. It does not provide content — t
 
 5. **Code Conventions**
    - 3–5 prescriptive bullets covering the highest-impact rules.
-   - Defer the full list to `docs/{language}-conventions.md` via a one-line link.
+   - Link to project-local convention docs only when they actually exist.
 
 6. **Testing**
    - Test framework, file naming rule, mocking approach, the single command to run before commit.
@@ -34,13 +34,13 @@ This file lists **which sections to include**. It does not provide content — t
    - Convert SPEC.md Constraints into "NEVER ..." rules, each paired with a recommended alternative.
 
 8. **References**
-   - Link to SPEC.md and to `docs/{language}-conventions.md`.
-   - Add other internal docs the agent should consult (only when they actually exist).
+   - Link to SPEC.md.
+   - Add other internal docs the agent should consult, including convention docs, only when they actually exist.
 
 ## Constraints
 
 - **English only**, regardless of conversation or SPEC.md language.
 - **Under 150 lines.** If you cannot fit, push detail into `docs/` references and link.
-- **Every Core Commands entry must back to a Makefile target.** If a target is missing, add it to the Makefile first.
+- **Every Core Commands entry must back to a Makefile target or `package.json` script.** If a command is missing, add it to the command surface first.
 - **Drop sections that do not apply** — empty sections are worse than no section.
 - **Be prescriptive, not explanatory** — "Wrap with `fmt.Errorf(\"verb-ing X: %w\", err)`" beats "Wrap errors appropriately".
