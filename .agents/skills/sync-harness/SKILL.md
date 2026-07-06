@@ -37,7 +37,7 @@ Cursor and OpenCode are never sources. If the user asks for `Cursor -> Codex` or
 
 ## Scope
 
-Sync all shared artifacts by default: every shared skill, all reviewer sub-agents, and the hook set. If the user names specific artifacts, limit the work to those. Paths are relative to the repo root:
+Sync all shared artifacts by default: every shared skill, all shared persona sub-agents, and the hook set. If the user names specific artifacts, limit the work to those. Paths are relative to the repo root:
 
 | Artifact | `claude/` | `codex/` | `cursor/` | `opencode/` |
 | --- | --- | --- | --- | --- |
@@ -74,7 +74,7 @@ Skills contain `SKILL.md` plus optional `references/` and `scripts/` subtrees.
 
 ### Sub-agents
 
-The reviewer personas are `security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, and `senior-generalist-reviewer`.
+The shared persona sub-agents are `security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`, and `planner`.
 
 - `Claude -> Codex`: Claude Markdown becomes Codex TOML.
 - `Codex -> Claude`: Codex TOML becomes Claude Markdown with YAML frontmatter, `tools:` where appropriate, and body instructions restored to Claude Code terms.
