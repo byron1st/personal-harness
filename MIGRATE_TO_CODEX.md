@@ -38,7 +38,7 @@ Claude Code는 subagent description과 문맥을 보고 자동 위임할 수 있
 Claude Code의 `Agent` tool, `subagent_type`, Markdown 기반 custom agent 파일은 Codex의 agent 모델과 다르다.
 
 - Codex 기본 agent는 `default`, `worker`, `explorer`를 기준으로 생각한다.
-- 구현/수정 작업은 보통 `worker`, 읽기 중심 조사나 리뷰는 보통 `explorer`에 맞춘다.
+- 구현/수정 작업은 보통 `worker`, 읽기 중심 조사나 리뷰는 보통 `explorer`에 맞춘다. (예외: `implement-dev`는 minimal-code 규율을 위해 custom `implementer` agent를 spawn하고, 없으면 built-in `worker`로 폴백한다.)
 - custom agent 정의 자체는 "Sub-agent migration"에서 다룬다. Skill 본문에서는 Claude persona agent 이름을 그대로 Codex agent type으로 쓰지 말고, 필요한 persona는 Codex agent prompt 안에 명시한다.
 - 별도 컨텍스트가 목적이면 self-contained prompt를 넘기고, parent conversation fork는 필요한 경우에만 사용한다.
 

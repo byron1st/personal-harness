@@ -34,7 +34,7 @@ The test: Every changed line should trace directly to the user's request.
 ## Common Development Rules
 
 - Always use Context7 for code generation, setup/configuration steps, or library/API documentation.
-- Check `Makefile` to find useful commands for verifying the code, generating mocks/database models/swagger documentation, testing the code, building the application, or listing outdated direct dependencies.
+- Check `Makefile` or `package.json` to find useful commands for verifying the code, generating mocks/database models/swagger documentation, testing the code, building the application, or listing outdated direct dependencies.
 - Use `rg` (ripgrep) instead of `grep` for code/codebase searches. Plain pipe-filter usage (e.g. `git status | grep modified`) is fine.
 - Use `fd` instead of `find` for file/code searches. Metadata-only queries (e.g. `find . -mtime ...`, `-size`, `-perm`) may still use `find`.
 - When writing Markdown documents, do not insert line breaks solely for readability; keep each paragraph or bullet as a single logical line unless the format requires line breaks.

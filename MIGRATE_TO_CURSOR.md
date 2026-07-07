@@ -30,7 +30,7 @@ Cursor는 Claude Code처럼 subagent와 plan mode를 기본 지원하지만, 이
 
 Cursor 내장 subagent는 `Explore`(읽기 중심 병렬 탐색), `Bash`, `Browser`다. 커스텀 subagent는 `.cursor/agents/`에 Markdown(YAML frontmatter)으로 정의하고, Task tool 또는 `/name`으로 호출하며, 한 턴에 여러 Task 호출로 병렬 실행한다.
 
-- Codex `worker`(구현/수정 위임) → 범용 **Cursor subagent를 Task tool로 디스패치**한다. 전용 에이전트 이름을 박지 말고, self-contained 프롬프트를 넘기고 요약만 반환받는다.
+- Codex `worker`(구현/수정 위임) → 범용 **Cursor subagent를 Task tool로 디스패치**한다. 전용 에이전트 이름을 박지 말고, self-contained 프롬프트를 넘기고 요약만 반환받는다. **예외**: `implement-dev`는 Codex의 custom `implementer` agent에 대응해 named **`implementer`** Cursor subagent를 Task tool로 디스패치하고, 없으면 범용 subagent로 폴백한다(정의는 "Sub-agent migration").
 - `review-code`의 네 persona 이름은 세 플랫폼에서 동일하게 쓴다: `security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`. "Codex custom agent" → "Cursor custom subagent (Task tool)"로 표현만 바꾼다. 병렬 dispatch는 "한 턴에 여러 Task 호출"로 적는다. 정의 자체는 "Sub-agent migration"에서 다룬다.
 - Codex `explorer` 폴백 → Cursor 내장 **`Explore`** subagent로 바꾸고, persona 지시는 프롬프트에 임베드한다.
 - subagent는 clean context이므로 필요한 입력을 프롬프트에 모두 담는다는 원칙은 유지한다.
