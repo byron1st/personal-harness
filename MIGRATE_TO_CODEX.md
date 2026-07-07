@@ -2,18 +2,13 @@
 
 이 문서는 **Claude Code → Codex** 마이그레이션 점검표다. 특정 스킬에 묶이지 않도록 작성하며, 새 스킬·서브에이전트·훅이 추가될 때도 같은 기준으로 검사한다.
 
-마이그레이션 토폴로지는 **Claude ↔ Codex**, 그리고 **Codex → Cursor**다. Personal 환경의 중심은 Claude Code이고 Work 환경의 중심은 Codex이므로, Claude Code와 Codex 변형은 양방향으로 공유할 수 있다. Cursor는 Work의 하위 변형이므로 Codex에서만 파생되며 Cursor를 소스로 쓰는 역방향은 지원하지 않는다. 이 문서의 소스는 Claude 변형(`skills/claude/`, `agents/claude/`, `hooks/claude/`)이고, 대상은 Codex 변형(`skills/codex/`, `agents/codex/`, `hooks/codex/`)이다. Codex → Claude Code 단계는 [MIGRATE_TO_CLAUDE.md](MIGRATE_TO_CLAUDE.md), Codex → Cursor 단계는 [MIGRATE_TO_CURSOR.md](MIGRATE_TO_CURSOR.md)를 참고한다.
+마이그레이션 토폴로지는 **Claude ↔ Codex**다. Personal 환경의 중심은 Claude Code이고 Work 환경의 중심은 Codex이므로, Claude Code와 Codex 변형은 양방향으로 공유할 수 있다. 이 문서의 소스는 Claude 변형(`skills/claude/`, `agents/claude/`, `hooks/claude/`)이고, 대상은 Codex 변형(`skills/codex/`, `agents/codex/`, `hooks/codex/`)이다. Codex → Claude Code 단계는 [MIGRATE_TO_CLAUDE.md](MIGRATE_TO_CLAUDE.md)를 참고한다.
 
 옮기는 대상은 크게 세 가지 — 스킬(`SKILL.md`), 서브에이전트(custom agent 정의 파일), 훅(hook 설정·스크립트) — 이고, 아래도 그 순서로 나눈다.
 
 ## Skill migration
 
 `skills/claude/<skill>`를 `skills/codex/<skill>`로 옮길 때의 규칙이다.
-
-### Preserve Work-only skill exceptions
-
-- `loki-log-search`는 Work-only 스킬이다. `skills/codex/loki-log-search`와 `skills/cursor/loki-log-search`에만 존재해야 하며, Claude Code/OpenCode 같은 personal 변형으로 만들지 않는다.
-- Claude → Codex 동기화 중 Claude 소스에 `loki-log-search`가 없더라도 Codex 대상에서 삭제하지 않는다. 이 스킬을 갱신할 때는 Codex를 소스로 삼아 [MIGRATE_TO_CURSOR.md](MIGRATE_TO_CURSOR.md)에 따라 Cursor로만 전파한다.
 
 ### Keep frontmatter descriptions short and trigger-focused
 
@@ -77,7 +72,7 @@ Claude Code Skill에는 `Read`, `Grep`, `Glob`, `Bash`, `Edit`, `Write`, `AskUse
 - Claude 소스에 대응 파일이 없어도 Codex 대상 스킬이 이미 `agents/openai.yaml`을 사용한다면 삭제하지 않는다.
 - 새 Codex 스킬에서 UI metadata가 필요하다고 판단한 경우에만 `agents/openai.yaml`을 생성한다. 기존 모든 스킬에 일괄 추가하지 않는다.
 - 생성/갱신 시 `SKILL.md`를 기준으로 `display_name`, `short_description`, `default_prompt`를 맞추고, `default_prompt`는 `$skill-name` 형식을 포함한다.
-- 이 파일은 Codex 대상 전용이다. Claude/Cursor로 다시 마이그레이션할 때는 대상 스킬에 복사하지 않는다.
+- 이 파일은 Codex 대상 전용이다. Claude로 다시 마이그레이션할 때는 대상 스킬에 복사하지 않는다.
 
 ## Sub-agent migration
 

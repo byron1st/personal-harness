@@ -1,18 +1,17 @@
 # personal-harness
 
-A harness of Agent Skills, global instructions, and install scripts for personal use. It supports four platforms — Claude Code, Codex, Cursor, and OpenCode — and migrates platform variants using the topology below.
+A harness of Agent Skills, global instructions, and install scripts for personal use. It supports three platforms — Claude Code, Codex, and OpenCode — and migrates platform variants using the topology below.
 
 - Claude ↔ Codex (bidirectional; Personal center is Claude Code, Work center is Codex)
-- Codex → Cursor (Work sub-variant; reverse direction not supported)
 - Claude → OpenCode (Personal sub-variant; reverse direction not supported)
 
-Per-stage conversion rules are defined in the root files `MIGRATE_TO_CODEX.md`, `MIGRATE_TO_CLAUDE.md`, `MIGRATE_TO_CURSOR.md`, and `MIGRATE_TO_OPENCODE.md`.
+Per-stage conversion rules are defined in the root files `MIGRATE_TO_CODEX.md`, `MIGRATE_TO_CLAUDE.md`, and `MIGRATE_TO_OPENCODE.md`.
 
 ## Folder Structure
 
-- `skills/` — Per-platform Agent Skills. Subdirectories (`claude/`, `codex/`, `cursor/`, `opencode/`) separate platform variants. Each skill lives in its own folder.
-- `agents/` — Custom sub-agent definitions. Split by platform format: `agents/claude/` (`.md`), `agents/codex/` (`.toml`), `agents/cursor/` (`.md`), `agents/opencode/` (`.md`). Holds persona agents that skills or the user delegate to, such as review, planning, and implementation.
-- `hooks/` — Per-platform hook definitions and execution scripts. `hooks/claude/` (`settings.json` snippet + `hooks/*.sh`), `hooks/codex/` (`hooks.json` + `hooks/*.sh`), `hooks/cursor/` (`hooks.json` + `hooks/*.sh`), `hooks/opencode/` (`personal-harness.js` JS plugin). Requires `rg`/`fd` to be installed.
+- `skills/` — Per-platform Agent Skills. Subdirectories (`claude/`, `codex/`, `opencode/`) separate platform variants. Each skill lives in its own folder.
+- `agents/` — Custom sub-agent definitions. Split by platform format: `agents/claude/` (`.md`), `agents/codex/` (`.toml`), `agents/opencode/` (`.md`). Holds persona agents that skills or the user delegate to, such as review, planning, and implementation.
+- `hooks/` — Per-platform hook definitions and execution scripts. `hooks/claude/` (`settings.json` snippet + `hooks/*.sh`), `hooks/codex/` (`hooks.json` + `hooks/*.sh`), `hooks/opencode/` (`personal-harness.js` JS plugin). Requires `rg`/`fd` to be installed.
 - `instructions/` — The `AGENTS.md` distribution source that defines global commands and development principles for Claude Code, Codex, and OpenCode.
 - `scripts/` — Distribution scripts that install and sync skills and global instructions across editors/agents (`apply-to-personal.sh`, `apply-to-work.sh`, `setup-ctx7.sh`).
 - `.agents/skills/` — Meta-skills for the harness itself (e.g., `sync-harness` for platform-variant synchronization).
@@ -44,11 +43,11 @@ Each skill under `skills/<platform>/` is managed in its own folder. Skills outsi
 - `application-research-sync`: Analyzes code changes and batch-updates Research files under `docs/agents/research`.
 - `learn-from-manual-edits`: Detects the user's manual edits on top of agent-written code, infers preferences, and records them as conventions in AGENTS.md/CLAUDE.md.
 - `find-docs`: Fetches official library/framework documentation via Context7 (`ctx7`).
-- `loki-log-search`: Queries Grafana Loki logs via `gcx api`. Work-only skill; exists only in `skills/codex/` and `skills/cursor/`.
+- `loki-log-search`: Queries Grafana Loki logs via `gcx api`.
 
 ## Agents
 
-Persona sub-agent definitions under `agents/<platform>/`. Formats differ by platform (Claude/Cursor/OpenCode: `.md`, Codex: `.toml`). Persona agents delegated to by skills:
+Persona sub-agent definitions under `agents/<platform>/`. Formats differ by platform (Claude/OpenCode: `.md`, Codex: `.toml`). Persona agents delegated to by skills:
 
 - `planner`: Planning persona that reviews implementation direction, boundaries, interfaces, sequencing, and risks.
 - `implementer`: Implementation persona that handles actual code/test/report edits in `implement-dev` Worker mode.
@@ -64,4 +63,4 @@ Hook definitions and scripts under `hooks/<platform>/`. Common shell hooks (`hoo
 - `auto-format.sh`: Runs the project Makefile's `fmt`/`format` target.
 - `doc-drift-reminder.sh`: Detects documentation sync drift from changed files and alerts.
 
-Platform-specific config files: Claude Code uses the `hooks` block in `settings.json`, Codex/Cursor use `hooks.json`, and OpenCode uses the `personal-harness.js` JS plugin. `jq`·`git`·`make`·`rg`·`fd`·`node` are required (see README.md Prerequisites for details).
+Platform-specific config files: Claude Code uses the `hooks` block in `settings.json`, Codex uses `hooks.json`, and OpenCode uses the `personal-harness.js` JS plugin. `jq`·`git`·`make`·`rg`·`fd`·`node` are required (see README.md Prerequisites for details).

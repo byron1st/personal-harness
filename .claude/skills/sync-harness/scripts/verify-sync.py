@@ -2,15 +2,13 @@
 """sync-harness verifier.
 
 Mechanizes the "Verify" checklists from MIGRATE_TO_CODEX.md and
-MIGRATE_TO_CURSOR.md so a migration can be checked without eyeballing:
+MIGRATE_TO_CLAUDE.md so a migration can be checked without eyeballing:
 
-  - tree parity across claude/ codex/ cursor/ (skills, agents, hooks)
-  - sub-agent frontmatter parses as YAML (the colon-space trap) and carries
-    readonly: true with name == filename
+  - tree parity across claude/ codex/ opencode/ (skills, agents, hooks)
+  - sub-agent frontmatter parses as YAML (the colon-space trap)
   - skill / agent `name` matches its directory or filename across variants
-  - residual sweep: leftover Codex / worker / explorer / sandbox-and-approval /
-    Claude-tool references in the Cursor (and a lighter pass on Codex) variants
-  - hooks.json valid JSON, Cursor has version:1 + relative ./hooks/ commands
+  - residual sweep: leftover Claude-only references in the Codex variants
+  - hooks.json valid JSON
   - bash -n on every hook script
 
 Exit code 0 = clean, 1 = at least one failure. Warnings never fail the run.
@@ -104,16 +102,13 @@ def read(path: Path) -> str:
 # ── checks ──────────────────────────────────────────────────────────────────
 def check_agents(root: Path) -> None:
     sec = "agents/tree-parity"
-    cl, cx, cu = root / "agents/claude", root / "agents/codex", root / "agents/cursor"
+    cl, cx = root / "agents/claude", root / "agents/codex"
     if not cl.is_dir():
         return
     claude = {p.stem for p in cl.glob("*.md")}
     codex = {p.stem for p in cx.glob("*.toml")}
-    cursor = {p.stem for p in cu.glob("*.md")}
     if claude != codex:
         fail(sec, f"claude(.md) vs codex(.toml) differ: only-claude={claude - codex} only-codex={codex - claude}")
-    if codex != cursor:
-        fail(sec, f"codex(.toml) vs cursor(.md) differ: only-codex={codex - cursor} only-cursor={cursor - codex}")
 
     for name in sorted(codex):
         toml = read(cx / f"{name}.toml")
@@ -124,18 +119,6 @@ def check_agents(root: Path) -> None:
         if m and m.group(1) != name:
             fail("agents/codex", f"{name}.toml name=\"{m.group(1)}\" != filename `{name}`")
 
-    for name in sorted(cursor):
-        data, err = load_frontmatter(cu / f"{name}.md")
-        if err:
-            fail("agents/cursor", f"{name}.md frontmatter: {err}")
-            continue
-        if str(data.get("name")) != name:
-            fail("agents/cursor", f"{name}.md name `{data.get('name')}` != filename `{name}`")
-        if data.get("readonly") not in (True, "true"):
-            fail("agents/cursor", f"{name}.md missing `readonly: true` (reviewers are read-only)")
-        if not data.get("description"):
-            fail("agents/cursor", f"{name}.md missing `description`")
-
 
 def skill_dirs(base: Path) -> set[str]:
     return {p.name for p in base.iterdir() if p.is_dir()} if base.is_dir() else set()
@@ -145,33 +128,19 @@ def subtree(base: Path) -> set[str]:
     return {str(p.relative_to(base)) for p in base.rglob("*") if p.is_file()} if base.is_dir() else set()
 
 
-# Work-only skills live in Codex/Cursor (Work variants) but not in Claude
-# (Personal). MIGRATE_TO_CODEX.md / MIGRATE_TO_CURSOR.md document this split.
-WORK_ONLY_SKILLS = {"loki-log-search"}
-
-
 def check_skills(root: Path) -> None:
-    cl, cx, cu = root / "skills/claude", root / "skills/codex", root / "skills/cursor"
+    cl, cx = root / "skills/claude", root / "skills/codex"
     if not cl.is_dir():
         return
-    sc, sx, su = skill_dirs(cl), skill_dirs(cx), skill_dirs(cu)
-    # Strip Work-only skills before comparing the shared tree; they are allowed
-    # to exist only in codex/cursor and must NOT appear in claude.
-    sc_shared = sc - WORK_ONLY_SKILLS
-    sx_shared = sx - WORK_ONLY_SKILLS
-    su_shared = su - WORK_ONLY_SKILLS
-    if not (sc_shared == sx_shared == su_shared):
-        fail("skills/tree-parity", f"skill sets differ: claude={sc} codex={sx} cursor={su}")
-    # Work-only skills must be present in codex+cursor and absent in claude.
-    for name in WORK_ONLY_SKILLS:
-        if name in sc:
-            fail("skills/tree-parity", f"Work-only skill `{name}` must not exist in claude/")
-        elif not (name in sx and name in su):
-            fail("skills/tree-parity", f"Work-only skill `{name}` missing from codex/cursor")
+    op = root / "skills/opencode"
+    sc, sx = skill_dirs(cl), skill_dirs(cx)
+    so = skill_dirs(op)
+    if not (sc == sx == so):
+        fail("skills/tree-parity", f"skill sets differ: claude={sc} codex={sx} opencode={so}")
 
-    for name in sorted(sc_shared & sx_shared & su_shared):
+    for name in sorted(sc & sx & so):
         # name frontmatter must match dir across all three variants
-        for plat, base in (("claude", cl), ("codex", cx), ("cursor", cu)):
+        for plat, base in (("claude", cl), ("codex", cx), ("opencode", op)):
             sk = base / name / "SKILL.md"
             if not sk.exists():
                 fail("skills/structure", f"{plat}/{name} missing SKILL.md")
@@ -183,50 +152,9 @@ def check_skills(root: Path) -> None:
                 fail(f"skills/{plat}", f"{name}/SKILL.md name `{data.get('name')}` != dir `{name}`")
         # references/ and scripts/ copy verbatim — trees must be identical
         for sub in ("references", "scripts"):
-            t = {plat: subtree(base / name / sub) for plat, base in (("claude", cl), ("codex", cx), ("cursor", cu))}
-            if not (t["claude"] == t["codex"] == t["cursor"]):
+            t = {plat: subtree(base / name / sub) for plat, base in (("claude", cl), ("codex", cx), ("opencode", op))}
+            if not (t["claude"] == t["codex"] == t["opencode"]):
                 fail("skills/subtree-parity", f"{name}/{sub} trees differ: {t}")
-
-
-# Cursor variants must be free of Codex-execution-model leftovers. Per-skill
-# allowlist mirrors the intentional exceptions named in MIGRATE_TO_CURSOR.md.
-CURSOR_FORBIDDEN = {
-    r"\bCodex\b": "Codex",
-    r"\bsandbox and approval\b": "sandbox and approval",
-    r"\bExitPlanMode\b": "ExitPlanMode",
-    r"\bsubagent_type\b": "subagent_type",
-    r"\bworker\b": "worker",
-    r"\bexplorer\b": "explorer",  # lowercase Codex agent; Cursor builtin is `Explore`
-}
-ALLOW = {  # skill name -> tokens that are intentional there
-    "setup-initial-repo": {"Codex"},
-    "spec-creator": {"worker"},
-    "implement-dev": {"worker"},  # Worker delegation role + worker-contract.md reference (cross-platform)
-}
-
-
-def check_cursor_residuals(root: Path) -> None:
-    cu_sk, cu_ag = root / "skills/cursor", root / "agents/cursor"
-    files = list(cu_sk.rglob("*.md")) if cu_sk.is_dir() else []
-    files += list(cu_ag.glob("*.md")) if cu_ag.is_dir() else []
-    for f in files:
-        skill_name = None
-        try:
-            rel = f.relative_to(cu_sk)
-            skill_name = rel.parts[0]
-        except ValueError:
-            pass
-        allowed = ALLOW.get(skill_name or "", set())
-        body = read(f)
-        for pat, label in CURSOR_FORBIDDEN.items():
-            if label in allowed:
-                continue
-            if re.search(pat, body):
-                fail("cursor/residual-sweep", f"{f.relative_to(root)} still contains `{label}`")
-        if ".tool_input.command" in body:
-            fail("cursor/residual-sweep", f"{f.relative_to(root)} uses Codex field `.tool_input.command`")
-        if re.search(r"\bMCP\b", body):
-            warn("cursor/residual-sweep", f"{f.relative_to(root)} mentions MCP (Cursor plan mode disables MCP — confirm intentional)")
 
 
 def check_codex_residuals(root: Path) -> None:
@@ -241,19 +169,12 @@ def check_codex_residuals(root: Path) -> None:
 def check_hooks(root: Path) -> None:
     cl = root / "hooks/claude/hooks"
     cx = root / "hooks/codex/hooks"
-    cu = root / "hooks/cursor/hooks"
     if not cl.is_dir():
         return
     s_cl = {p.name for p in cl.glob("*.sh")}
     s_cx = {p.name for p in cx.glob("*.sh")}
-    s_cu = {p.name for p in cu.glob("*.sh")}
     if s_cl != s_cx:
         fail("hooks/tree-parity", f"claude vs codex scripts differ: {s_cl ^ s_cx}")
-    extra = s_cu - s_cx
-    if not s_cx <= s_cu:
-        fail("hooks/tree-parity", f"cursor missing codex scripts: {s_cx - s_cu}")
-    if extra - {"doc-drift-flag.sh"}:
-        fail("hooks/tree-parity", f"cursor has unexpected extra scripts: {extra - {'doc-drift-flag.sh'}}")
 
     # Codex hooks.json: valid JSON, points at ~/.codex (not ~/.claude)
     cxj = root / "hooks/codex/hooks.json"
@@ -265,40 +186,19 @@ def check_hooks(root: Path) -> None:
         if "$HOME/.claude/" in read(cxj):
             fail("hooks/codex", "hooks.json still references $HOME/.claude/ (should be $HOME/.codex/)")
 
-    # Cursor hooks.json: version:1 + relative ./hooks/ commands
-    cuj = root / "hooks/cursor/hooks.json"
-    if cuj.exists():
-        try:
-            data = json.loads(read(cuj))
-        except Exception as e:
-            fail("hooks/cursor", f"hooks.json invalid JSON: {e}")
-            data = None
-        if isinstance(data, dict):
-            if data.get("version") != 1:
-                fail("hooks/cursor", 'hooks.json missing `"version": 1`')
-            for event, entries in (data.get("hooks") or {}).items():
-                for ent in entries:
-                    cmd = ent.get("command", "")
-                    if not cmd.startswith("./hooks/"):
-                        fail("hooks/cursor", f"{event} command not relative `./hooks/...`: {cmd}")
-
-    # bash -n on every hook script across all three variants
-    for base in (cl, cx, cu):
+    # bash -n on every hook script across both variants
+    for base in (cl, cx):
         for sh in sorted(base.glob("*.sh")):
             r = subprocess.run(["bash", "-n", str(sh)], capture_output=True, text=True)
             if r.returncode != 0:
                 fail("hooks/syntax", f"{sh.relative_to(root)} bash -n: {r.stderr.strip()}")
-    # Cursor scripts should use the Cursor input schema, not Codex's
-    for sh in (cu.glob("*.sh") if cu.is_dir() else []):
-        if ".tool_input.command" in read(sh):
-            fail("hooks/cursor", f"{sh.relative_to(root)} uses Codex field `.tool_input.command` (use `.command`)")
 
 
 def main() -> int:
     root = find_root(sys.argv)
     if not (root / "MIGRATE_TO_CODEX.md").exists():
         print(f"warning: {root} doesn't look like the harness root (no MIGRATE_TO_CODEX.md)", file=sys.stderr)
-    for fn in (check_agents, check_skills, check_cursor_residuals,
+    for fn in (check_agents, check_skills,
                check_codex_residuals, check_hooks):
         try:
             fn(root)

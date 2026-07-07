@@ -25,7 +25,7 @@ Pi에서도 단계별 작업 규약은 여전히 skill로 유지하는 것이 �
 
 ## Pi가 구조를 바꾸는 이유
 
-Codex, Claude Code, Cursor 하네스에서는 제품이 이미 제공하는 plan mode, hooks, subagents, permissions 같은 표면에 skill을 맞춘다. Pi는 의도적으로 작은 코어를 유지하고 extension, skills, prompt templates, packages로 워크플로우별 동작을 밀어낸다. 이 때문에 Pi 중심 하네스는 "문서와 복사 스크립트"보다 "상태 있는 TypeScript extension + 문서화된 skill protocol" 쪽이 자연스럽다.
+Codex, Claude Code 하네스에서는 제품이 이미 제공하는 plan mode, hooks, subagents, permissions 같은 표면에 skill을 맞춘다. Pi는 의도적으로 작은 코어를 유지하고 extension, skills, prompt templates, packages로 워크플로우별 동작을 밀어낸다. 이 때문에 Pi 중심 하네스는 "문서와 복사 스크립트"보다 "상태 있는 TypeScript extension + 문서화된 skill protocol" 쪽이 자연스럽다.
 
 Pi 코어만으로는 plan mode, MCP, subagent, permission popup, hook system이 기본 제공되지 않는다고 가정한다. 필요한 기능은 Pi extension 또는 Pi package로 제공한다.
 
@@ -458,13 +458,13 @@ Pi는 Codex 아래의 부차적 변형이 아니라 first-class variant가 되�
 ```text
 Codex -> Pi for host-neutral skill behavior
 Pi extension -> Pi-specific runtime behavior
-Pi -> Codex/Claude/Cursor only for reusable workflow insights, not for runtime features
+Pi -> Codex/Claude only for reusable workflow insights, not for runtime features
 ```
 
 나중에 추가할 문서는 다음과 같다.
 
-- `MIGRATE_TO_PI.md`: Codex/Claude/Cursor skill, agent, hook을 Pi로 변환하는 규칙.
-- `MIGRATE_FROM_PI.md`: Pi workflow concept 중 Codex/Claude/Cursor로 backport 가능한 것과 불가능한 것.
+- `MIGRATE_TO_PI.md`: Codex/Claude skill, agent, hook을 Pi로 변환하는 규칙.
+- `MIGRATE_FROM_PI.md`: Pi workflow concept 중 Codex/Claude로 backport 가능한 것과 불가능한 것.
 - `pi/package/README.md`: install, trust, settings, package contents, security model.
 
 ## 열린 설계 결정

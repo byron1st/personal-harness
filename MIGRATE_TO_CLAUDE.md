@@ -2,7 +2,7 @@
 
 이 문서는 **Codex → Claude Code** 마이그레이션 점검표다. 특정 스킬에 묶이지 않도록 작성하며, Work 중심인 Codex 변형의 변경을 Personal 중심인 Claude Code 변형으로 공유할 때 같은 기준으로 검사한다.
 
-마이그레이션 토폴로지는 **Claude ↔ Codex**, 그리고 **Codex → Cursor**다. Personal 환경의 중심은 Claude Code이고 Work 환경의 중심은 Codex이므로, Claude Code와 Codex 변형은 양방향으로 공유할 수 있다. Cursor는 Work의 하위 변형이므로 Codex에서만 파생되며 Cursor를 소스로 쓰는 역방향은 지원하지 않는다. 이 문서는 Codex 변형을 소스로 삼아 Claude Code 변형을 갱신하는 공식 경로다.
+마이그레이션 토폴로지는 **Claude ↔ Codex**다. Personal 환경의 중심은 Claude Code이고 Work 환경의 중심은 Codex이므로, Claude Code와 Codex 변형은 양방향으로 공유할 수 있다. 이 문서는 Codex 변형을 소스로 삼아 Claude Code 변형을 갱신하는 공식 경로다.
 
 이 문서의 소스는 Codex 변형(`skills/codex/`, `agents/codex/`, `hooks/codex/`)이고, 대상은 Claude Code 변형(`skills/claude/`, `agents/claude/`, `hooks/claude/`)이다. repo-scoped Codex skill인 `.agents/skills/<skill>`을 소스로 지정받은 경우에도 아래 Skill migration 규칙을 적용하되, 대상은 사용자가 지정한 Claude Code skill 위치(일반적으로 `.claude/skills/<skill>` 또는 `skills/claude/<skill>`)로 둔다.
 
@@ -11,11 +11,6 @@
 ## Skill migration
 
 `skills/codex/<skill>`를 `skills/claude/<skill>`로 옮길 때의 규칙이다.
-
-### Exclude Work-only skills
-
-- `loki-log-search`는 Work-only 스킬이다. Codex → Claude Code 동기화 대상에서 제외하며 `skills/claude/loki-log-search`를 만들지 않는다.
-- 이 스킬이 Codex에서 변경되면 personal 변형으로 가져오지 말고 [MIGRATE_TO_CURSOR.md](MIGRATE_TO_CURSOR.md)에 따라 Cursor로만 전파한다.
 
 ### Start from the Codex behavior, then restore Claude Code mechanics
 
@@ -173,6 +168,4 @@ Codex에서 MCP tool matcher를 쓰고 있었다면 Claude Code에서 같은 too
 
 - 이 문서는 Claude Code가 Personal 중심이고 Codex가 Work 중심이라는 ownership을 바꾸지 않는다. 양쪽 변형은 상호 공유 가능하지만, 어느 쪽을 소스로 삼을지는 사용자가 선택한 현재 작업 방향이 정한다.
 - 이 문서는 설치/배포를 수행하지 않는다. Claude Code 설치는 `scripts/apply-to-personal.sh`가 담당한다.
-- Codex → Cursor 동기화는 이 문서가 아니라 [MIGRATE_TO_CURSOR.md](MIGRATE_TO_CURSOR.md)를 따른다.
-- Cursor → Codex 또는 Cursor → Claude Code 역방향 동기화는 지원하지 않는다.
 - Codex 변형의 현재 동작이 Claude Code에 맞지 않으면 그대로 복사하지 말고, 사용자-facing 의미만 보존한 채 Claude Code 실행모델로 재작성한다.

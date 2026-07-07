@@ -2,7 +2,7 @@
 
 이 문서는 **Claude Code → OpenCode** 마이그레이션 점검표다. 특정 스킬에 묶이지 않도록 작성하며, 새 스킬·서브에이전트·훅이 추가될 때도 같은 기준으로 검사한다.
 
-마이그레이션 토폴로지는 **Claude ↔ Codex**, **Codex → Cursor**, 그리고 **Claude → OpenCode**다. Personal 환경의 중심은 Claude Code이고 OpenCode는 Personal의 하위 변형이므로, OpenCode는 Claude Code에서만 파생되며 OpenCode를 소스로 쓰는 역방향은 지원하지 않는다. Work 환경의 중심은 Codex이고 Cursor는 Work의 하위 변형이므로 Codex에서만 파생된다. Claude Code와 Codex 변형은 양방향으로 공유할 수 있다. 이 문서의 소스는 Claude 변형(`skills/claude/`, `agents/claude/`, `hooks/claude/`)이고, 대상은 OpenCode 변형(`skills/opencode/`, `agents/opencode/`, `hooks/opencode/`)이다. Claude → Codex 단계는 [MIGRATE_TO_CODEX.md](MIGRATE_TO_CODEX.md), Codex → Claude Code 단계는 [MIGRATE_TO_CLAUDE.md](MIGRATE_TO_CLAUDE.md), Codex → Cursor 단계는 [MIGRATE_TO_CURSOR.md](MIGRATE_TO_CURSOR.md)를 참고한다.
+마이그레이션 토폴로지는 **Claude ↔ Codex**, 그리고 **Claude → OpenCode**다. Personal 환경의 중심은 Claude Code이고 OpenCode는 Personal의 하위 변형이므로, OpenCode는 Claude Code에서만 파생되며 OpenCode를 소스로 쓰는 역방향은 지원하지 않는다. Work 환경의 중심은 Codex이고 Claude Code와 Codex 변형은 양방향으로 공유할 수 있다. 이 문서의 소스는 Claude 변형(`skills/claude/`, `agents/claude/`, `hooks/claude/`)이고, 대상은 OpenCode 변형(`skills/opencode/`, `agents/opencode/`, `hooks/opencode/`)이다. Claude → Codex 단계는 [MIGRATE_TO_CODEX.md](MIGRATE_TO_CODEX.md), Codex → Claude Code 단계는 [MIGRATE_TO_CLAUDE.md](MIGRATE_TO_CLAUDE.md)를 참고한다.
 
 OpenCode는 Claude Code 호환 모드를 기본 제공하여 `~/.claude/skills/`, `~/.claude/CLAUDE.md`, `~/.claude/agents/`를 fallback으로 읽을 수 있다. 하지만 이 harness는 플랫폼별 독립 변형을 유지하므로, Claude 호환 fallback에 의존하지 않고 `~/.config/opencode/` 아래에 OpenCode 전용 변형을 배포한다. 호환 모드는 마이그레이션 누락 시 안전망일 뿐, source of truth는 OpenCode 변형이다.
 
@@ -11,11 +11,6 @@ OpenCode는 Claude Code 호환 모드를 기본 제공하여 `~/.claude/skills/`
 ## Skill migration
 
 `skills/claude/<skill>`를 `skills/opencode/<skill>`로 옮길 때의 규칙이다.
-
-### Exclude Work-only skills
-
-- `loki-log-search`는 Work-only 스킬이다. OpenCode는 Personal 하위 변형이므로 `skills/opencode/loki-log-search`를 만들지 않는다.
-- Codex 쪽 변경 묶음에 `loki-log-search`가 포함되어 있으면 OpenCode로 직접 가져오지 말고, Work 경로인 Codex → Cursor로만 전파한다.
 
 ### Start from the Claude variant
 
@@ -191,7 +186,7 @@ OpenCode의 built-in agent 이름은 Claude Code와 다르다. skill 본문에�
 
 ## Hook migration
 
-`hooks/claude/`(shell-script hooks)를 OpenCode plugin으로 옮길 때의 규칙이다. OpenCode는 Claude Code·Codex·Cursor와 달리 shell-script hook이 아니라 **JS/TS plugin**으로 hook을 구현한다.
+`hooks/claude/`(shell-script hooks)를 OpenCode plugin으로 옮길 때의 규칙이다. OpenCode는 Claude Code·Codex와 달리 shell-script hook이 아니라 **JS/TS plugin**으로 hook을 구현한다.
 
 ### Convert Claude Code shell-script hooks to OpenCode plugin
 
@@ -316,7 +311,7 @@ Claude Code의 각 hook script를 OpenCode plugin function으로 매핑한다:
 
 - 이 문서는 Claude Code가 Personal 대표이고 OpenCode가 Personal 하위 변형이라는 ownership을 바꾸지 않는다. OpenCode는 Claude Code에서만 파생되며, OpenCode → Claude Code 역방향 동기화는 지원하지 않는다.
 - 이 문서는 설치/배포를 수행하지 않는다. OpenCode 설치는 `scripts/apply-to-personal.sh`가 담당해야 하며, `skills/opencode/`·`agents/opencode/`·`hooks/opencode/`를 각각 `~/.config/opencode/`의 `skills`·`agents`·`plugins`로 동기화한다. 배포 스크립트 수정은 별도 작업이다.
-- OpenCode → Codex 또는 OpenCode → Cursor 동기화는 지원하지 않는다. Work 환경의 변형은 Codex에서만 파생된다.
+- OpenCode → Codex 동기화는 지원하지 않는다. Work 환경의 변형은 Codex에서만 파생된다.
 - Codex 변형의 변경을 OpenCode로 직접 가져오지 않는다. Codex → Claude Code → OpenCode 경로를 따른다. 즉, Work의 변경은 먼저 Claude Code로 공유된 후 Claude Code에서 OpenCode로 파생된다.
 - OpenCode는 Claude Code 호환 모드로 `~/.claude/skills/`, `~/.claude/CLAUDE.md`, `~/.claude/agents/`를 fallback으로 읽을 수 있으나, 이 호환 모드에 의존하지 않고 독립 변형을 유지한다.
 - OpenCode 변형의 현재 동작이 Claude Code에 맞지 않으면 그대로 복사하지 말고, 사용자-facing 의미만 보존한 채 OpenCode 실행모델로 재작성한다.
