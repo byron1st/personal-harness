@@ -16,7 +16,6 @@ Per-stage conversion rules are defined in the root files `MIGRATE_TO_CODEX.md`, 
 - `scripts/` — Distribution scripts that install and sync skills and global instructions across editors/agents (`apply-to-personal.sh`, `apply-to-work.sh`, `setup-ctx7.sh`).
 - `.agents/skills/` — Meta-skills for the harness itself (e.g., `sync-harness` for platform-variant synchronization).
 - `references/` — Supplementary materials referenced by skills.
-- `pi/` — Harness design/architecture documents (e.g., `flow-workflow-architecture.md`).
 
 ## Core Development Process
 
