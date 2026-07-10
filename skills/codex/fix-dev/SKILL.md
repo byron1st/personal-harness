@@ -93,8 +93,8 @@ Append using exactly this shape. Heading and field labels in English; the prose 
 - **Root cause**: 무엇이 왜 잘못되어 있었는지 한 문장으로.
 - **Change**: 어떤 변경을 가했고 왜 그것이 가장 작은 올바른 수정인지 한 문장으로.
 - **Files changed**:
-  - `path/to/file1`
-  - `path/to/file2`
+  - `path/to/file1:line`
+  - `path/to/file2:line`
 - **Verification**: 실행한 명령과 결과 (예: `make lint` ✅, `make test` ✅, `make build` ✅).
 - **Notes**: 사용자가 알아야 할 후속/주변 사항. 없으면 줄 자체를 생략.
 ```
