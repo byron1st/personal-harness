@@ -84,7 +84,7 @@ Skills 실행에 필요한 환경변수 목록. 각 Agent 의 환경변수 설�
 - `scripts/apply-to-personal.sh`는 Claude Code와 OpenCode 설치 스크립트다. `skills/claude/` 디렉토리의 스킬을 `~/.claude/skills`로 복사하고, `instructions/AGENTS.md` 파일을 `~/.claude/CLAUDE.md`로 복사한다.
 - Claude Code 전용으로 `agents/claude/*`를 `~/.claude/agents/`로, `hooks/claude/hooks/*`를 `~/.claude/hooks/`로 동기화한다.
 - `hooks/claude/settings.json`의 `hooks` 블록을 `~/.claude/settings.json`에 `jq`로 머지한다. 사용자의 `permissions`/`model`/`env` 등 다른 설정은 보존되며, 대상 파일이 없으면 통째로 생성한다 (jq 필요).
-- OpenCode 전용으로 `skills/opencode/`를 `~/.config/opencode/skills/`로, `agents/opencode/*`를 `~/.config/opencode/agents/`로 동기화하고, `instructions/AGENTS.md`를 `~/.config/opencode/AGENTS.md`로 복사한다. `hooks/opencode/personal-harness.js`를 `~/.config/opencode/personal-harness.js`로 설치하며, `~/.config/opencode/opencode.json`에 plugin이 등록되어 있는지 확인한다.
+- OpenCode 전용으로 `skills/opencode/`를 `~/.config/opencode/skills/`로, `agents/opencode/*`를 `~/.config/opencode/agents/`로 동기화하고, `instructions/AGENTS.md`를 `~/.config/opencode/AGENTS.md`로 복사한다. `hooks/opencode/personal-harness.js`를 `~/.config/opencode/personal-harness.js`로 설치하며, `~/.config/opencode/opencode.jsonc`가 있으면 이를 우선 사용하고 없으면 `opencode.json`에 plugin을 등록한다.
 - `scripts/apply-to-work.sh`는 Codex 전용 설치 스크립트다. `skills/codex/` 디렉토리의 스킬을 `~/.agents/skills`로 복사하고, `instructions/AGENTS.md` 파일을 `~/.codex/AGENTS.md`로 복사한다.
 - Codex 전용으로 `~/.codex/agents/`를 정리한 뒤 `agents/codex/*.toml`을 동기화한다.
 - Codex 전용으로 `~/.codex/hooks/`를 정리한 뒤 `hooks/codex/hooks/*`를 동기화하고, `hooks/codex/hooks.json`을 `~/.codex/hooks.json`으로 복사한다.

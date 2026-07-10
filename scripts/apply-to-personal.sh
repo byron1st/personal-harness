@@ -24,7 +24,11 @@ OPENCODE_SKILLS_DIR="${OPENCODE_HOME}/skills"
 OPENCODE_AGENTS_DIR="${OPENCODE_HOME}/agents"
 OPENCODE_INSTRUCTIONS_FILE="${OPENCODE_HOME}/AGENTS.md"
 OPENCODE_PLUGIN_FILE="${OPENCODE_HOME}/personal-harness.js"
-OPENCODE_CONFIG_FILE="${OPENCODE_HOME}/opencode.json"
+if [[ -f "${OPENCODE_HOME}/opencode.jsonc" ]]; then
+  OPENCODE_CONFIG_FILE="${OPENCODE_HOME}/opencode.jsonc"
+else
+  OPENCODE_CONFIG_FILE="${OPENCODE_HOME}/opencode.json"
+fi
 
 mkdir -p "${SKILLS_DIR}" "${AGENTS_DIR}" "${HOOKS_DIR}" "${OPENCODE_SKILLS_DIR}" "${OPENCODE_AGENTS_DIR}"
 
@@ -106,7 +110,7 @@ if [[ -f "${OPENCODE_HOOKS_SOURCE_DIR}/personal-harness.js" ]]; then
 fi
 
 if [[ -f "${OPENCODE_CONFIG_FILE}" ]]; then
-  if jq -e 'any(.plugin[]; type == "array" and .[0] == "./personal-harness.js")' "${OPENCODE_CONFIG_FILE}" >/dev/null 2>&1; then
+  if jq -e 'any(.plugin[]; . == "./personal-harness.js")' "${OPENCODE_CONFIG_FILE}" >/dev/null 2>&1; then
     opencode_config_status="✓ plugin registered"
   else
     opencode_config_status="⚠ plugin not registered in opencode.json"
