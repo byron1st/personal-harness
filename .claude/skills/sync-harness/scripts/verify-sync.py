@@ -135,6 +135,7 @@ def check_skills(root: Path) -> None:
     op = root / "skills/opencode"
     sc, sx = skill_dirs(cl), skill_dirs(cx)
     so = skill_dirs(op)
+
     if not (sc == sx == so):
         fail("skills/tree-parity", f"skill sets differ: claude={sc} codex={sx} opencode={so}")
 

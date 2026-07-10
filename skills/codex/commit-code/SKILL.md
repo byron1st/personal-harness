@@ -47,4 +47,13 @@ DO NOT add "Co-Authored-By" in the commit message.
 
 ## Afterward
 
+### Documentation drift check
+
+After a successful commit, and before an optional push, perform a **read-only** documentation-drift check against the commit (for example, inspect `HEAD^..HEAD` with `git show` or `git diff`). Do not modify, stage, amend, or create any documentation files as part of this check.
+
+- Compare the committed code, configuration, commands, interfaces, and behavior with relevant repository documentation, including `AGENTS.md`, legacy `CLAUDE.md` when present, `README.md`, and affected documents under `docs/`.
+- If no update is needed, tell the user that the documentation-drift check found no required changes.
+- If an update appears necessary, tell the user that no files were changed and list each likely document with a concise description of the stale or missing content—for example, setup or execution commands, configuration/environment variables, public API or CLI behavior, architecture/flow descriptions, or developer instructions.
+- When the evidence is insufficient to determine whether a document is stale, label it as a manual-review candidate rather than claiming that it needs an update.
+
 If user clearly mentioned to push after the commit, push it to the origin. If not, DO NOT push it to any remote.

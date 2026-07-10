@@ -21,7 +21,7 @@
 | 도구 | 적용 범위 | 용도 | 설치 |
 | --- | --- | --- | --- |
 | `jq` | 전체(Claude/Codex shell hook + `apply-to-personal.sh`) | hook 입력 파싱, `settings.json` 머지, `loki-log-search`의 LogQL URL 인코딩 | `brew install jq` |
-| `git` | 전체 shell hook | 세션 컨텍스트 분류, git identity 검증, doc-drift 변경 파일 감지 | `brew install git` |
+| `git` | 전체 shell hook 및 `commit-code` | 세션 컨텍스트 분류, git identity 검증, 커밋 후 문서 드리프트 검사 | `brew install git` |
 | `make` | 전체 `auto-format` hook | 프로젝트 Makefile의 `fmt`/`format` 타겟 실행 | macOS: Xcode Command Line Tools, Linux: `build-essential` |
 | `rg` (ripgrep) | 전체 `enforce-rg` hook + AGENTS.md | 재귀 `grep` 대신 코드 검색 강제 | `brew install ripgrep` |
 | `fd` | 전체 `enforce-fd` hook + AGENTS.md | 파일명/경로 검색용 `find` 대체 강제 | `brew install fd` |

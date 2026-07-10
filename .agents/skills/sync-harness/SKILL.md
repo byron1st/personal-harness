@@ -76,7 +76,7 @@ Hooks migrate between Claude `settings.json` and Codex `hooks.json`.
 - `Claude -> Codex`: `settings.json` hooks block becomes `hooks.json`; `$HOME/.claude/...` becomes `$HOME/.codex/...`; file edit matchers use Codex-safe matcher names.
 - `Codex -> Claude`: `hooks.json` hooks block goes into `settings.json`; `$HOME/.codex/...` becomes `$HOME/.claude/...`; `apply_patch|Edit|Write` becomes `Edit|Write|MultiEdit`.
 - `Claude -> OpenCode`: convert the Claude shell-hook set into the OpenCode JS plugin according to `MIGRATE_TO_OPENCODE.md`; OpenCode does not use Claude/Codex shell-hook JSON.
-- doc-drift is a single stop hook on every platform (Codex/Claude `Stop`, OpenCode `session.idle`).
+- Documentation-drift checking is intentionally not a hook on any platform. Every platform's `commit-code` skill runs a read-only post-commit check and reports likely updates without editing files.
 
 ## Step 3 - Verify
 

@@ -40,16 +40,6 @@
           }
         ]
       }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/.codex/hooks/doc-drift-reminder.sh"
-          }
-        ]
-      }
     ]
   }
 }

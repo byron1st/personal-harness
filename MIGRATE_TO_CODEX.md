@@ -110,7 +110,8 @@ Claude Code hook 설정은 `settings.json`의 `hooks` 블록으로 배포할 수
 - `PreToolUse`에서 차단하려면 exit code `2`와 `stderr` 메시지를 사용하거나, JSON의 `permissionDecision: "deny"` / legacy `decision: "block"`을 사용한다.
 - `PostToolUse`는 이미 실행된 side effect를 되돌리지 않는다. 실패나 추가 지시를 Codex에 feedback으로 전달하는 용도로 사용한다.
 - `UserPromptSubmit`에서 context를 추가하려면 `hookSpecificOutput.additionalContext` JSON을 출력한다. Plain text도 developer context로 추가될 수 있지만, 구조화 JSON을 선호한다.
-- `Stop` hook은 plain text stdout이 유효하지 않다. 종료 시 continuation을 유도하려면 `{decision:"block",reason}` JSON(또는 exit code `2` + stderr에 continuation reason)을 출력한다. `.stop_hook_active`가 true면 무한 루프 방지로 반드시 통과시킨다.
+- `Stop` hook is plain text stdout이 유효하지 않다. 종료 시 continuation을 유도하려면 `{decision:"block",reason}` JSON(또는 exit code `2` + stderr에 continuation reason)을 출력한다. `.stop_hook_active`가 true면 무한 루프 방지로 반드시 통과시킨다.
+- 문서 드리프트 검사는 훅으로 옮기지 않는다. 모든 플랫폼의 `commit-code` skill이 커밋 후 변경 범위를 읽기 전용으로 검사하고, 필요한 문서와 업데이트 개요만 사용자에게 보고한다.
 - Codex hook은 guardrail이지 완전한 보안 경계가 아니다. 공식 문서상 `PreToolUse`는 모든 shell 경로를 아직 intercept하지 못하므로, 중요한 정책은 전역 instructions와 별도 검증 명령에도 남긴다.
 - 배포 스크립트가 personal harness를 Codex hooks의 source of truth로 관리한다면 `~/.codex/hooks/`를 먼저 정리한 뒤 `hooks/codex/hooks/*`만 복사하고, `hooks/codex/hooks.json`은 `~/.codex/hooks.json`으로 덮어쓴다.
 - 설치 후 Codex CLI/App에서 새 command hooks를 trust해야 할 수 있다. Codex가 경고하면 `/hooks`에서 검토한다.

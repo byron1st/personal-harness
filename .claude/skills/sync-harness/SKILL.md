@@ -1,37 +1,37 @@
 ---
 name: sync-harness
-description: Propagate this personal-harness repo's platform variants across the supported migration topology — Claude ↔ Codex and Claude → OpenCode. Use whenever a skill, sub-agent, or hook needs another platform variant regenerated, including Personal→Work, Work→Personal, Personal→OpenCode, or all-downstream sync. OpenCode is downstream only; never sync from it back to Claude or Codex.
+description: Sync this personal-harness repo's platform variants across Claude and Codex, and from Claude to OpenCode. Use when the user asks to regenerate skills, agents, or hooks for another platform variant in this repo.
 ---
 
 # Sync Harness
 
-This repo keeps three platform variants of every skill, sub-agent, and hook: `claude/`, `codex/`, and `opencode/`. The supported migration topology is **Claude ↔ Codex** and **Claude → OpenCode**. Claude Code is the center of Personal, Codex is the center of Work, and OpenCode is a Personal subvariant derived only from Claude Code.
+This repo keeps three platform variants of every skill, sub-agent, and hook: `claude/`, `codex/`, and `opencode/`. The supported migration topology is `Claude <-> Codex` and `Claude -> OpenCode`. Claude Code is the center of Personal, Codex is the center of Work, and OpenCode is a Personal subvariant derived only from Claude Code.
 
 Your job is to regenerate target variant(s) so they match the chosen source variant.
 
-The transform rules are **not** in this skill. They live in three checklists at the repo root that the user maintains:
+The transform rules are not in this skill. They live in three checklists at the repo root:
 
-- `MIGRATE_TO_CODEX.md` — Claude → Codex
-- `MIGRATE_TO_CLAUDE.md` — Codex → Claude Code
-- `MIGRATE_TO_OPENCODE.md` — Claude Code → OpenCode
+- `MIGRATE_TO_CODEX.md` - Claude -> Codex
+- `MIGRATE_TO_CLAUDE.md` - Codex -> Claude
+- `MIGRATE_TO_OPENCODE.md` - Claude -> OpenCode
 
-These are the living authority. Read the sections relevant to what you're migrating and apply them faithfully — prefer them over anything summarized here, because they get updated and this skill must not drift from them.
+Read the sections relevant to what you are migrating and apply them faithfully. Prefer those documents over this summary because they are the living authority.
 
-## Step 1 — Get the migration direction (ask explicitly)
+## Step 1 - Get the migration direction
 
-The direction is an explicit decision the user makes — don't infer it from git history or anything else. If the user's request already names it, use that direction ("sync work back to personal" → Codex → Claude; "sync personal to opencode" → Claude → OpenCode; "sync personal changes to work" → Claude → Codex). Otherwise **ask the user with AskUserQuestion before touching any files.** Supported directions:
+The direction is an explicit user decision. If the user's request already names it, use that direction. Otherwise ask the user before touching files. Supported directions:
 
-- **Claude → Codex** — Personal to Work. Claude is the source; regenerate the Codex variant.
-- **Claude → OpenCode** — Personal to Personal subvariant. Claude is the source; regenerate the OpenCode variant.
-- **Claude → Codex + OpenCode** — Personal updates shared to Work and OpenCode. Regenerate Codex and OpenCode independently from Claude.
-- **Codex → Claude** — Work to Personal. Codex is the source; regenerate the Claude Code variant.
-- **Codex → Claude → OpenCode** — Work updates shared to Personal and OpenCode. Regenerate Claude from Codex, then OpenCode from the refreshed Claude variant.
+- `Claude -> Codex` - Personal to Work.
+- `Claude -> OpenCode` - Personal to Personal subvariant.
+- `Claude -> Codex + OpenCode` - Personal updates shared to Work and OpenCode.
+- `Codex -> Claude` - Work to Personal.
+- `Codex -> Claude -> OpenCode` - Work updates shared to Personal, then OpenCode from the refreshed Claude variant.
 
-OpenCode is never a source. If the user asks for a reverse sync from OpenCode, explain that OpenCode is Personal's downstream variant and offer `Claude → OpenCode` after refreshing Claude from the intended source if needed.
+OpenCode is never a source. If the user asks for `OpenCode -> Claude` or `OpenCode -> Codex`, explain that OpenCode is Personal's downstream variant and offer `Claude -> OpenCode` after refreshing Claude from the intended source if needed.
 
-### What to migrate (scope)
+## Scope
 
-Once the direction is set, sync **all** artifacts by default — every skill, all four reviewer sub-agents, and the hook set — so nothing target-side is left stale. If the user named specific artifacts ("just the review-code skill", "only the hooks"), limit to those. Paths, relative to the repo root:
+Sync all shared artifacts by default: every shared skill, all shared persona sub-agents, and the hook set. If the user names specific artifacts, limit the work to those. Paths are relative to the repo root:
 
 | Artifact | `claude/` | `codex/` | `opencode/` |
 | --- | --- | --- | --- |
@@ -39,64 +39,62 @@ Once the direction is set, sync **all** artifacts by default — every skill, al
 | sub-agent `<name>` | `agents/claude/<name>.md` | `agents/codex/<name>.toml` | `agents/opencode/<name>.md` |
 | hooks | `hooks/claude/` | `hooks/codex/` | `hooks/opencode/` |
 
-For Claude → Codex, `claude/` is the source and `codex/` is the target. For Claude → OpenCode, `claude/` is the source and `opencode/` is the target. For Codex → Claude, `codex/` is the source and `claude/` is the target. For Codex → Claude → OpenCode, regenerate Claude from Codex first, then derive OpenCode from that refreshed Claude variant.
+For `Claude -> Codex`, `claude/` is the source and `codex/` is the target. For `Codex -> Claude`, `codex/` is the source and `claude/` is the target. For `Claude -> OpenCode`, `claude/` is the source and `opencode/` is the target. Composite directions apply those hops in order without using OpenCode as an intermediate source, except that a freshly regenerated Claude target becomes the source for a following `Claude -> OpenCode` hop.
 
 ## Why OpenCode is target-only
 
-OpenCode variants are Personal subvariants derived from **Claude Code**, not from Codex — the OpenCode skill, subagent, and hook variants restore OpenCode's Task tool, permission, Plan/Build mode, and JS plugin model from the Claude variant. So when a Codex change needs OpenCode, regenerate Claude first, then derive OpenCode from the refreshed Claude variant. When a Claude change needs OpenCode, derive OpenCode directly from Claude.
+OpenCode variants are Personal subvariants derived from Claude Code, not from Codex. When a Codex change needs OpenCode, regenerate Claude first, then derive OpenCode from the refreshed Claude variant. When a Claude change needs OpenCode, derive OpenCode directly from Claude.
 
-## Step 2 — Migrate, per artifact
+## Step 2 - Migrate per artifact
 
-Read the relevant section of each MIGRATE doc and apply it. The docs are organized by artifact type (`## Skill migration`, `## Sub-agent migration`, `## Hook migration`). For composite directions, apply each hop in order and keep the chosen source variant read-only.
-
-Here is the structural shape of each transform so you know what you're producing. **The detailed rules — field mappings, what to strip, the gotchas — are in the MIGRATE docs; read them.**
+Read the relevant section of each migration document and apply it. The docs are organized by artifact type: `## Skill migration`, `## Sub-agent migration`, and `## Hook migration`.
 
 ### Skills
 
-`skills/<platform>/<name>/SKILL.md` plus a `references/` and/or `scripts/` subtree.
+Skills contain `SKILL.md` plus optional `references/` and `scripts/` subtrees.
 
-- **`references/` and `scripts/` copy verbatim** across platforms when they are host-neutral. Only `SKILL.md` (frontmatter + body) transforms.
-- Claude → Codex: shorten the `description` to a trigger-focused sentence or two; gate sub-agent use behind explicit user request when Codex requires it; replace Claude tool names (`Agent`/`subagent_type`, `Read`/`Grep`/`AskUserQuestion`, `ExitPlanMode`) with Codex wording; map persona agents to Codex agent concepts.
-- Codex → Claude: preserve Codex's user-facing behavior while restoring Claude Code mechanics such as `Agent` tool dispatch, `subagent_type`, richer Claude descriptions when useful, `AskUserQuestion`, `ExitPlanMode`, and Claude Code permission/tool assumptions.
-- Claude → OpenCode: preserve Claude's user-facing behavior while replacing Claude Code tool names with OpenCode-safe wording; map `Agent` tool dispatch to OpenCode's Task tool and `subagent_type: general`; convert plan-mode instructions to OpenCode Plan/Build mode; keep OpenCode discovery and frontmatter constraints in view.
-- **Host-neutral skills are near-identical copies.** If a skill's body has no delegation, no plan-mode, and no platform terms, don't manufacture differences.
+- `references/` and `scripts/` copy verbatim across platforms when they are host-neutral. Only `SKILL.md` transforms.
+- `Claude -> Codex`: shorten descriptions, gate sub-agent use behind explicit user request when Codex requires it, replace Claude-specific tool names with Codex-safe wording, and map Claude persona agent wording to Codex agent concepts.
+- `Codex -> Claude`: preserve Codex's user-facing behavior while restoring Claude Code mechanics such as `Agent` tool dispatch, `subagent_type`, richer Claude descriptions when useful, `AskUserQuestion`, and `ExitPlanMode`.
+- `Claude -> OpenCode`: apply the wording and execution-model changes in `MIGRATE_TO_OPENCODE.md`; replace Claude Code tool names with OpenCode-safe wording, map `Agent` tool dispatch to OpenCode's Task tool, and convert plan-mode instructions to OpenCode Plan/Build mode.
+- Host-neutral skills should stay near-identical. Do not manufacture platform differences when the body has no delegation, plan-mode, or platform-specific terms.
 
 ### Sub-agents
 
-The four reviewer personas (`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`).
+The shared persona sub-agents are `security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`, and `planner`.
 
-- Claude → Codex: Claude `*.md` (YAML frontmatter + body) → Codex `*.toml` (`name`, `description`, `sandbox_mode`, `developer_instructions = """..."""`).
-- Codex → Claude: Codex `*.toml` → Claude `*.md` (YAML frontmatter + body), restoring Claude Code `tools:` allowlists and richer delegation descriptions where useful.
-- Claude → OpenCode: Claude `*.md` → OpenCode `*.md` (YAML frontmatter + body), replacing Claude `tools:` allowlists with OpenCode `permission:` blocks, adding `mode: subagent` where required, and mapping `subagent_type: general-purpose` to OpenCode `general`.
-- **YAML colon trap:** in Claude or OpenCode Markdown frontmatter, any `description` value containing `: ` (colon-space) must be quoted, or the frontmatter can fail to parse.
-- `name` must equal the filename and the name the skill body dispatches by. Keep all supported variants on the same hyphenated name.
+- `Claude -> Codex`: Claude Markdown becomes Codex TOML.
+- `Codex -> Claude`: Codex TOML becomes Claude Markdown with YAML frontmatter, `tools:` where appropriate, and body instructions restored to Claude Code terms.
+- `Claude -> OpenCode`: Claude Markdown becomes OpenCode Markdown; use OpenCode frontmatter and `permission:` blocks, not Claude `tools:` allowlists.
+- Quote YAML frontmatter descriptions that contain `: ` so frontmatter parses correctly.
+- Keep `name` equal to the filename and to the name used by skill bodies.
 
 ### Hooks
 
-Hooks move between Claude `settings.json` (`hooks` block) and Codex `hooks.json`. Scripts live under `hooks/<platform>/hooks/`.
+Hooks migrate between Claude `settings.json` and Codex `hooks.json`.
 
-- Claude → Codex: `settings.json` hooks block → `hooks.json`; path `$HOME/.claude/...` → `$HOME/.codex/...`; matcher `Edit|Write|MultiEdit` → `apply_patch|Edit|Write`.
-- Codex → Claude: `hooks.json` hooks block → `settings.json`; path `$HOME/.codex/...` → `$HOME/.claude/...`; matcher `apply_patch|Edit|Write` → `Edit|Write|MultiEdit`.
-- Claude → OpenCode: shell hooks become the OpenCode JS plugin (`hooks/opencode/personal-harness.js`) rather than another shell-hook JSON file. Map Claude `PreToolUse`/`PostToolUse`/`Stop` to OpenCode plugin events per `MIGRATE_TO_OPENCODE.md`.
-- **doc-drift is a single `Stop`/`session.idle` hook on every platform.** Codex/Claude use `stop_hook_active` + `{decision:"block",reason}`; OpenCode uses the `session.idle` event + `client.session.prompt` follow-up with a module-level `Set` for loop guarding.
+- `Claude -> Codex`: `settings.json` hooks block becomes `hooks.json`; `$HOME/.claude/...` becomes `$HOME/.codex/...`; file edit matchers use Codex-safe matcher names.
+- `Codex -> Claude`: `hooks.json` hooks block goes into `settings.json`; `$HOME/.codex/...` becomes `$HOME/.claude/...`; `apply_patch|Edit|Write` becomes `Edit|Write|MultiEdit`.
+- `Claude -> OpenCode`: convert the Claude shell-hook set into the OpenCode JS plugin according to `MIGRATE_TO_OPENCODE.md`; OpenCode does not use Claude/Codex shell-hook JSON.
+- Documentation-drift checking is intentionally not a hook on any platform. Every platform's `commit-code` skill runs a read-only post-commit check and reports likely updates without editing files.
 
-## Step 3 — Verify
+## Step 3 - Verify
 
 After migrating, run the bundled checker from the repo root:
 
 ```bash
-python3 .claude/skills/sync-harness/scripts/verify-sync.py
+python3 .agents/skills/sync-harness/scripts/verify-sync.py
 ```
 
-It mechanizes the Verify checklists from the MIGRATE docs where possible for the Claude/Codex variants: tree parity, sub-agent frontmatter actually parsing as YAML, skill/agent `name` matching its directory or filename, the residual sweep for leftover Claude execution-model terms in Codex variants, `hooks.json` shape, and `bash -n` on every hook script. It exits non-zero and prints what failed.
+It checks tree parity, frontmatter parsing, skill and agent names, residual platform-specific terms, hook JSON shape, and `bash -n` for hook scripts. It exits non-zero when failures remain.
 
-The script catches mechanical regressions. You still own the judgment calls: read your regenerated files and confirm the meaning survived the transform. Codex → Claude and Claude → OpenCode especially require manual review because restoring or translating platform tool names, permission models, hook/plugin mechanics, plan-mode mechanics, and subagent dispatch policy is not fully mechanical. When the checker flags something, fix the file and re-run until it's clean. For OpenCode changes, manually verify the relevant `MIGRATE_TO_OPENCODE.md` checklist because OpenCode uses a different plugin and permission model.
+The script catches mechanical regressions for the Claude/Codex variants. You still need to read the regenerated files and confirm the meaning survived the transform, especially for `Codex -> Claude` and `Claude -> OpenCode` because platform-specific tool, permission, hook, and plan-mode restoration requires judgment. If the checker flags something, fix the file and rerun until it is clean. For OpenCode changes, also manually verify the relevant `MIGRATE_TO_OPENCODE.md` checklist because OpenCode uses a different plugin and permission model.
 
 ## Boundaries
 
-- **Never write to the source variant of the chosen direction.** For Claude-sourced directions, `claude/` is read-only. For Codex-sourced directions, `codex/` is read-only; in a following Claude → OpenCode hop, use the freshly regenerated Claude variant as the source for OpenCode.
-- **Claude and Codex are mutually shareable sources.** Personal centers on Claude Code; Work centers on Codex.
-- **OpenCode is target-only.** Never propagate OpenCode → Claude or OpenCode → Codex.
-- **Don't deploy.** Installing into `~/.claude` / `~/.config/opencode` is `scripts/apply-to-personal.sh`'s job, and installing into `~/.codex` is `scripts/apply-to-work.sh`'s job. Leave your changes in the working tree for the user to review.
-- **Don't commit** unless the user asks. Migration produces a reviewable diff; let them look before it lands.
-- If a MIGRATE doc and this skill's summary ever disagree, the MIGRATE doc wins — and mention the drift so the user can reconcile it.
+- Never write to the source variant of the chosen direction.
+- Claude and Codex can be sources for each other; OpenCode is target-only.
+- Never propagate from OpenCode to Claude or Codex.
+- Do not deploy; `scripts/apply-to-personal.sh` handles Claude Code and OpenCode installation, and `scripts/apply-to-work.sh` handles Codex installation.
+- Do not commit unless the user asks.
+- If a migration document and this skill disagree, the migration document wins; mention the drift so the user can reconcile it.

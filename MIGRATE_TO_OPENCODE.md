@@ -195,7 +195,8 @@ Claude Code hook은 `settings.json`의 `hooks` 블록과 `hooks/*.sh` 스크립�
 - Claude Code 소스: `hooks/claude/settings.json` + `hooks/claude/hooks/*.sh`
 - OpenCode 대상: `hooks/opencode/<plugin-name>.js` (단일 JS 파일로 통합)
 - 설치 대상은 `~/.config/opencode/plugins/<plugin-name>.js`다.
-- personal harness에서는 Claude Code의 hook script(`session-context.sh`, `git-identity-guard.sh`, `enforce-rg.sh`, `enforce-fd.sh`, `auto-format.sh`, `doc-drift-reminder.sh`)를 **하나의 plugin 파일**로 통합한다. OpenCode plugin은 이벤트별 handler를 객체로 반환하므로, 여러 hook을 한 파일에서 처리하는 것이 자연스럽다.
+- personal harness에서는 Claude Code의 hook script(`session-context.sh`, `git-identity-guard.sh`, `enforce-rg.sh`, `enforce-fd.sh`, `auto-format.sh`)를 **하나의 plugin 파일**로 통합한다. OpenCode plugin은 이벤트별 handler를 객체로 반환하므로, 여러 hook을 한 파일에서 처리하는 것이 자연스럽다.
+- 문서 드리프트 검사는 hook/plugin으로 구현하지 않는다. 모든 플랫폼의 `commit-code` skill이 커밋 후 변경 범위를 읽기 전용으로 검사하고, 필요한 문서와 업데이트 개요만 사용자에게 보고한다.
 - plugin 설정(`gitIdentity` 등)은 `opencode.json`의 `plugin` 배열에서 plugin 경로와 함께 옵션 객체로 전달한다.
 
 ### Event mapping
@@ -207,11 +208,11 @@ Claude Code의 hook 이벤트를 OpenCode plugin 이벤트로 매핑한다:
 | `SessionStart` | `event` (filter `event.type === "session.created"`) | work/personal session context: `client.session.prompt`로 주입 |
 | `PreToolUse` matcher `Bash` | `tool.execute.before` (filter `input.tool === "bash"`) | 명령 검사·차단 |
 | `PostToolUse` matcher `Edit\|Write\|MultiEdit` | `tool.execute.after` (filter `["edit","write","apply_patch"].includes(input.tool)`) | auto-format |
-| `Stop` | `event` (filter `event.type === "session.idle"`) | doc-drift reminder: `client.session.prompt`로 follow-up 주입 |
+
 
 - `tool.execute.before` handler는 `(input, output)`를 받는다. `input.tool`로 도구를 식별하고, `output.args`에서 명령/인자를 읽는다. 차단은 `throw new Error(message)`로 한다. Claude Code의 `exit 2 + stderr`와 동일한 효과다.
 - `tool.execute.after` handler는 `(input)`을 받는다. `input.tool`과 `input.args`에서 파일 경로·cwd를 얻는다. side effect(auto-format)를 수행하고, 실패 시 `throw new Error`로 agent에 feedback을 전달한다. `PostToolUse`와 달리 이미 실행된 side effect를 되돌리지 않는다.
-- `event` handler는 `({ event })`를 받는다. `event.type === "session.idle"`일 때 `event.properties.sessionID`로 세션을 식별한다. OpenCode는 Claude Code의 `Stop` `{decision:"block",reason}`에 해당하는 차단-후-재개 API가 없으므로, 대신 `client.session.prompt({ path:{id}, body:{parts:[{type:"text",text:reason}]} })`로 follow-up user message를 직접 주입해 에이전트를 재개시킨다. 무한 루프 방지는 모듈 수준 `Set`에 sessionID를 기록해 1회만 발화하는 것으로 `stop_hook_active`를 대체한다.
+
 - `session.created`도 `event` handler에서 처리한다. `session-context.sh`의 work/personal 판별은 `repoContext()`로 옮기고, `client.session.prompt`로 세션 컨텍스트를 한 번 주입한다.
 
 ### Plugin structure
@@ -241,16 +242,13 @@ export const PersonalHarness = async ({ directory, worktree, client }, options =
     event: async ({ event }) => {
       if (event.type === "session.created") {
         await announceSessionContext(client, fallbackCwd, gitIdentity, event.properties?.sessionID)
-        return
       }
-      if (event.type !== "session.idle") return
-      await maybeRemindDocDrift(client, fallbackCwd, event.properties?.sessionID)
     },
   }
 }
 ```
 
-- plugin function의 첫 인자 `ctx`는 `directory`, `worktree`, `project`, `client`, `$`(Bun shell)를 제공한다. cwd fallback은 `worktree || directory`를 사용한다. doc-drift reminder가 `client.session.prompt`로 follow-up을 주입하므로 `client`를 반드시 destructure한다.
+- plugin function의 첫 인자 `ctx`는 `directory`, `worktree`, `project`, `client`, `$`(Bun shell)를 제공한다. cwd fallback은 `worktree || directory`를 사용한다. session context를 `client.session.prompt`로 주입하므로 `client`를 반드시 destructure한다.
 - plugin function의 두 번째 인자 `options`는 `opencode.json`의 `plugin` 배열에서 전달한 옵션이다. `gitIdentity` 설정을 여기서 받는다.
 - plugin function은 hook handler 객체를 반환한다. handler key는 이벤트명(`tool.execute.before`, `tool.execute.after`, `event` 등)이다.
 
@@ -275,8 +273,7 @@ plugin은 `opencode.json`의 `plugin` 배열에 경로와 옵션을 함께 등�
 - Claude Code hook script는 stdin JSON → exit code + stdout/stderr로 결과를 전달한다. OpenCode plugin handler는 `(input, output)` 객체를 직접 조작하며, `throw new Error`로 차단한다.
 - Claude Code의 `.tool_input.command`는 OpenCode에서 `output.args.command`(또는 `output.args.cmd`)로 접근한다. `tool.execute.before` handler에서 `output.args`를 읽는다.
 - Claude Code의 `.cwd`는 OpenCode에서 `output.args.cwd`(또는 `output.args.directory`)로 접근한다. `tool.execute.after`에서는 `input.args.cwd`를 사용한다. 필드가 없을 수 있으므로 `fallbackCwd`(`worktree || directory`)로 fallback한다.
-- Claude Code의 `Stop` 훅은 `.stop_hook_active` 가드 + `{decision:"block",reason}`로 에이전트를 재개한다. OpenCode에는 동일한 차단-후-재개 API가 없으므로, `session.idle` 이벤트에서 `client.session.prompt`로 follow-up user message를 직접 보내 에이전트를 재개시킨다. 무한 루프 방지는 모듈 수준 `Set`에 sessionID를 기록해 1회만 발화하는 것으로 `stop_hook_active`를 대체한다.
-- 차단 메시지는 Claude Code에서 `stderr + exit 2`를 썼지만, OpenCode에서는 `throw new Error(message)`를 쓴다. 에러 메시지가 agent에게 전달된다. doc-drift reminder는 에러가 아닌 follow-up prompt이므로 `throw` 대신 `client.session.prompt`를 사용한다.
+- 차단 메시지는 Claude Code에서 `stderr + exit 2`를 썼지만, OpenCode에서는 `throw new Error(message)`를 쓴다. 에러 메시지가 agent에게 전달된다.
 - context 주입은 Claude Code에서 `hookSpecificOutput.additionalContext` JSON을 출력했지만, OpenCode에서는 `client.session.prompt`의 `body.parts`에 text part를 넣어 주입한다.
 
 ### Hook script to plugin function mapping
@@ -290,11 +287,10 @@ Claude Code의 각 hook script를 OpenCode plugin function으로 매핑한다:
 | `enforce-rg.sh` | `guardSearchCommands(command)` (rg 부분) | `tool.execute.before` |
 | `enforce-fd.sh` | `guardSearchCommands(command)` (fd 부분) | `tool.execute.before` |
 | `auto-format.sh` | `runAutoFormat(cwd)` | `tool.execute.after` |
-| `doc-drift-reminder.sh` | `maybeRemindDocDrift(client, cwd, sessionID)` | `event` (`session.idle`) |
 
 - Claude Code의 3개 PreToolUse hook script(`git-identity-guard.sh`, `enforce-rg.sh`, `enforce-fd.sh`)는 OpenCode에서 `tool.execute.before` handler 하나로 통합된다. `input.tool === "bash"`인 경우에만 `guardSearchCommands`와 `guardGitIdentity`를 순차 호출한다.
 - Claude Code의 `auto-format.sh`는 `tool.execute.after` handler에서 `runAutoFormat` 함수로 옮긴다. Makefile을 찾아 `fmt`/`format` target을 실행하는 로직은 동일하다. `spawnSync` 대신 Bun의 `$` shell API를 쓸 수도 있지만, `node:child_process`의 `spawnSync`를 써도 무방하다.
-- Claude Code의 `doc-drift-reminder.sh`(`Stop` 훅)는 `event` handler(`session.idle`)에서 `maybeRemindDocDrift` 함수로 옮긴다. `git diff --name-only HEAD`에서 `.md`를 제외한 변경 파일이 있으면, `client.session.prompt`로 doc-drift reminder text를 follow-up user message로 주입해 에이전트를 재개시킨다. 1회 발화 보장은 모듈 수준 `Set`으로 한다.
+
 
 ### Verify
 
@@ -303,9 +299,9 @@ Claude Code의 각 hook script를 OpenCode plugin function으로 매핑한다:
 - `event` handler가 `event.type === "session.created"`를 필터링하고, work/personal context를 같은 sessionID에 한 번만 주입하는가.
 - `tool.execute.before` handler가 `input.tool === "bash"` 필터를 갖고, `guardSearchCommands`와 `guardGitIdentity`를 호출하는가.
 - `tool.execute.after` handler가 `["edit","write","apply_patch"].includes(input.tool)` 필터를 갖고, `runAutoFormat`을 호출하는가.
-- `event` handler가 `event.type === "session.idle"`를 필터링하고, `maybeRemindDocDrift`를 호출하는가.
+
 - Claude Code의 환경변수 기반 git identity(`PERSONAL_GIT_EMAIL`, `WORK_GIT_EMAIL` 등)가 plugin 옵션(`gitIdentity`)으로 마이그레이션되었는가.
-- 샘플 입력으로 스모크 테스트: 차단 케이스가 `throw new Error`를 발생시키는가; auto-format이 실패 시 에러를 전달하는가; doc-drift reminder가 `client.session.prompt`로 follow-up을 주입하고, 같은 sessionID로는 1회만 발화하는가.
+- 샘플 입력으로 스모크 테스트: 차단 케이스가 `throw new Error`를 발생시키는가; auto-format이 실패 시 에러를 전달하는가.
 
 ## Out of scope
 

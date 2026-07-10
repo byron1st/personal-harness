@@ -6,7 +6,6 @@ const RECURSIVE_GREP = /(^|[^a-zA-Z])grep\s+(-[a-zA-Z]*[rR][a-zA-Z]*|--include|-
 const FIND_FILE_SEARCH = /(^|[^a-zA-Z])find\s+[^|;&]*\s(-iname|-name|-ipath|-path|-iregex|-regex)(\s|=|$)/
 const GIT_WRITE = /(^|[^a-zA-Z])git\s+(commit|push)/
 
-const reminded = new Set()
 const announced = new Set()
 
 function commandFromArgs(args) {
@@ -189,29 +188,7 @@ function runAutoFormat(cwd) {
   }
 }
 
-function nonDocChangedFiles(cwd) {
-  if (!isGitRepo(cwd)) return []
-  return runText("git", ["-C", cwd, "diff", "--name-only", "HEAD"], cwd)
-    .split("\n")
-    .map((x) => x.trim())
-    .filter((file) => file.length > 0 && !file.endsWith(".md"))
-}
 
-async function maybeRemindDocDrift(client, cwd, sessionID) {
-  if (!sessionID || reminded.has(sessionID)) return
-
-  const changed = nonDocChangedFiles(cwd)
-  if (changed.length === 0) return
-
-  reminded.add(sessionID)
-
-  const reason = `Code changes detected. Before finishing, review AGENTS.md, legacy CLAUDE.md (when present), and README.md for drift and update any outdated content — keep the existing section structure intact. Changed files:\n${changed.join("\n")}`
-
-  await client.session.prompt({
-    path: { id: sessionID },
-    body: { parts: [{ type: "text", text: reason }] },
-  })
-}
 
 export const PersonalHarness = async ({ directory, worktree, client }, options = {}) => {
   const fallbackCwd = worktree || directory
@@ -235,11 +212,7 @@ export const PersonalHarness = async ({ directory, worktree, client }, options =
     event: async ({ event }) => {
       if (event.type === "session.created") {
         await announceSessionContext(client, fallbackCwd, gitIdentity, sessionIDFromEvent(event))
-        return
       }
-      if (event.type !== "session.idle") return
-      const sessionID = event.properties?.sessionID
-      await maybeRemindDocDrift(client, fallbackCwd, sessionID)
     },
   }
 }

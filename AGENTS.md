@@ -30,7 +30,7 @@ plan-dev → implement-dev → (fix-dev loop on issues) → test-dev → review-
 - `fix-dev`: Handles defects found during review — root-cause analysis, fix, and verification — and appends a `## Fix` section to the Implementation Report. Does not commit; leaves the working tree as-is.
 - `test-dev`: Strengthens the test suite over a git-defined scope (default: diff against `main`). Fills unit/e2e gaps and removes LIVED mutation survivors in sequence; does not modify production/business logic.
 - `review-code`: Reviews code changes (diff, PR, branch, etc.) through ISO 25010 quality attributes. On supported platforms, dispatches four persona agents (`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`) in parallel and synthesizes findings.
-- `commit-code`: Creates a commit based on currently modified files.
+- `commit-code`: Creates a commit based on currently modified files. Every platform variant performs a read-only documentation-drift check after committing and reports likely documentation updates without editing them.
 - `request-merge`: Creates or updates a Pull Request / Merge Request using the `gh` or `glab` CLI.
 
 ## Skills
@@ -60,6 +60,6 @@ Hook definitions and scripts under `hooks/<platform>/`. Common shell hooks (`hoo
 - `git-identity-guard.sh`: Verifies git identity at commit time.
 - `enforce-rg.sh`, `enforce-fd.sh`: Enforces `rg`/`fd` for code and file searches.
 - `auto-format.sh`: Runs the project Makefile's `fmt`/`format` target.
-- `doc-drift-reminder.sh`: Detects documentation sync drift from changed files and alerts.
+
 
 Platform-specific config files: Claude Code uses the `hooks` block in `settings.json`, Codex uses `hooks.json`, and OpenCode uses the `personal-harness.js` JS plugin. `jq`·`git`·`make`·`rg`·`fd`·`node` are required (see README.md Prerequisites for details).
