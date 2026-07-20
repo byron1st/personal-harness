@@ -1,11 +1,11 @@
 ---
 name: fix-dev
-description: Fix a bug found during review or verification after implementation. Use when the user asks to correct a defect without a new plan; delegate to a Codex worker only when explicitly requested.
+description: Fix a bug found during review or verification after implementation. Use when the user asks to correct a defect without a new plan; dispatch one Codex worker and require an explicit decision before direct fallback.
 ---
 
 # Fix Dev
 
-A surgical fix-it skill for issues caught during a review gate. In Codex, delegate only when the user explicitly asks for subagents or delegation; then the main session organises the issue and dispatches a Codex `worker` to diagnose and patch it. Otherwise, the main session performs the same fix workflow directly.
+A surgical fix-it skill for issues caught during a review gate. In Codex, the main session organises the issue and dispatches one Codex `worker` to diagnose and patch it. If the Worker capability is unavailable or spawning fails, report the failure and ask whether to continue directly; never silently perform the fix in the main session.
 
 ## When this skill applies
 
@@ -43,11 +43,11 @@ The main session is the only place that has the surrounding context — which pl
 
 If any required field is missing and cannot be reasonably inferred from the conversation so far, ask the user once rather than guessing or proceeding with a half-formed brief.
 
-### 2. Dispatch a worker only when explicitly requested
+### 2. Dispatch one worker by default
 
-Use this section only when the user explicitly asked for subagents or delegation. Spawn a Codex `worker` with a **self-contained** prompt — embed the brief from §1, the work contract (§4), and the return contract (§5) directly. Do not fork the parent conversation unless the user explicitly asked for that. The worker inherits the parent sandbox and approval policy, so do not assume it has independent permissions.
+Spawn exactly one Codex `worker` with a **self-contained** prompt — embed the brief from §1, the work contract (§4), and the return contract (§5) directly. Do not fork the parent conversation unless the user explicitly asked for that. The worker inherits the parent sandbox and approval policy, so do not assume it has independent permissions.
 
-If delegation was not explicitly requested, skip this section and perform the work contract in the main session.
+If the Worker capability is unavailable or the spawn call fails, stop before editing. Report `Delegation status: unavailable` or `failed`, include the observed cause, and ask the user whether to continue with a direct main-session fix or stop. Direct execution is allowed only after the user explicitly chooses that fallback.
 
 When a worker is used, the main session never reads the touched files back into its own context after the worker returns. That defeats the purpose of delegation.
 
@@ -66,7 +66,7 @@ Wait for the user's explicit answer before either path.
 
 ## Fix work contract
 
-When using a worker, its prompt must specify the following sequence. When not delegating, the main session follows the same sequence directly. Steps 3 and 4 are the only ones that branch on outcome; everything else runs unconditionally.
+The Worker's prompt must specify the following sequence. If the user explicitly authorizes direct fallback after a delegation failure, the main session follows the same sequence directly. Steps 3 and 4 are the only ones that branch on outcome; everything else runs unconditionally.
 
 1. **Read inputs** — open the plan file(s) and the files pointed at by the brief. Read `AGENTS.md` / `CLAUDE.md` at the repo root (and any nested copies relevant to the changed files) for project conventions.
 

@@ -1,12 +1,12 @@
 # Test-hardening Worker delegation contract
 
-`test-dev` uses this contract only when the user explicitly asks for delegation. In that opt-in path, the main session acts as the Dispatcher and hands the actual test hardening to a single Codex `worker` agent (the **Worker**). This file is the **single source of truth** for that delegation: the prompt the dispatcher hands the Worker, the fixed-heading return the Worker must emit (②), and the chat summary the dispatcher owes the user (③).
+`test-dev` uses this contract in its default Dispatcher path. The main session acts as the Dispatcher and hands the actual test hardening to a single Codex `worker` agent (the **Worker**). This file is the **single source of truth** for that delegation: the prompt the dispatcher hands the Worker, the fixed-heading return the Worker must emit (②), and the chat summary the dispatcher owes the user (③).
 
-`test-dev` references this contract instead of restating it. Do not duplicate these templates elsewhere; update them here. This contract does not change the Codex variant's default interactive behavior when delegation was not requested.
+`test-dev` references this contract instead of restating it. Do not duplicate these templates elsewhere; update them here. Direct main-session execution is allowed only after the user explicitly chooses it following delegation failure or directly requests direct mode.
 
 ## A. Worker signal
 
-The Worker detects it is a Worker (not the main session) from the dispatch prompt itself: the prompt contains the line `You are running as the test-hardening Worker subagent.` A session that sees this line runs the three-phase flow directly and **does not re-dispatch** another Worker - that would double-nest. A session that does not see this line stays in the main-session flow; it dispatches exactly one Worker only when the user explicitly requested delegation, subagent work, or parallel agent work.
+The Worker detects it is a Worker (not the main session) from the dispatch prompt itself: the prompt contains the line `You are running as the test-hardening Worker subagent.` A session that sees this line runs the three-phase flow directly and **does not re-dispatch** another Worker - that would double-nest. A session that does not see this line stays in the main-session Dispatcher flow and dispatches exactly one Worker.
 
 ## B. Dispatch prompt
 
@@ -85,6 +85,10 @@ After the dispatcher receives ②, it renders a short summary for the user in ch
 
 Translate to Korean if the Worker returned English; keep paths, command names, and code identifiers in their original form.
 
-## E. Boundary
+## E. Delegation failure
+
+If the Dispatcher cannot start the Worker or the spawn call returns an error, it must stop before modifying tests. It reports `Delegation status: unavailable` or `failed`, includes the observed cause, and asks the user whether to continue with direct main-session test hardening or stop. Direct execution starts only after the user explicitly chooses that fallback; the Dispatcher never silently substitutes itself for a failed Worker and never retries by dispatching another Worker.
+
+## F. Boundary
 
 This contract covers only test-hardening delegation. `implement-dev` and `review-code` keep their own prompts and return schemas; they do not duplicate the test-hardening contract above.

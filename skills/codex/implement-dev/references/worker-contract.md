@@ -1,6 +1,6 @@
 # Worker delegation contract
 
-`implement-dev`'s **Dispatch mode** (the main session, when the user explicitly requests delegation in Codex) delegates the actual implementation to a single `implementer` subagent (the **Worker**, spawned as the custom `implementer` agent, falling back to the built-in `worker` agent if unavailable). This file is the **single source of truth** for that delegation: the prompt the dispatcher hands the Worker, the structured Markdown the Worker must return (② in [report-file.md](report-file.md)'s terminology - ① is the on-disk report, ② is the Worker's return message, ③ is the dispatcher's chat summary), and the chat summary the dispatcher owes the user.
+`implement-dev`'s **Dispatch mode** (the default main-session mode) delegates the actual implementation to a single `implementer` subagent (the **Worker**, spawned as the custom `implementer` agent, falling back to the built-in `worker` agent if unavailable). This file is the **single source of truth** for that delegation: the prompt the dispatcher hands the Worker, the structured Markdown the Worker must return (② in [report-file.md](report-file.md)'s terminology - ① is the on-disk report, ② is the Worker's return message, ③ is the dispatcher's chat summary), and the chat summary the dispatcher owes the user.
 
 `implement-dev` Dispatch references this contract instead of restating it. Do not duplicate these templates elsewhere; update them here.
 
@@ -72,8 +72,12 @@ After the dispatcher receives ②, it renders a short summary for the user in ch
 - A clickable Markdown link to the ① report file by absolute path.
 - If `## Implementation Status` is `blocked`, surface `## Decision Needed` first and prominently so the user sees what to decide, then stop - do not proceed to additional stages.
 
-When `implement-dev` runs interactively (not via dispatch), the same shape applies as the final chat output: short bullets + report link, with report sections kept in the file.
+When `implement-dev` runs in explicitly authorized direct mode, the same shape applies as the final chat output: short bullets + report link, with report sections kept in the file.
 
-## E. Boundary
+## E. Delegation failure
+
+If the Worker capability is unavailable or the spawn call fails, the Dispatcher must stop before substantive implementation. It reports `Delegation status: unavailable` or `failed`, includes the observed cause, and asks the user whether to continue with direct main-session execution or stop. Direct execution starts only after the user explicitly chooses that fallback; the Dispatcher never silently substitutes itself for a failed Worker and never retries by dispatching another Worker.
+
+## F. Boundary
 
 This contract covers only implementation delegation. `test-dev` and `review-code` keep their own prompts and return schemas; they do not duplicate the implementation-stage contract above.

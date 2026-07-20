@@ -1,6 +1,6 @@
 # Implementation flow
 
-`implement-dev` always takes one plan file describing the full implementation and executes it in one pass. This flow is followed by whoever actually edits the code - either a **Worker** (a subagent launched by the `implement-dev` Dispatcher, recognized by the `You are running as the implementation Worker subagent.` signal) or an **interactive** main session opted into direct execution (no subagent dispatch). The Dispatcher itself does not edit; it only launches one Worker and parses that Worker's return. Mode-specific routing (asking the user vs. returning `blocked`) is called out inline.
+`implement-dev` always takes one plan file describing the full implementation and executes it in one pass. This flow is followed by whoever actually edits the code - either a **Worker** (a subagent launched by the `implement-dev` Dispatcher, recognized by the `You are running as the implementation Worker subagent.` signal) or an **interactive** main session explicitly authorized for direct execution (for example, after a delegation failure). The Dispatcher itself does not edit; it only launches one Worker and parses that Worker's return. Mode-specific routing (asking the user vs. returning `blocked`) is called out inline.
 
 ## 1. Read the plan
 

@@ -1,15 +1,15 @@
 ---
 name: review-code
-description: Review code changes for bugs, security, reliability, maintainability, and missing tests. Use for diff, PR, branch, or file reviews; use Codex subagents only when explicitly requested.
+description: Review code changes for bugs, security, reliability, maintainability, and missing tests. Use for diff, PR, branch, or file reviews; dispatch Codex reviewer agents by default and require an explicit decision before direct fallback.
 ---
 
 # Review Code
 
-You are the reviewer. If the user explicitly asks for subagents, delegation, or parallel reviewer agents, act as the orchestrator: gather context once, dispatch four parallel Codex reviewer agents (`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`) and aggregate their findings into a single output. Otherwise, perform the same four-axis review in the main session.
+You are the reviewer and Dispatcher. Gather context once, dispatch four parallel Codex reviewer agents (`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`), and aggregate their findings into a single output. If no reviewer Worker can be spawned or any required spawn fails, stop before reviewing in the main session, report the delegation failure and affected axes, and ask the user whether to continue with a direct four-axis review or stop. Never silently substitute a main-session review.
 
 ## Reviewer roles
 
-Four review axes. When delegation is explicitly requested, dispatch one Codex custom agent per axis:
+Four review axes. Dispatch one Codex custom agent per axis:
 
 - `security-reviewer` — adversarial. Authn/authz, secret handling, injection, crypto misuse, malicious-input resistance, TOCTOU.
 - `reliability-reviewer` — failure-mode imaginer. Error handling, resource lifecycle, concurrency, idempotency, timeouts, partial failure, boundary conditions.
@@ -40,11 +40,11 @@ Before dispatching, do these once. The result becomes part of every dispatch pro
 2. Read `AGENTS.md` / `CLAUDE.md` at the repo root and any nested copies in directories the diff touches. Extract any rules relevant to the four axes.
 3. List the touched files with absolute paths and the language(s) involved.
 
-If the diff is very large (roughly >2000 changed lines), review one file at a time. When delegation was explicitly requested, use one set of four reviewers per file (still four in parallel each round). Otherwise, run the four main-session reviewer passes per file. Note the file-by-file mode at the end of the final output so the user knows the review was chunked.
+If the diff is very large (roughly >2000 changed lines), review one file at a time and use one set of four reviewers per file (still four in parallel each round). If the user explicitly authorizes direct fallback after a delegation failure, run the four main-session reviewer passes per file. Note the file-by-file mode at the end of the final output so the user knows the review was chunked.
 
 ## Run the four reviewers
 
-If the user explicitly requested subagents or parallel review, spawn all four Codex custom reviewer agents in parallel so they run concurrently. If not, run the four reviewer passes in the main session without spawning agents.
+Spawn all four Codex custom reviewer agents in parallel so they run concurrently. A successful `explorer` fallback for an unavailable custom persona still counts as a Worker dispatch. If no fallback can spawn or any required spawn fails, stop the review run, preserve any successful returns, report the failed axes, and do not begin a main-session pass until the user explicitly authorizes direct fallback.
 
 Each delegated prompt, or each main-session reviewer pass, contains:
 

@@ -19,14 +19,17 @@ Codex는 시작 시 각 Skill의 `name`, `description`, 경로만 먼저 본다.
 - 긴 bullet list, 다중 문단 description, 플랫폼별 내부 구현 설명을 피한다.
 - 권장 기준: 한두 문장, 대략 300자 이내.
 
-### Gate subagent usage behind explicit user intent
+### Allow Skill-directed delegation with an explicit failure gate
 
-Claude Code는 subagent description과 문맥을 보고 자동 위임할 수 있지만, Codex는 사용자가 명시적으로 subagent, delegation, parallel agent work를 요청했을 때만 subagent를 spawn한다.
+현재 Codex는 subagent collaboration이 활성화되어 있고, 활성 Skill 또는 `AGENTS.md`가 delegation을 요구하는 경우 사용자가 별도로 subagent 사용을 반복하지 않아도 dispatch를 시도할 수 있다. 다만 capability와 surface/build에 따라 spawn이 실패할 수 있으므로, delegation은 다음 규칙을 따른다.
 
-- Skill이 subagent를 전제로 하면, 먼저 명시적 위임 요청이 있었는지 확인한다.
-- 명시적 요청이 없으면 메인 세션에서 같은 작업을 수행하는 fallback을 둔다.
-- 자동 위임을 전제로 한 문장, 예를 들어 "always dispatch" 같은 지시는 Codex용 Skill에서 제거한다.
-- 사용자가 위임 여부를 선택해야 하는 workflow라면 작업 시작 전에 한 번만 묻는다.
+- subagent-dispatch Skill은 Dispatcher-first로 동작한다. Skill이 요구하면 명시적 사용자 위임 문구를 기다리지 말고 dispatch를 시도한다.
+- dispatch가 성공하면 Worker가 해당 작업을 전담한다. 메인 세션은 Worker의 변경 작업을 중복 수행하지 않는다.
+- worker capability가 없거나 spawn 호출이 실패하면 substantive 작업을 시작하지 않는다.
+- 메인 세션은 `Delegation status: unavailable` 또는 `failed`, 관찰된 원인을 사용자에게 보고한다.
+- direct fallback은 사용자가 명시적으로 선택한 뒤에만 시작한다. 사용자가 중단을 선택하면 종료한다.
+- 여러 Worker 중 일부만 성공한 경우 성공한 결과를 임의로 main session 작업으로 대체하지 않는다. 부분 실패 상태와 direct fallback 여부를 사용자에게 묻는다.
+- Worker는 재-dispatch하지 않는다.
 
 ### Replace Claude Code agent invocation with Codex agent concepts
 
@@ -86,7 +89,7 @@ Claude Code custom agent는 Markdown 파일의 YAML frontmatter와 본문으로 
 - 설치 대상은 개인 전역 agent면 `~/.codex/agents/`, 프로젝트 범위 agent면 `.codex/agents/`다.
 - 각 TOML 파일에는 최소한 `name`, `description`, `developer_instructions`를 둔다.
 - Claude Markdown의 짧은 역할 요약은 `description`으로 옮긴다. Codex가 agent를 고를 때 읽기 쉬워야 하므로 한두 문장으로 유지한다.
-- Claude Markdown 본문은 `developer_instructions = """..."""`로 옮긴다. 단, Claude 전용 tool 이름, permission mode, hook, 자동 dispatch 전제는 제거하거나 Codex 표현으로 바꾼다.
+- Claude Markdown 본문은 `developer_instructions = """..."""`로 옮긴다. 단, Claude 전용 tool 이름, permission mode, hook, 자동 dispatch 전제는 Codex의 Skill-directed delegation 규칙과 runtime failure gate로 번역한다.
 - Claude frontmatter의 `tools:`는 그대로 옮기지 않는다. Codex에서 read-only agent가 필요하면 `sandbox_mode = "read-only"` 같은 Codex config key를 사용하고, instructions에도 "no edits, no commits"를 남긴다.
 - agent 이름은 Codex에서 spawn할 때 쓰는 source of truth다. 파일명과 `name`을 맞추는 단순한 규칙을 쓴다.
 - Codex 기본 agent 이름(`default`, `worker`, `explorer`)과 충돌하는 custom `name`은 피한다. 충돌하면 custom agent가 우선되어 예상과 다른 동작이 날 수 있다.
