@@ -7,6 +7,23 @@ description: Execute a plan-dev implementation plan with TDD, verification, TODO
 
 Execute an implementation plan by writing code test-first, validating via automated checks, keeping the plan's TODOs current, and producing a completion report under `docs/agents/dev`.
 
+## Required language convention gate
+
+Complete this gate during Prepare **before writing a Red test, production code, or completing a TODO**. It is a hard prerequisite, not a suggested resource lookup.
+
+1. Determine every language/framework involved in the plan's TODOs and the files expected to change. If that is unclear, inspect the plan and repository before proceeding.
+2. Open and read the **entire contents** of every matching convention file in the table below. Seeing its link, title, or table row does not count as reading it.
+3. For a multi-language change, read **all** matching files; do not select only a primary language. Read the file again even if it was consulted during an earlier task or session.
+4. If a matching convention file is missing or inaccessible, continue without it. Apply the most widely adopted de facto standard known for that language/framework, and record the fallback in the completion report's `## Summary`.
+
+| Language / framework | Read when | Required convention file |
+| --- | --- | --- |
+| Go | The plan or changed files involve Go code. | [references/go-convention.md](references/go-convention.md) |
+| Swift / macOS | The plan or changed files involve Swift, SwiftUI, AppKit, or macOS app code. | [references/swift-convention.md](references/swift-convention.md) |
+| TypeScript / Next.js | The plan or changed files involve TypeScript, React, or Next.js code. | [references/ts-nextjs-convention.md](references/ts-nextjs-convention.md) |
+
+Repository `AGENTS.md` / `CLAUDE.md` instructions override bundled defaults, but they do not replace this required read. Record every convention file consulted and any de facto fallback used in the completion report's `## Summary`.
+
 ## Execution modes
 
 `implement-dev` runs in one of two delegated modes, detected from the invoking prompt (the **worker signal**). In Codex, subagent dispatch (Worker) requires the user to explicitly request delegation, subagent, or parallel agent work - auto-dispatch is not assumed.
@@ -52,13 +69,7 @@ The Dispatcher itself never makes direction decisions for the Worker; if the Wor
 1. **Plan file**: the user (Dispatcher / interactive) or the dispatch prompt (Worker) provides the plan path. If the prompt omits it, ask the user (interactive) or surface in `## Open Questions` / `## Decision Needed` (Worker).
 2. **Verification commands**: extract lint, format, test, and build commands from `Makefile`, `AGENTS.md`, `CLAUDE.md`, or `README.md`. If none are found, ask the user (interactive) or surface in `## Open Questions` / `## Decision Needed` (Worker).
 3. **Project conventions**: read `AGENTS.md` / `CLAUDE.md`; their constraints apply to every implementation decision. Treat bundled conventions as defaults only where the repository's own instructions and existing code are silent.
-   - **Language conventions**: detect the implementation language/framework from the plan and repository files. Read every matching convention file.
-
-     | Language / framework | Read when | Convention reference |
-     | --- | --- | --- |
-     | Go | The plan or changed files involve Go code. | [references/go-convention.md](references/go-convention.md) |
-     | Swift / macOS | The plan or changed files involve Swift, SwiftUI, AppKit, or macOS app code. | [references/swift-convention.md](references/swift-convention.md) |
-     | TypeScript / Next.js | The plan or changed files involve TypeScript, React, or Next.js code. | [references/ts-nextjs-convention.md](references/ts-nextjs-convention.md) |
+4. **Language conventions**: complete the [required language convention gate](#required-language-convention-gate). Do not advance from Prepare until every matching convention file has been read.
 
 ## Execute
 
@@ -89,4 +100,5 @@ When verification fails:
 - All plan TODO checkboxes are up to date.
 - The completion report (①) is saved under `docs/agents/dev`, and the plan/report Markdown links are bidirectional.
 - If running as a Worker, the return message ② uses the fixed headings and links ① by absolute path.
+- The completion report's `## Summary` records every language-specific convention file consulted and any de facto fallback used, or states that no table mapping applied.
 - `AGENTS.md` / `CLAUDE.md` / `README.md` have been reviewed for staleness caused by the change; update content while preserving the existing section structure.
