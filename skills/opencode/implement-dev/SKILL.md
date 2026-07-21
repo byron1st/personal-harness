@@ -1,6 +1,6 @@
 ---
 name: implement-dev
-description: "Execute a plan-dev implementation plan with TDD, verification, TODO updates, and repository-local implementation reports under docs/agents. By default runs as the Dispatcher (main session): it launches one Worker subagent via OpenCode's Task tool that owns the actual code/test/report edits and returns a fixed-heading status the Dispatcher collapses to a short chat summary. Use when the user asks to implement a saved plan."
+description: "Execute a plan-dev implementation plan with TDD, verification, TODO updates, and repository-local implementation reports under docs/agents. By default runs as the Dispatcher (main session): it launches one Worker subagent via OpenCode's Task tool that owns the actual code/test/report edits and returns a fixed-heading status the Dispatcher collapses to a short chat summary. If dispatch fails, it requires an explicit decision before direct fallback. Use when the user asks to implement a saved plan."
 ---
 
 # Implement Dev
@@ -31,7 +31,7 @@ Repository `AGENTS.md` instructions and legacy `CLAUDE.md` when present override
 - **Dispatcher (default, main session)** - The session that is *not* told it is the Worker. The Dispatcher does **not** edit production code, tests, or the report itself; it launches exactly **one** `implementer` subagent (the Worker) via OpenCode's Task tool (`subagent_type: implementer`) using the prompt, return schema, and chat-summary shape in [references/worker-contract.md](references/worker-contract.md), then parses the Worker's fixed-heading return and renders a short chat summary (what changed / verification / red flags / TODO status) plus a clickable link to the on-disk report. The Dispatcher does not re-dispatch another Worker once one is running.
 - **Worker (delegation, subagent)** - A session invoked with `You are running as the implementation Worker subagent.` in its prompt. It runs the implementation flow directly ([references/implement-flow.md](references/implement-flow.md)), does not re-dispatch, and returns the fixed-heading Markdown from [references/worker-contract.md](references/worker-contract.md).
 
-Interactive (a third, opt-in mode, **not** the default): when a session runs `implement-dev` directly in the main session without dispatching a Worker - either because the user explicitly opts for direct execution, or because subagent dispatch is not available on the host - the implementation flow ([references/implement-flow.md](references/implement-flow.md)) runs in-place; follow the Worker rules except that a direction-level conflict goes back to the user interactively rather than being returned as `blocked`. In-place you are **not** running as the `implementer` subagent, so adopt its discipline explicitly: smallest correct change, the ladder (stdlib/native/installed-dep before new code), root-cause over symptom fixes, one runnable check for non-trivial logic, and flag-don't-block — surface a YAGNI/scope concern as a one-line note, never silently drop requested scope. A user simply invoking `implement-dev` from the main chat still gets Dispatcher mode and Worker delegation; interactive opt-in must be explicit (or forced by host capability). OpenCode can auto-dispatch like Claude Code, so Dispatcher mode stands unless the user explicitly restricts it (e.g., "main session only", "no subagents").
+**Delegation failure gate:** if OpenCode's Task tool or compatible Worker capability is unavailable, or dispatch fails, stop before substantive implementation. Report `Delegation status: unavailable` or `failed`, include the observed cause, and use the question tool to ask whether to continue with direct main-session execution or stop. Never enter the interactive flow silently. Direct execution is allowed only when the user explicitly chooses it; then the implementation flow ([references/implement-flow.md](references/implement-flow.md)) runs in-place with the Worker rules and the main-session routing for direction-level conflicts. An explicit user restriction such as "main session only" or "no subagents" counts as choosing direct execution.
 
 ## Rules
 
@@ -83,7 +83,7 @@ The implementation produces three artifacts, defined in [references/report-file.
 - **② Worker return** - the fixed-heading Markdown the Worker hands back to the Dispatcher. Never paste ① sections into ② - link the report by absolute path under `## Implementation Report`.
 - **③ Chat summary** - the Dispatcher renders a short summary (2-4 bullets + clickable report link) for the user, never pasting ① or ② verbatim.
 
-In interactive (non-delegated) execution, the same shape applies as the final chat output: short bullets + report link, with report sections kept in the file.
+In explicitly authorized direct execution, the same shape applies as the final chat output: short bullets + report link, with report sections kept in the file.
 
 ## Error Recovery
 

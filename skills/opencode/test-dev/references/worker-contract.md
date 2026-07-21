@@ -2,7 +2,7 @@
 
 `test-dev`'s **Dispatch mode** (the main session, default) delegates the actual test hardening to a single Worker subagent (the **Worker**) via OpenCode's Task tool. This file is the **single source of truth** for that delegation: the prompt the dispatcher hands the Worker, the fixed-heading return the Worker must emit (②), and the chat summary the dispatcher owes the user (③).
 
-`test-dev` references this contract instead of restating it. Do not duplicate these templates elsewhere; update them here. If the user explicitly asks for the main session only or says not to use subagents, do not dispatch.
+`test-dev` references this contract instead of restating it. Do not duplicate these templates elsewhere; update them here. Direct main-session execution is allowed only after the user explicitly chooses it following delegation failure or directly requests direct mode; if the user asks for the main session only or says not to use subagents, do not dispatch.
 
 ## A. Worker signal
 
@@ -85,6 +85,10 @@ After the dispatcher receives ②, it renders a short summary for the user in ch
 
 Translate to Korean if the Worker returned English; keep paths, command names, and code identifiers in their original form.
 
-## E. Boundary
+## E. Delegation failure
+
+If OpenCode's Task tool or compatible Worker capability is unavailable, or dispatch fails, the Dispatcher must stop before modifying tests. It reports `Delegation status: unavailable` or `failed`, includes the observed cause, and uses the question tool to ask whether to continue with direct main-session test hardening or stop. Direct execution starts only after the user explicitly chooses that fallback; the Dispatcher never silently substitutes itself for a failed Worker and never retries by dispatching another Worker.
+
+## F. Boundary
 
 This contract covers only test-hardening delegation. `implement-dev` and `review-code` keep their own prompts and return schemas; they do not duplicate the test-hardening contract above.

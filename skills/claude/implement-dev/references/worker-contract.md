@@ -72,8 +72,12 @@ After the dispatcher receives ②, it renders a short summary for the user in ch
 - A clickable Markdown link to the ① report file by absolute path.
 - If `## Implementation Status` is `blocked`, surface `## Decision Needed` first and prominently so the user sees what to decide, then stop - do not proceed to additional stages.
 
-When `implement-dev` runs interactively (not via dispatch), the same shape applies as the final chat output: short bullets + report link, with report sections kept in the file.
+When `implement-dev` runs in explicitly authorized direct mode, the same shape applies as the final chat output: short bullets + report link, with report sections kept in the file.
 
-## E. Boundary
+## E. Delegation failure
+
+If the `Agent` tool or compatible Worker capability is unavailable, or dispatch fails, the Dispatcher must stop before substantive implementation. It reports `Delegation status: unavailable` or `failed`, includes the observed cause, and uses `AskUserQuestion` to ask whether to continue with direct main-session execution or stop. Direct execution starts only after the user explicitly chooses that fallback; the Dispatcher never silently substitutes itself for a failed Worker and never retries by dispatching another Worker.
+
+## F. Boundary
 
 This contract covers only implementation delegation. `test-dev` and `review-code` keep their own prompts and return schemas; they do not duplicate the implementation-stage contract above.

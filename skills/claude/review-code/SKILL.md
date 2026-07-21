@@ -1,11 +1,11 @@
 ---
 name: review-code
-description: Review code changes for bugs, security, reliability, maintainability, and missing tests. Use for diff, PR, branch, or file reviews; dispatches four parallel reviewer agents in Claude Code.
+description: Review code changes for bugs, security, reliability, maintainability, and missing tests. Use for diff, PR, branch, or file reviews; dispatches four parallel reviewer agents in Claude Code and requires an explicit decision before direct fallback.
 ---
 
 # Review Code
 
-You are the orchestrator. Gather context once, dispatch four parallel reviewer agents (`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`) via the `Agent` tool, and aggregate their findings into a single output.
+You are the reviewer and Dispatcher. Gather context once, dispatch four parallel reviewer agents (`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`) via the `Agent` tool, and aggregate their findings into a single output. If any required dispatch fails, stop before reviewing that axis in the main session, report the delegation failure and affected axes, and use `AskUserQuestion` to ask whether to continue with a direct four-axis review or stop. Never silently substitute a main-session review.
 
 ## Reviewer roles
 
@@ -38,11 +38,11 @@ Before dispatching, do these once. The result becomes part of every dispatch pro
 2. Read `AGENTS.md` / `CLAUDE.md` at the repo root and any nested copies in directories the diff touches. Extract any rules relevant to the four axes.
 3. List the touched files with absolute paths and the language(s) involved.
 
-If the diff is very large (roughly >2000 changed lines), review one file at a time. Use one set of four reviewers per file (still four in parallel each round). Note the file-by-file mode at the end of the final output so the user knows the review was chunked.
+If the diff is very large (roughly >2000 changed lines), review one file at a time and use one set of four reviewers per file (still four in parallel each round). If the user explicitly authorizes direct fallback after a delegation failure, run the missing main-session reviewer passes per file. Note the file-by-file mode at the end of the final output so the user knows the review was chunked.
 
 ## Dispatch the four reviewers
 
-Send all four `Agent` tool calls in a single message so they run concurrently. `subagent_type` is the persona's own name (`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`).
+Send all four `Agent` tool calls in a single message so they run concurrently. `subagent_type` is the persona's own name (`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`). If a custom persona is unavailable, a `general-purpose` sub-agent given that persona's full review contract is an acceptable Worker fallback. If no fallback can dispatch or any required dispatch fails, stop the review run, preserve any successful returns, report the failed axes, and do not begin a main-session pass until the user explicitly authorizes direct fallback.
 
 Each dispatch prompt contains:
 

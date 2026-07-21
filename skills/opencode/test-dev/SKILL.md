@@ -1,6 +1,6 @@
 ---
 name: test-dev
-description: "Strengthen tests by filling unit/e2e gaps and reducing LIVED mutation survivors against a git-defined scope. By default runs as the Dispatcher (main session): it resolves the review scope, then launches one Worker subagent via OpenCode's Task tool and returns a fixed-heading status the Dispatcher collapses to a short chat summary. Use after implementation or when asked to improve coverage, harden tests, or kill mutants."
+description: "Strengthen tests by filling unit/e2e gaps and reducing LIVED mutation survivors against a git-defined scope. By default runs as the Dispatcher (main session): it resolves the review scope, then launches one Worker subagent via OpenCode's Task tool and returns a fixed-heading status the Dispatcher collapses to a short chat summary. If dispatch fails, it requires an explicit decision before direct fallback. Use after implementation or when asked to improve coverage, harden tests, or kill mutants."
 ---
 
 # Test Dev
@@ -11,12 +11,12 @@ Harden the project's test suite against a **git-defined scope** in three sequent
 
 ## Execution modes
 
-`test-dev` runs in one of two delegated modes, detected from the invoking prompt (the **worker signal**). OpenCode can automatically dispatch the Worker, but a user instruction like "main session only" or "no subagents" overrides that and forces interactive execution.
+`test-dev` runs in one of two delegated modes, detected from the invoking prompt (the **worker signal**). OpenCode can automatically dispatch the Worker, while a user instruction like "main session only" or "no subagents" explicitly chooses direct execution.
 
 - **Dispatcher (default, main session)** — the session that is *not* told it is the Worker. The Dispatcher does **not** edit tests itself; it resolves the review scope ([Determine Scope](#determine-scope)), gathers verification commands and conventions once, then launches exactly **one** Worker subagent via OpenCode's Task tool (`subagent_type: general`) using the prompt, return schema, and chat-summary shape in [references/worker-contract.md](references/worker-contract.md), and renders a short chat summary from the Worker's fixed-heading return. The Dispatcher does not re-dispatch another Worker once one is running.
 - **Worker (delegation, subagent)** — a session invoked with `You are running as the test-hardening Worker subagent.` in its prompt. It runs the three-phase flow directly against the scope handed to it, does not re-dispatch, and returns the fixed-heading Markdown from [references/worker-contract.md](references/worker-contract.md).
 
-Interactive (a third, opt-in mode, **not** the default): when a session runs `test-dev` directly in the main session without dispatching a Worker — either because the user explicitly opts for direct execution, asks for the main session only, or because subagent dispatch is not available on the host — the three-phase flow runs in-place; follow the Worker rules except that a blocking obstacle (missing verification command, absent mutation tooling) goes back to the user interactively rather than being returned as `blocked`. A user simply invoking `test-dev` from the main chat still gets Dispatcher mode and Worker delegation; interactive opt-in must be explicit (or forced by host capability).
+**Delegation failure gate:** if OpenCode's Task tool or compatible Worker capability is unavailable, or dispatch fails, stop before modifying tests. Report `Delegation status: unavailable` or `failed`, include the observed cause, and use the question tool to ask whether to continue with direct main-session test hardening or stop. Never enter the three-phase flow silently. Direct execution is allowed only when the user explicitly chooses it; then the flow runs in-place and a blocking obstacle goes back to the user interactively rather than being returned as `blocked`.
 
 ## Global Rules
 
@@ -144,7 +144,7 @@ The result is delivered as two artifacts, defined in [references/worker-contract
 - **Worker return (②)** — the fixed-heading Markdown the Worker hands back (`## Test Status` … `## Remaining Attention Items`, plus `## Decision Needed` when blocked). No file artifact is written, so the return **is** the deliverable: the Worker must emit the `## Suspected Business Logic Defects` list **verbatim**, never summarised or dropped.
 - **Dispatcher chat summary (③)** — the Dispatcher renders a short summary for the user: scope, per-phase one-liners (unit added/result, e2e added/result or skipped, mutation start→final efficacy and whether the 80% threshold was reached), and the suspected-defects list surfaced **prominently and verbatim** as the most important attention item. If the Worker returns `blocked`, surface `## Decision Needed` first and stop. Translate to Korean if the Worker returned English; keep paths and identifiers as-is.
 
-In interactive (non-delegated) execution, the same shape is the final chat output. Do not write a separate report file. Do not modify `docs/agents/dev` implementation reports.
+In explicitly authorized direct execution, the same shape is the final chat output. Do not write a separate report file. Do not modify `docs/agents/dev` implementation reports.
 
 ## Error Recovery
 

@@ -29,15 +29,17 @@ Codex는 시작 시 skill `name`, `description`, 경로만 예산 제한 안에�
 - 구현 세부 절차를 frontmatter description에 과하게 넣지 않는다. 긴 절차는 본문이나 `references/`에 둔다.
 - `name`은 디렉터리명과 일치시키고, YAML frontmatter가 파싱되는지 확인한다. 값에 `: `(콜론+공백)가 있으면 따옴표로 감싼다.
 
-### Restore Claude Code subagent dispatch where the skill expects delegation
+### Preserve Skill-directed delegation and restore Claude Code mechanics
 
-Codex는 명시적 요청이 있을 때만 subagent를 spawn한다. Claude Code는 custom subagent description과 작업 문맥을 보고 더 적극적으로 위임할 수 있고, skill 본문도 `Agent` tool dispatch를 직접 전제로 작성할 수 있다.
+Codex와 Claude Code 모두 활성 skill이 위임을 요구하면 사용자가 같은 요청을 반복하지 않아도 Dispatcher-first 흐름을 시작할 수 있다. Codex 변형의 기본 위임 의미와 명시적 실패 gate를 유지하되, 실제 dispatch와 사용자 질문은 Claude Code 도구로 바꾼다.
 
-- Codex 변형에 "use subagents only when explicitly requested" 정책이 들어간 이유를 먼저 확인한다. 그 문장이 Codex 제품 제약 때문에 추가된 것이라면 Claude Code 변형에서는 제거하거나 완화한다.
-- Claude Code 원래 workflow가 항상 병렬 reviewer agent를 dispatch하는 구조라면, Codex의 main-session fallback 문장을 제거하고 `Agent` tool 병렬 dispatch 흐름을 복원한다.
-- 그래도 사용자가 명시적으로 "main session only", "no subagents" 같은 제한을 둔 경우에는 그 지시가 우선한다는 문장을 남길 수 있다.
-- `Codex custom agent` 표현은 Claude Code의 `custom subagent` 또는 `reviewer agent`로 바꾼다. dispatch 절차를 써야 하면 `Agent` tool과 `subagent_type`을 명시한다.
-- Codex `worker`는 보통 Claude Code의 범용 subagent dispatch로 바꾸고, Codex `explorer` fallback은 Claude Code에서 사용할 수 있는 읽기 중심 subagent나 custom agent prompt로 바꾼다. 이 repo의 reviewer persona는 세 플랫폼에서 같은 이름(`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`)을 유지한다.
+- Codex `worker` 또는 custom agent dispatch는 Claude Code의 `Agent` tool과 적절한 `subagent_type`으로 바꾼다. Codex `explorer` fallback은 Claude Code에서 사용할 수 있는 읽기 중심 subagent나 custom agent prompt로 바꾼다.
+- 위임형 skill의 기본 Dispatcher 동작을 유지한다. Claude 변형에 별도의 "explicit user request only" gate를 추가하지 않는다.
+- `Agent` tool이나 호환 subagent capability가 없거나 dispatch가 실패하면 substantive 작업 전에 중단하고, `Delegation status: unavailable` 또는 `failed`와 관찰된 원인을 보고한 뒤 `AskUserQuestion`으로 direct fallback 여부를 묻는다. 사용자의 명시적 선택 전에는 main-session 작업으로 대체하지 않는다.
+- 병렬 reviewer 중 일부만 실패하면 성공한 결과를 보존하고 실패한 axis를 보고한 뒤, 누락된 pass를 main session에서 수행할지 사용자에게 묻는다.
+- Worker는 다시 subagent를 dispatch하지 않는다.
+- 사용자가 명시적으로 "main session only", "no subagents" 같은 제한을 둔 경우에는 그 지시가 우선한다.
+- 이 repo의 reviewer persona는 세 플랫폼에서 같은 이름(`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`)을 유지한다.
 
 ### Convert plan-mode instructions to Claude Code plan mode
 
@@ -72,7 +74,7 @@ Codex는 sandbox mode와 approval policy를 중심으로 권한을 설명한다.
 - skill-local `agents/openai.yaml`이 Claude 대상에 복사되지 않았는가. Claude custom subagent는 repo-level `agents/claude/*.md`로만 관리한다.
 - frontmatter `name`이 디렉터리명과 일치하고 YAML이 파싱되는가.
 - 잔존 스윕(`rg`): `Codex`, `worker`, `explorer`, `sandbox and approval`, `apply_patch`, `.agents/skills`, `~/.codex`, `ExitPlanMode` 누락, `AskUserQuestion` 누락이 문맥상 의도된 것인지 확인한다. `Codex`가 제품명 예시로 필요한 경우만 허용한다.
-- 위임형 skill은 Claude Code에서 `Agent` tool / `subagent_type` 흐름이 자연스럽고, Codex 전용 "explicit user request only" fallback이 불필요하게 남아있지 않은가.
+- 위임형 skill은 기본 Dispatcher 동작, `Agent` tool / `subagent_type` 변환, 명시적 실패 gate, Worker의 재-dispatch 금지를 보존하며 실패 시 main session으로 조용히 대체하지 않는가.
 - plan-mode skill은 최종 계획 후 `ExitPlanMode`로 승인받는 흐름을 갖는가.
 
 ## Sub-agent migration

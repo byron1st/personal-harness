@@ -24,31 +24,34 @@ OpenCode는 Claude Code 호환 모드를 기본 제공하여 `~/.claude/skills/`
 Claude Code Skill에는 `Read`, `Grep`, `Glob`, `Bash`, `Edit`, `Write`, `MultiEdit`, `AskUserQuestion`, `ExitPlanMode`, `Agent` 같은 도구명이 직접 들어가 있을 수 있다. OpenCode 환경에서는 도구 이름과 사용 방식이 다르므로, Skill 본문은 OpenCode에서 실행 가능한 표현으로 바꾼다.
 
 - Claude Code의 `Agent` tool은 OpenCode의 **Task tool**로 바꾼다. 본문에서 "dispatch via the `Agent` tool"은 "dispatch via OpenCode's Task tool"로 적는다.
-- Claude Code의 `subagent_type: general-purpose`는 OpenCode의 **`subagent_type: general`**로 바꾼다. OpenCode의 built-in subagent 이름은 `general`, `explore`, `scout`이다.
+- Claude Code의 `subagent_type: general-purpose`는 OpenCode의 **`subagent_type: general`**로 바꾼다. 현재 OpenCode의 built-in subagent 이름은 `general`, `explore`다.
 - Claude Code의 `AskUserQuestion`은 OpenCode의 **question tool**(또는 "ask the user"라는 기능 중심 표현)로 바꾼다.
-- Claude Code의 `ExitPlanMode`는 OpenCode에 대응 도구가 없다. 아래 "Convert plan-mode instructions"에서 다룬다.
+- Claude Code의 `ExitPlanMode`는 OpenCode Plan agent의 **`plan_exit`** 흐름으로 바꾼다. 아래 "Convert plan-mode instructions"에서 다룬다.
 - Claude Code의 `Read`, `Grep`, `Glob`, `Bash` 도구명은 기능 중심 표현("file reads", "grep/glob searches", "shell execution")으로 바꾸거나, workflow 이해에 직접 도움이 되는 경우에만 OpenCode 도구명을 쓴다. repo 규칙(`rg`/`fd` 사용)처럼 OpenCode에서도 유효한 지시는 그대로 둔다.
 - `MultiEdit`은 OpenCode에 없다. `edit`/`write`/`apply_patch`로 바꾼다. hook이나 도구 allowlist에서는 `edit`을 기준으로 생각한다.
 - 전역 지시 파일은 OpenCode가 읽는 `AGENTS.md`를 우선하되, Claude Code 호환 모드로 `CLAUDE.md`도 fallback으로 읽으므로 "legacy `CLAUDE.md` when present" 표현을 쓴다. Claude 변형의 "`AGENTS.md` / `CLAUDE.md`" 표현은 OpenCode 변형에서 "`AGENTS.md` and legacy `CLAUDE.md` when present"로 바꾼다.
 
-### Map Claude Code subagent dispatch to OpenCode Task tool
+### Map Claude Code subagent dispatch to OpenCode Task tool and preserve the failure gate
 
 Claude Code는 `Agent` tool과 `subagent_type`으로 subagent를 dispatch한다. OpenCode도 Task tool과 `subagent_type`으로 subagent를 dispatch하므로, 개념은 동일하지만 이름과 디스패치 표현이 다르다.
 
 - Claude Code의 `Agent` tool → OpenCode의 **Task tool**. 본문에서 "invoke the `Agent` tool (subagent_type `general-purpose`)"는 "invoke OpenCode's Task tool with `subagent_type: general`"로 바꾼다.
 - Claude Code의 "sub-agent"(하이픈) 표현은 OpenCode 공식 용어인 **"subagent"**(하이픈 없음)로 통일한다.
-- 이 repo의 reviewer persona는 네 플랫폼에서 같은 이름(`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`)을 유지한다. dispatch 참조도 같은 이름을 쓴다.
-- Claude Code의 자동 위임 전제("always dispatch")는 OpenCode에서도 유효하다. OpenCode는 Claude Code처럼 subagent description과 작업 문맥을 보고 자동으로 Task tool을 호출할 수 있다. 단, 사용자가 명시적으로 "main session only", "no subagents" 같은 제한을 둔 경우에는 그 지시가 우선한다는 문장을 유지한다.
+- 이 repo의 reviewer persona는 세 플랫폼에서 같은 이름(`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`)을 유지한다. dispatch 참조도 같은 이름을 쓴다.
+- 활성 skill의 위임 지시는 OpenCode에서도 충분한 dispatch 의도다. 사용자가 subagent 사용을 반복해서 요청하도록 별도 gate를 추가하지 않는다.
+- Task tool이나 호환 subagent capability가 없거나 dispatch가 실패하면 substantive 작업 전에 중단하고, `Delegation status: unavailable` 또는 `failed`와 관찰된 원인을 보고한 뒤 question tool로 direct fallback 여부를 묻는다. 사용자의 명시적 선택 전에는 main-session 작업으로 대체하지 않는다.
+- 병렬 reviewer 중 일부만 실패하면 성공한 결과를 보존하고 실패한 axis를 보고한 뒤, 누락된 pass를 main session에서 수행할지 사용자에게 묻는다.
+- Worker는 다시 Task tool로 subagent를 dispatch하지 않는다.
+- 사용자가 명시적으로 "main session only", "no subagents" 같은 제한을 둔 경우에는 그 지시가 우선한다.
 - Claude Code의 custom subagent는 `Agent` tool로 호출하지만, OpenCode의 custom subagent는 Task tool 또는 `@mention`으로 호출한다. skill 본문에서 dispatch를 설명할 때는 Task tool을 기준으로 적는다.
 
 ### Convert plan-mode instructions to OpenCode Plan/Build mode
 
-Claude Code에는 agent가 호출하는 plan-mode exit tool(`ExitPlanMode`)이 있다. OpenCode에는 agent-callable plan-exit tool이 없다. 사용자가 Plan agent에서 Build agent로 **직접 전환**(Tab 키)해야 하며, agent는 전환 후 첫 Build-mode turn에서 persistence를 수행한다.
+Claude Code의 `ExitPlanMode`에 대응해 현재 OpenCode Plan agent는 `plan_exit`을 사용할 수 있다. 최종 계획을 제시한 뒤 `plan_exit`으로 전환 승인을 요청하고, 승인되어 Build agent로 전환된 뒤 persistence를 수행한다.
 
-- Claude Code의 `ExitPlanMode` 호출은 OpenCode에서 **사용자가 Plan → Build 모드로 전환 (Tab)** 하는 흐름으로 바꾼다.
-- plan presentation 끝에 사용자에게 명시적인 hand-off line을 추가한다. 예: *"플랜 확정. Build 모드로 전환 (Tab) 한 뒤 'continue' 라고 답하면 파일을 저장할게."* / *"Plan ready — switch to Build mode (Tab) and reply 'continue' to persist these files."*
-- "agent calls `ExitPlanMode` with the final plan" 같은 지시는 제거하고, "사용자가 Build 모드로 전환하면 첫 번째 Build-mode turn에서 persistence를 수행한다"로 바꾼다.
-- 계획 단계는 read-only라는 원칙은 유지한다. OpenCode의 Plan agent는 permission이 `ask`로 설정되어 있어 write 전에 사용자 승인을 요구한다.
+- Claude Code의 `ExitPlanMode` 호출은 OpenCode의 **`plan_exit`** 호출로 바꾼다.
+- plan presentation 끝에 사용자에게 수동 Tab 전환과 별도 `continue` 응답을 요구하지 않는다. 최종 계획을 제시하고 `plan_exit`을 호출한다.
+- 계획 단계는 read-only라는 원칙을 유지한다. OpenCode Plan agent는 일반 파일 편집을 거부하고 plan 파일 위치만 편집할 수 있다.
 - 승인 후 첫 write가 스킬이 요구하는 persistence(Obsidian 저장 등)여야 한다는 정책은 유지한다. "첫 번째 Build-mode turn의 첫 tool calls"로 표현한다.
 - Claude Code의 `Plan` subagent는 OpenCode의 **Plan agent**(primary agent)로 대응된다. "Claude Code의 `Plan` subagent가 생성한 출력"은 "OpenCode의 Plan agent가 생성한 출력"으로 바꾼다.
 - `AskUserQuestion`으로 모드를 묻는 부분은 "question tool" 또는 "ask the user"로 바꾼다.
@@ -73,8 +76,8 @@ OpenCode는 skill을 다음 경로에서 발견한다:
 - 트리 패리티: 대상 skill에 `SKILL.md`가 있고, host-neutral `references/`·`scripts/` 트리가 Claude 소스와 동일한가.
 - 각 `SKILL.md`의 `name:`이 디렉터리명과 일치하고 YAML이 파싱되는가.
 - 잔존 스윕(`rg`): Claude 전용 `Agent` tool, `subagent_type: general-purpose`, `AskUserQuestion`, `ExitPlanMode`, `MultiEdit`, `sub-agent`(하이픈)가 문맥상 의도된 것인지 확인한다. `sub-agent`는 OpenCode 공식 용어인 `subagent`로 통일해야 한다.
-- 위임형 skill은 OpenCode에서 Task tool / `subagent_type` 흐름이 자연스러운가.
-- plan-mode skill은 Plan → Build 전환 hand-off line을 갖는가.
+- 위임형 skill은 OpenCode에서 Task tool / `subagent_type` 흐름이 자연스럽고, 명시적 실패 gate와 Worker의 재-dispatch 금지를 보존하며 실패 시 main session으로 조용히 대체하지 않는가.
+- plan-mode skill은 최종 계획 후 `plan_exit`으로 승인을 요청하고, 수동 Tab + `continue` hand-off를 요구하지 않는가.
 - `AGENTS.md` / `CLAUDE.md` 표현이 OpenCode 변형에서 "`AGENTS.md` and legacy `CLAUDE.md` when present"로 바뀌었는가.
 
 ## Sub-agent migration
@@ -95,9 +98,9 @@ Claude Code와 OpenCode 모두 Markdown 파일의 YAML frontmatter와 본문으�
 | Claude Code frontmatter | OpenCode frontmatter | 메모 |
 | --- | --- | --- |
 | `name: <name>` | `name: <name>` | 파일명과 일치. OpenCode는 filename을 이름으로 사용 |
-| `description: "..."` | `description: "..."` | **required**. OpenCode 자동 위임에 사용되므로 trigger·persona 충분히 설명 |
+| `description: "..."` | `description: "..."` | 생략 가능하지만 없으면 Task tool 목록에서 수동 호출 전용으로 안내된다. 자동 위임용 trigger·persona를 충분히 설명 |
 | `tools: Read, Grep, Glob, Bash` | `permission:` 객체 (아래 참조) | Claude `tools:` allowlist → OpenCode `permission:` 매핑 |
-| (없음) | `mode: subagent` | OpenCode는 `mode`를 명시해야 함 (`primary`/`subagent`/`all`) |
+| (없음) | `mode: subagent` | 선택 필드지만 이 repo의 persona agent는 Task 전용임을 명확히 하려고 명시 |
 | (없음) | `hidden: true` (선택) | `@mention` 자동완성에서 숨김. review-code처럼 dispatch-only agent에 사용 |
 
 ### Convert read-only and tool policy
@@ -169,9 +172,8 @@ OpenCode의 built-in agent 이름은 Claude Code와 다르다. skill 본문에�
 | (직접 구현) | `build` agent (primary) | OpenCode Build는 기본 primary agent |
 | `general-purpose` subagent | `general` subagent | Task tool의 기본 subagent_type |
 | (없음) | `explore` subagent | 읽기 전용 코드 탐색 |
-| (없음) | `scout` subagent | 외부 문서/의존성 연구 (read-only) |
 
-- Claude Code의 `subagent_type: general-purpose`는 OpenCode의 **`general`**로 바꾼다. 이름 충돌을 피하기 위해 custom agent 이름은 `general`, `explore`, `scout`, `build`, `plan`과 겹치지 않게 한다.
+- Claude Code의 `subagent_type: general-purpose`는 OpenCode의 **`general`**로 바꾼다. 이름 충돌을 피하기 위해 custom agent 이름은 `general`, `explore`, `build`, `plan`과 겹치지 않게 한다.
 - skill 본문에서 "Claude Code의 `Plan` subagent"는 "OpenCode의 Plan agent"로 바꾼다.
 
 ### Verify
@@ -190,14 +192,14 @@ OpenCode의 built-in agent 이름은 Claude Code와 다르다. skill 본문에�
 
 ### Convert Claude Code shell-script hooks to OpenCode plugin
 
-Claude Code hook은 `settings.json`의 `hooks` 블록과 `hooks/*.sh` 스크립트로 구성된다. OpenCode plugin은 `~/.config/opencode/plugins/*.js`에 JS 모듈로 정의하며, plugin function이 hook handler 객체를 반환한다.
+Claude Code hook은 `settings.json`의 `hooks` 블록과 `hooks/*.sh` 스크립트로 구성된다. OpenCode plugin은 JS/TS 모듈로 정의하며, plugin function이 hook handler 객체를 반환한다. personal harness는 plugin을 OpenCode config에 명시적으로 등록하는 방식을 사용한다.
 
 - Claude Code 소스: `hooks/claude/settings.json` + `hooks/claude/hooks/*.sh`
 - OpenCode 대상: `hooks/opencode/<plugin-name>.js` (단일 JS 파일로 통합)
-- 설치 대상은 `~/.config/opencode/plugins/<plugin-name>.js`다.
+- personal harness의 설치 대상은 `~/.config/opencode/personal-harness.js`다.
 - personal harness에서는 Claude Code의 hook script(`session-context.sh`, `git-identity-guard.sh`, `enforce-rg.sh`, `enforce-fd.sh`, `auto-format.sh`)를 **하나의 plugin 파일**로 통합한다. OpenCode plugin은 이벤트별 handler를 객체로 반환하므로, 여러 hook을 한 파일에서 처리하는 것이 자연스럽다.
 - 문서 드리프트 검사는 hook/plugin으로 구현하지 않는다. 모든 플랫폼의 `commit-code` skill이 커밋 후 변경 범위를 읽기 전용으로 검사하고, 필요한 문서와 업데이트 개요만 사용자에게 보고한다.
-- plugin 설정(`gitIdentity` 등)은 `opencode.json`의 `plugin` 배열에서 plugin 경로와 함께 옵션 객체로 전달한다.
+- plugin은 `opencode.jsonc`가 있으면 이를 우선하고 없으면 `opencode.json`을 사용하는 config의 `plugin` 배열에 `"./personal-harness.js"` 문자열로 등록한다. Git identity는 기본적으로 환경변수에서 읽는다.
 
 ### Event mapping
 
@@ -217,7 +219,7 @@ Claude Code의 hook 이벤트를 OpenCode plugin 이벤트로 매핑한다:
 
 ### Plugin structure
 
-plugin은 async function이 `(ctx, options)`를 받아 hook handler 객체를 반환하는 구조다:
+plugin은 async function이 context와 선택적 options를 받아 hook handler 객체를 반환하는 구조다. personal harness의 표준 config는 경로 문자열만 등록하므로 options는 기본값 `{}`를 사용한다:
 
 ```javascript
 export const PersonalHarness = async ({ directory, worktree, client }, options = {}) => {
@@ -249,23 +251,24 @@ export const PersonalHarness = async ({ directory, worktree, client }, options =
 ```
 
 - plugin function의 첫 인자 `ctx`는 `directory`, `worktree`, `project`, `client`, `$`(Bun shell)를 제공한다. cwd fallback은 `worktree || directory`를 사용한다. session context를 `client.session.prompt`로 주입하므로 `client`를 반드시 destructure한다.
-- plugin function의 두 번째 인자 `options`는 `opencode.json`의 `plugin` 배열에서 전달한 옵션이다. `gitIdentity` 설정을 여기서 받는다.
+- plugin function의 두 번째 인자 `options`는 tuple 형태로 plugin을 등록할 때 전달할 수 있는 선택적 옵션이다. personal harness의 표준 문자열 등록에서는 비어 있으며, `identityConfig()`가 `PERSONAL_GIT_EMAIL`, `PERSONAL_GIT_NAME`, `WORK_GIT_EMAIL`, `WORK_GIT_NAME`, `WORK_GITLAB_HOST` 환경변수로 fallback한다.
 - plugin function은 hook handler 객체를 반환한다. handler key는 이벤트명(`tool.execute.before`, `tool.execute.after`, `event` 등)이다.
 
-### Plugin configuration in opencode.json
+### Plugin configuration in opencode.jsonc or opencode.json
 
-plugin은 `opencode.json`의 `plugin` 배열에 경로와 옵션을 함께 등록한다:
+plugin은 OpenCode config의 `plugin` 배열에 경로 문자열로 등록한다:
 
 ```json
 {
   "plugin": [
-    ["./personal-harness.js", { "gitIdentity": { ... } }]
+    "./personal-harness.js"
   ]
 }
 ```
 
 - plugin 경로는 `~/.config/opencode/` 기준 상대경로다. 설치 시 `hooks/opencode/personal-harness.js`를 `~/.config/opencode/personal-harness.js`로 복사한다.
-- `gitIdentity` 옵션은 Claude Code에서 환경변수(`PERSONAL_GIT_EMAIL`, `WORK_GIT_EMAIL` 등)로 전달하던 값을 plugin 옵션으로 옮긴다. OpenCode plugin은 JS 환경에서 직접 git 명령을 실행하므로, 환경변수 대신 옵션 객체로 전달하는 것이 더 명확하다.
+- `scripts/apply-to-personal.sh`는 `~/.config/opencode/opencode.jsonc`가 있으면 이를 검사하고, 없으면 `opencode.json`을 검사한다. 표준 등록은 정확히 `"./personal-harness.js"` 문자열이다.
+- Git identity는 Claude Code와 같은 환경변수(`PERSONAL_GIT_EMAIL`, `PERSONAL_GIT_NAME`, `WORK_GIT_EMAIL`, `WORK_GIT_NAME`, `WORK_GITLAB_HOST`)를 사용한다. plugin의 선택적 `gitIdentity` options는 호환용 override이며 표준 설치에 필수인 config가 아니다.
 - Claude Code의 `hooks/claude/settings.json`은 OpenCode에서 대응물이 없다. plugin 파일 자체가 hook 정의이므로, `settings.json`의 `hooks` 블록을 별도로 둘 필요가 없다.
 
 ### Script I/O and blocking
@@ -295,18 +298,18 @@ Claude Code의 각 hook script를 OpenCode plugin function으로 매핑한다:
 ### Verify
 
 - plugin 파일이 유효한 JS module이고 `export`로 hook handler 객체를 반환하는가.
-- `opencode.json`의 `plugin` 배열에 plugin 경로와 옵션이 등록되어 있는가.
+- 선택된 OpenCode config(`opencode.jsonc` 우선, 없으면 `opencode.json`)의 `plugin` 배열에 `"./personal-harness.js"` 문자열이 등록되어 있는가.
 - `event` handler가 `event.type === "session.created"`를 필터링하고, work/personal context를 같은 sessionID에 한 번만 주입하는가.
 - `tool.execute.before` handler가 `input.tool === "bash"` 필터를 갖고, `guardSearchCommands`와 `guardGitIdentity`를 호출하는가.
 - `tool.execute.after` handler가 `["edit","write","apply_patch"].includes(input.tool)` 필터를 갖고, `runAutoFormat`을 호출하는가.
 
-- Claude Code의 환경변수 기반 git identity(`PERSONAL_GIT_EMAIL`, `WORK_GIT_EMAIL` 등)가 plugin 옵션(`gitIdentity`)으로 마이그레이션되었는가.
+- plugin이 Claude Code와 같은 git identity 환경변수(`PERSONAL_GIT_EMAIL`, `WORK_GIT_EMAIL` 등)를 fallback으로 읽는가.
 - 샘플 입력으로 스모크 테스트: 차단 케이스가 `throw new Error`를 발생시키는가; auto-format이 실패 시 에러를 전달하는가.
 
 ## Out of scope
 
 - 이 문서는 Claude Code가 Personal 대표이고 OpenCode가 Personal 하위 변형이라는 ownership을 바꾸지 않는다. OpenCode는 Claude Code에서만 파생되며, OpenCode → Claude Code 역방향 동기화는 지원하지 않는다.
-- 이 문서는 설치/배포를 수행하지 않는다. OpenCode 설치는 `scripts/apply-to-personal.sh`가 담당해야 하며, `skills/opencode/`·`agents/opencode/`·`hooks/opencode/`를 각각 `~/.config/opencode/`의 `skills`·`agents`·`plugins`로 동기화한다. 배포 스크립트 수정은 별도 작업이다.
+- 이 문서는 설치/배포를 수행하지 않는다. OpenCode 설치는 `scripts/apply-to-personal.sh`가 담당해야 하며, `skills/opencode/`는 `~/.config/opencode/skills/`로, `agents/opencode/`는 `~/.config/opencode/agents/`로, `hooks/opencode/personal-harness.js`는 `~/.config/opencode/personal-harness.js`로 동기화한다. 배포 스크립트 수정은 별도 작업이다.
 - OpenCode → Codex 동기화는 지원하지 않는다. Work 환경의 변형은 Codex에서만 파생된다.
 - Codex 변형의 변경을 OpenCode로 직접 가져오지 않는다. Codex → Claude Code → OpenCode 경로를 따른다. 즉, Work의 변경은 먼저 Claude Code로 공유된 후 Claude Code에서 OpenCode로 파생된다.
 - OpenCode는 Claude Code 호환 모드로 `~/.claude/skills/`, `~/.claude/CLAUDE.md`, `~/.claude/agents/`를 fallback으로 읽을 수 있으나, 이 호환 모드에 의존하지 않고 독립 변형을 유지한다.

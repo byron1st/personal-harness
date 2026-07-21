@@ -1,6 +1,6 @@
 # Implementation flow
 
-`implement-dev` always takes one plan file describing the full implementation and executes it in one pass. This flow is followed by whoever actually edits the code - either a **Worker** (a subagent launched by the `implement-dev` Dispatcher, recognized by the `You are running as the implementation Worker subagent.` signal) or an **interactive** main session opted into direct execution (no subagent dispatch). The Dispatcher itself does not edit; it only launches one Worker and parses that Worker's return. Mode-specific routing (asking the user vs. returning `blocked`) is called out inline.
+`implement-dev` always takes one plan file describing the full implementation and executes it in one pass. This flow is followed by whoever actually edits the code - either a **Worker** (a subagent launched by the `implement-dev` Dispatcher, recognized by the `You are running as the implementation Worker subagent.` signal) or an **interactive** main session explicitly authorized for direct execution (for example, after a delegation failure). The Dispatcher itself does not edit; it only launches one Worker and parses that Worker's return. Mode-specific routing (asking the user vs. returning `blocked`) is called out inline.
 
 ## 1. Read the plan
 
@@ -13,7 +13,7 @@ Read the plan file end-to-end. The plan is a coarse-grained **direction** - it l
 
 Do **not** expect a hardcoded `## Goal` / `## Technical Approach` / `## Affected Files` / `## Verification` template - the plan body is free-form between the anchors above. Adopt whatever sections it does carry; do not invent missing ones.
 
-**Verification commands** are not read off a plan section: extract lint / format / test / build commands from `Makefile`, `AGENTS.md`, `CLAUDE.md`, or `README.md` during the `Prepare` step. (`implement-dev` already does this in SKILL.md.)
+**Verification commands** are not read off a plan section: extract lint / format / test / build commands from `Makefile`, `AGENTS.md` (and legacy `CLAUDE.md` when present), or `README.md` during the `Prepare` step. (`implement-dev` already does this in SKILL.md.)
 
 ## 2. Implement task-by-task with TDD
 
@@ -51,11 +51,11 @@ After all non-blocked TODOs are complete, run the full verification suite you ex
 
 All commands must pass. If anything fails, follow Error Recovery in SKILL.md.
 
-If the plan happens to include a `## Verification` **checklist** (free-form, not guaranteed), tick its items in the plan file as each command passes. If the plan does not have one (the common case - verification commands were extracted from `Makefile` / `AGENTS.md` / `CLAUDE.md` / `README.md`, not authored into the plan), just run the extracted commands and record the result under `## Verification` in the Worker return (②) and in the report.
+If the plan happens to include a `## Verification` **checklist** (free-form, not guaranteed), tick its items in the plan file as each command passes. If the plan does not have one (the common case - verification commands were extracted from `Makefile`, `AGENTS.md` and legacy `CLAUDE.md` when present, or `README.md`, not authored into the plan), just run the extracted commands and record the result under `## Verification` in the Worker return (②) and in the report.
 
 ## 4. Refresh project docs (if affected)
 
-If the implementation changed public APIs, commands, architecture, or setup steps, update `AGENTS.md` / `CLAUDE.md` / `README.md`. Preserve existing section structure; update only content that is now stale.
+If the implementation changed public APIs, commands, architecture, or setup steps, update `AGENTS.md`, legacy `CLAUDE.md` when present, and `README.md`. Preserve existing section structure; update only content that is now stale.
 
 ## 5. Write the completion report (①)
 
