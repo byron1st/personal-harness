@@ -28,8 +28,8 @@ Any unresolved `## Decision Needed` in any return stops the loop regardless of r
 ## Reduced vs. final TESTING
 
 - **Reduced (re-entry after fixes)**: unit/e2e over the changed files only; mutation skipped.
-- **Final mutation round**: when REVIEWING returns `pass` and any reduced round skipped mutation, run one mutation-only `test-dev` pass before READY_TO_COMMIT. Test-code-only additions do not void review evidence. `pass` → READY_TO_COMMIT; `pass-with-suspected-defects` → the TESTING human gate.
-- A loop whose Round 0 already satisfied mutation policy and had no remediation rounds owes no final mutation round.
+- **Final mutation round**: when REVIEWING returns `pass` and a reduced round skipped mutation **the project has tooling for**, run one mutation-only `test-dev` pass before READY_TO_COMMIT. Test-code-only additions do not void review evidence. `pass` → READY_TO_COMMIT; `pass-with-suspected-defects` → the TESTING human gate.
+- No final mutation round is owed when the loop had no remediation rounds and Round 0 already satisfied mutation policy, **or when the project has no mutation tooling at all** (the approved infeasibility skip satisfies predicate ⑤ directly, so a final round would be a no-op).
 
 ## Termination predicate (all 9 must hold for READY_TO_COMMIT)
 

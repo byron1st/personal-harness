@@ -40,7 +40,7 @@ Each stage runs by invoking the stage skill; the skill's own Dispatcher flow exe
 
 Production fixes void prior test and review evidence. A completed FIXING round therefore always re-enters **TESTING with reduced scope** (unit/e2e over the changed files only; mutation skipped), then **REVIEWING** — never straight back to review.
 
-- **Final mutation round**: when REVIEWING returns `pass` and any reduced round skipped mutation, run one mutation-only `test-dev` pass before declaring READY_TO_COMMIT. Test-code-only additions do not void review evidence; findings from this pass go through the TESTING human gate.
+- **Final mutation round**: when REVIEWING returns `pass` and a reduced round skipped mutation **that the project actually has tooling for**, run one mutation-only `test-dev` pass before declaring READY_TO_COMMIT. Test-code-only additions do not void review evidence; findings from this pass go through the TESTING human gate. If the project has no mutation tooling at all, skip this round — the approved infeasibility skip already satisfies termination predicate ⑤, so the round would be a guaranteed no-op.
 - **Multiple Fix findings in one round**: one `fix-dev` invocation per finding (its brief carries `Finding ID` and `Loop context`), sequentially. The round's TESTING/REVIEWING re-entry happens once, after all fixes.
 
 ## Budgets and escalation
