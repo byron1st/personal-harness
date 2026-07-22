@@ -70,6 +70,15 @@ Claude Code의 `ExitPlanMode`에 대응해 현재 OpenCode Plan agent는 `plan_e
 - Claude Code의 `Plan` subagent는 OpenCode의 **Plan agent**(primary agent)로 대응된다. "Claude Code의 `Plan` subagent가 생성한 출력"은 "OpenCode의 Plan agent가 생성한 출력"으로 바꾼다.
 - `AskUserQuestion`으로 모드를 묻는 부분은 "question tool" 또는 "ask the user"로 바꾼다.
 
+### Migrate controller skills (dev-loop) as a primary session skill
+
+`dev-loop`는 다른 스킬의 Dispatcher 흐름을 호출하는 **primary 세션 컨트롤러 스킬**이다. subagent가 아니므로 `agents/opencode/`에 대응 agent 파일이나 `permission:` 블록이 필요 없다.
+
+- 본문은 host-neutral하다(스테이지 스킬 위임이라 Claude 전용 도구명이 없음). 거의 그대로 옮긴다.
+- `description`은 1024자 이내이면 되고(현재 분량은 충분히 이내), 값에 `: `(콜론+공백)가 있으면 따옴표로 감싼다.
+- 트리아지 등 사용자 상호작용은 dev-loop가 아니라 호출되는 `review-code`가 소유하므로, question tool 매핑은 `review-code`에만 적용되고 dev-loop 본문에는 추가 변환이 없다.
+- 상태 어휘·섹션명·ID·스킬 이름은 Platform invariants 목록대로 번역하지 않는다.
+
 ### Handle OpenCode skill discovery and frontmatter
 
 OpenCode는 skill을 다음 경로에서 발견한다:
@@ -328,3 +337,4 @@ Claude Code의 각 hook script를 OpenCode plugin function으로 매핑한다:
 - Codex 변형의 변경을 OpenCode로 직접 가져오지 않는다. Codex → Claude Code → OpenCode 경로를 따른다. 즉, Work의 변경은 먼저 Claude Code로 공유된 후 Claude Code에서 OpenCode로 파생된다.
 - OpenCode는 Claude Code 호환 모드로 `~/.claude/skills/`, `~/.claude/CLAUDE.md`, `~/.claude/agents/`를 fallback으로 읽을 수 있으나, 이 호환 모드에 의존하지 않고 독립 변형을 유지한다.
 - OpenCode 변형의 현재 동작이 Claude Code에 맞지 않으면 그대로 복사하지 말고, 사용자-facing 의미만 보존한 채 OpenCode 실행모델로 재작성한다.
+- **무인(headless) dev-loop 모드는 OpenCode 대상에서 제외된다.** 향후 Claude 전용 무인 모드(`/goal` 래핑 또는 Ralph식 Stop hook)는 세션 종료 시점에 continuation을 유도하는 Stop 이벤트에 의존하는데, OpenCode plugin 모델에는 대응하는 Stop 이벤트가 없어 무인 루프를 구성할 수 없다. dev-loop의 대화형 MVP(사람 트리아지 + READY_TO_COMMIT 게이트)는 정상적으로 이식되지만, 무인 자동화 계층은 이식 대상이 아니다.

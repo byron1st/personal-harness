@@ -90,6 +90,15 @@ Claude Code의 review-code 트리아지는 `AskUserQuestion`으로 blocking find
 - 응답이 없는 ID는 **미분류로 유지**한다 — 자동 수용 금지, Fix로의 자동 분류도 금지(분류는 사용자의 명시 응답만으로 확정되고, 미분류 잔존 시 Stage Status는 `needs-decision`).
 - Accept 분류 항목의 AR 기록 위치·형식·불변식은 Platform invariants 목록을 따른다.
 
+### Migrate controller skills (dev-loop) without agent or hook dependencies
+
+`dev-loop`는 다른 스킬의 Dispatcher 흐름을 호출하고 상태를 전이시키는 **primary 세션 컨트롤러 스킬**이다. 자체적으로 Worker를 spawn하지 않으므로 별도 custom agent도, `agents/openai.yaml`도 필요 없다.
+
+- 본문은 host-neutral하다(스테이지 스킬 위임이라 Claude 전용 도구명이 없음). 거의 그대로 옮기되, `description`만 300자 이내 trigger 중심으로 압축한다.
+- 트리아지 등 사용자 상호작용은 dev-loop가 직접 하지 않고 호출되는 `review-code`가 소유하므로, 트리아지 텍스트 응답 규약(위 "Convert structured triage questions..." 참조)은 `review-code`에만 적용되고 dev-loop 본문에는 추가 변환이 없다.
+- **루프 불변식은 스킬 본문 규칙으로만 보장된다.** 커밋·푸시·PR 금지, AR은 사용자 명시 Accept 시에만 기록, 테스트 약화 금지, 예산 초과 금지 등은 SKILL 본문이 강제한다 — 훅에 의존하지 않는다. Codex의 `PreToolUse`는 공식 문서상 모든 shell 경로를 intercept하지 못하므로, 훅으로 루프 불변식을 강제한다고 가정하지 말고 본문 규칙을 그대로 보존한다.
+- 상태 어휘·섹션명·ID·스킬 이름은 Platform invariants 목록대로 번역하지 않는다.
+
 ### Handle Codex skill UI metadata
 
 `skills/codex/<skill>/agents/openai.yaml`은 Codex/OpenAI UI 메타데이터이며 repo-level custom agent 정의(`agents/codex/*.toml`)가 아니다.

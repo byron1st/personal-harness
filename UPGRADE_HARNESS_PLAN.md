@@ -1,6 +1,6 @@
 # UPGRADE_HARNESS_PLAN.md — 메타프롬프팅 & 루프 엔지니어링 적용 실행 계획
 
-이 문서는 personal-harness에 메타프롬프팅과 루프 엔지니어링을 적용하는 **실행 계약이자 진행 추적 문서**다. 조사 근거는 [NEXT_HARNESS_CLAUDE.md](NEXT_HARNESS_CLAUDE.md), [NEXT_HARNESS_CODEX.md](NEXT_HARNESS_CODEX.md), [NEXT_HARNESS_OPENCODE_GROK.md](NEXT_HARNESS_OPENCODE_GROK.md) 3개 문서이며, 이 계획은 세 문서의 통합·조정 결과다. 이 문서만 읽고 작업을 이어갈 수 있도록 작성되었다 — 이전 대화의 기억은 필요 없다.
+이 문서는 personal-harness에 메타프롬프팅과 루프 엔지니어링을 적용하는 **실행 계약이자 진행 추적 문서**다. 조사 근거는 [NEXT_HARNESS_CLAUDE.md](docs/archive/NEXT_HARNESS_CLAUDE.md), [NEXT_HARNESS_CODEX.md](docs/archive/NEXT_HARNESS_CODEX.md), [NEXT_HARNESS_OPENCODE_GROK.md](docs/archive/NEXT_HARNESS_OPENCODE_GROK.md) 3개 문서(T2-4에서 `docs/archive/`로 아카이브)이며, 이 계획은 세 문서의 통합·조정 결과다. 이 문서만 읽고 작업을 이어갈 수 있도록 작성되었다 — 이전 대화의 기억은 필요 없다.
 
 - 작성일: 2026-07-21 (사용자 승인 동일)
 - 브랜치: `feature/next-harness`
@@ -26,7 +26,7 @@
 | T1 | 1차 변형 전파 (P0~P3 범위) | done | |
 | P4 | dev-loop 컨트롤러 스킬 신설 (MVP) | done | |
 | P5 | 계측과 튜닝 | done | |
-| T2 | 2차 변형 전파 + 문서 마감 | todo | |
+| T2 | 2차 변형 전파 + 문서 마감 | done | |
 | P7 | 후속 확장 (multi-step 외곽 루프 / flywheel / 무인 모드) | on-hold | 착수 자체가 별도 사용자 결정 |
 
 상태 값: `todo`(미착수) / `in-progress`(진행 중) / `done`(완료 기준 충족) / `on-hold`(보류) / `skipped`(사유와 함께 건너뜀).
@@ -163,10 +163,10 @@ READY_TO_COMMIT에서 정지 → 인간이 IMPL 리포트·LOOP 파일 확인 �
 
 ### T2 — 2차 변형 전파 + 문서 마감
 
-- [ ] **T2-1** sync-harness 실행: `Claude -> Codex + OpenCode` (dev-loop + P5 조정분). Codex dev-loop는 description 300자 압축, `agents/openai.yaml`은 기본 미생성. OpenCode dev-loop는 frontmatter 규칙(1024자, 콜론 따옴표) 준수, dev-loop 자체는 primary 세션 스킬이므로 agent 파일·permission 블록 불필요.
-- [ ] **T2-2** MIGRATE 문서 갱신: dev-loop 변환 규칙, 무인 모드(P7-3)는 Claude 전용이며 OpenCode는 plugin에 Stop 대응 이벤트가 없어 제외임을 MIGRATE_TO_OPENCODE.md Out of scope에 명시. Codex의 PreToolUse가 모든 shell 경로를 intercept하지 못하므로 루프 불변식은 스킬 본문 규칙으로만 보장됨을 명시.
-- [ ] **T2-3** `verify-sync.py` 통과 + `scripts/apply-to-personal.sh`/`apply-to-work.sh` 실행으로 신규 스킬(dev-loop) 설치 확인(디렉토리 단위 복사라 자동 포함 예상 — 실행으로 검증).
-- [ ] **T2-4** NEXT_HARNESS_CLAUDE.md / NEXT_HARNESS_CODEX.md / NEXT_HARNESS_OPENCODE_GROK.md 3개 조사 문서의 아카이브·삭제 여부를 사용자에게 확인(이 문서가 통합 결론을 대체).
+- [x] **T2-1** sync-harness 실행: `Claude -> Codex + OpenCode` (dev-loop + P5 조정분). Codex dev-loop는 description 300자 압축, `agents/openai.yaml`은 기본 미생성. OpenCode dev-loop는 frontmatter 규칙(1024자, 콜론 따옴표) 준수, dev-loop 자체는 primary 세션 스킬이므로 agent 파일·permission 블록 불필요.
+- [x] **T2-2** MIGRATE 문서 갱신: dev-loop 변환 규칙, 무인 모드(P7-3)는 Claude 전용이며 OpenCode는 plugin에 Stop 대응 이벤트가 없어 제외임을 MIGRATE_TO_OPENCODE.md Out of scope에 명시. Codex의 PreToolUse가 모든 shell 경로를 intercept하지 못하므로 루프 불변식은 스킬 본문 규칙으로만 보장됨을 명시.
+- [x] **T2-3** `verify-sync.py` 통과 + `scripts/apply-to-personal.sh`/`apply-to-work.sh` 실행으로 신규 스킬(dev-loop) 설치 확인(디렉토리 단위 복사라 자동 포함 예상 — 실행으로 검증). *(설치 메커니즘은 임시 디렉토리 dry-run으로 검증 — 실제 live 전역 배포는 사용자 결정으로 보류)*
+- [x] **T2-4** NEXT_HARNESS_CLAUDE.md / NEXT_HARNESS_CODEX.md / NEXT_HARNESS_OPENCODE_GROK.md 3개 조사 문서의 아카이브·삭제 여부를 사용자에게 확인(이 문서가 통합 결론을 대체). *(사용자 결정: `docs/archive/`로 아카이브 — git mv로 이력 보존)*
 
 완료 기준: 3변형 트리 패리티 + 설치 검증 완료.
 
@@ -266,3 +266,13 @@ READY_TO_COMMIT에서 정지 → 인간이 IMPL 리포트·LOOP 파일 확인 �
 - 완료 기준 검증: **잘못된 자동 수정 0건** ✓ · **에스컬레이션이 §2 정의 조건에서만 발생** ✓(정상 run에서 0 오발동, refuse 게이트만 정의된 preflight 조건에서 발동).
 - 편차/결정: (1) fix-cycle을 태우려면 리뷰가 차단 finding을 반환해야 하는데 구현자 AC 증거 검사(P2-2)가 기능 결함을 조기 차단하므로, AC-직교 reliability HIGH를 시드하는 방식으로 컨트롤러의 remediation 라우팅을 검증(구현자 해피패스는 P4에서 검증됨 — 표준 컨트롤러 테스트 기법). (2) 리뷰는 P3 근거대로 1축으로 축소(fix-cycle 메커니즘은 축 수와 독립). (3) 스킬 미설치라 Worker에 소스 SKILL 경로 명시 구동.
 - 다음 시작점: **T2-1** (sync-harness Claude→Codex+OpenCode: dev-loop + P5 조정분).
+
+### 2026-07-22 — T2 완료 (2차 변형 전파 + 문서 마감)
+- 수행: T2-2(MIGRATE_TO_CODEX.md·MIGRATE_TO_OPENCODE.md에 "Migrate controller skills (dev-loop)" 절 신설 — primary 세션 컨트롤러라 agent/permission/openai.yaml 불필요, description 압축(Codex)·콜론따옴표(OpenCode), 루프 불변식은 스킬 본문으로만 보장(Codex PreToolUse가 전체 shell 미intercept), 트리아지는 review-code 소유; MIGRATE_TO_OPENCODE.md Out of scope에 무인 모드(P7-3) Claude 전용·OpenCode Stop 이벤트 부재로 제외 명시), T2-1(dev-loop을 Codex/OpenCode로 전파 — 본문 host-neutral이라 3변형 동일, Codex만 description 285자로 압축, references 2개 verbatim; agent 파일·permission 블록 미생성), T2-3(verify-sync PASS + 임시 디렉토리 dry-run으로 3변형 모두 dev-loop 설치 확인[SKILL+references, 14개 스킬 디렉토리 수 일치]), T2-4(연구 문서 3건을 `docs/archive/`로 git mv 아카이브, 계획 상단 링크 갱신).
+- 완료 기준 검증: **3변형 트리 패리티** — verify-sync PASS, dev-loop이 claude/codex/opencode 모두에 SKILL.md+references/{transitions,loop-state}.md로 존재, 신규 계약 키워드·상태 어휘 3변형 일치(T1에서 확립, T2 전파분 포함 유지). **설치 검증** — dry-run으로 디렉토리 단위 복사가 dev-loop 자동 포함함을 확인.
+- 편차/결정: (1) 실제 live 전역 배포(apply-to-personal/work.sh)는 ~/.claude·~/.config/opencode·~/.codex를 wipe 후 재설치하는 파괴적 작업이라 사용자 결정으로 보류 — 설치 메커니즘은 무해한 임시 디렉토리 dry-run으로 동등하게 검증(sync-harness 스킬도 "Do not deploy"로 배포를 개발 흐름과 분리). (2) 연구 문서는 삭제 대신 `docs/archive/` 아카이브(사용자 선택) — 근거 이력 보존.
+- 다음 시작점: 없음(P0~T2 완료). **P7은 on-hold** — 착수는 별도 사용자 결정.
+
+### 2026-07-22 — T2-2 보정 (역방향 대칭성)
+- 수행: 사용자 지적 — T2-2가 MIGRATE_TO_CODEX/OPENCODE에만 controller skill(dev-loop) 절을 추가하고 MIGRATE_TO_CLAUDE에는 누락. Migration은 Codex→Claude도 지원되므로(Work 중심 Codex에서 dev-loop 수정 후 역이식 가능) 대칭 가이드 필요. MIGRATE_TO_CLAUDE.md "Preserve cross-platform contract keywords" 뒤에 "Migrate controller skills (dev-loop) back to Claude Code" 절 신설 — custom subagent 미생성, description은 Claude에 300자 제약 없으니 필요 시 보강, 트리아지 변환은 review-code 소유, 루프 불변식은 본문으로만 보장, 계약 키워드 비번역.
+- 편차/결정: 없음(누락 보완).

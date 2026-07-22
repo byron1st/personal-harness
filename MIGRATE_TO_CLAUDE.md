@@ -59,6 +59,16 @@ Codex 변형을 소스로 역이식할 때도 공통 계약 키워드는 번역�
 - ID 규칙(`AC-N`, `AR-NNN`, `REVIEW-NNN`, `TEST-NNN`)과 AR 인간-전용 기록 불변식.
 - Codex의 텍스트 트리아지 규약("각 ID에 `REVIEW-001: fix` 형식으로 응답")은 Claude Code의 `AskUserQuestion` 트리아지로 되돌리되, 무응답=미분류 유지·자동 수용 금지 의미는 바꾸지 않는다.
 
+### Migrate controller skills (dev-loop) back to Claude Code
+
+`dev-loop`는 다른 스킬의 Dispatcher 흐름을 호출하고 상태를 전이시키는 **primary 세션 컨트롤러 스킬**이다. Codex 변형을 소스로 Claude Code로 역이식할 때도 대칭적으로 다룬다.
+
+- 자체적으로 Worker를 spawn하지 않으므로 대응하는 custom subagent(`agents/claude/*.md`)를 만들지 않는다. 컨트롤러 본문만 `skills/claude/dev-loop/`로 옮긴다.
+- 본문은 host-neutral하다(스테이지 스킬 위임이라 Codex 전용 도구명이 없음). 거의 그대로 옮기되, Codex에서 300자로 압축된 `description`은 Claude Code에 300자 제약이 없으므로 트리거가 부족하면 한 문단 안에서 보강한다("Expand descriptions only when Claude Code benefits from it" 참조).
+- 트리아지 등 사용자 상호작용은 dev-loop가 아니라 호출되는 `review-code`가 소유하므로, Codex의 텍스트 트리아지 규약을 Claude Code의 `AskUserQuestion`으로 되돌리는 변환은 `review-code`에만 적용되고 dev-loop 본문에는 추가 변환이 없다.
+- **루프 불변식은 스킬 본문 규칙으로만 보장된다.** 커밋·푸시·PR 금지, AR은 사용자 명시 Accept 시에만 기록, 테스트 약화 금지, 예산 초과 금지 등은 SKILL 본문이 강제한다 — 훅에 의존하지 않는다. Codex의 hooks.json이든 Claude의 settings.json이든 훅으로 루프 불변식을 강제한다고 가정하지 말고 본문 규칙을 그대로 보존한다.
+- 상태 어휘·섹션명·ID·스킬 이름은 위 "Preserve cross-platform contract keywords"대로 번역하지 않는다.
+
 ### Replace Codex-safe generic wording with Claude Code tool names only when useful
 
 Codex 변형은 호스트 독립성을 위해 "read files", "search", "ask the user"처럼 기능 중심 표현을 쓰는 경우가 많다. Claude Code 변형은 필요할 때 `Read`, `Grep`, `Glob`, `Bash`, `Edit`, `Write`, `MultiEdit`, `AskUserQuestion`, `ExitPlanMode`, `Agent` 같은 도구명을 직접 써도 된다.
