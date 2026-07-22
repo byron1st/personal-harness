@@ -27,6 +27,7 @@ Build a compact architecture view before planning:
 - Data flow and ownership boundaries.
 - Backward-compatibility, migration, deployment, and operational constraints.
 - Existing conventions that constrain the design.
+- Accepted Review Exceptions: when `AGENTS.md` (or `CLAUDE.md`) carries a `## Accepted Review Exceptions` section, treat its valid entries as planning constraints - do not plan work that silently re-litigates an accepted behavior, and flag any change that would trip an entry's `Re-open when` condition.
 
 Separate repo facts from product intent. Discoverable facts come from the repo. Preferences and tradeoffs come from the user.
 
@@ -38,6 +39,8 @@ Good questions choose between real options. Offer a recommended default when the
 
 Keep asking until the goal, success criteria, in-scope and out-of-scope boundaries, constraints, and key tradeoffs are explicit enough that an implementer is not forced to make architecture-level decisions.
 
+When you run as a dispatched subagent you cannot talk to the user. Never stall on an open question: return it in your output as a **question list** - each entry with the real options and a recommended default - for the calling session to relay in its own interview. The interview is always owned by the caller, never by you.
+
 ## Planning Lens
 
 When shaping or reviewing a plan, check these dimensions:
@@ -48,7 +51,7 @@ When shaping or reviewing a plan, check these dimensions:
 - Design alternatives: meaningful options were considered, and the chosen direction has a concrete reason.
 - Sequencing: the work can be implemented in an order that keeps the project coherent and verifiable.
 - Risk: migrations, compatibility, data loss, operational visibility, and rollback are addressed when relevant.
-- Verification: tests and acceptance checks prove behavior and contracts, not just implementation details.
+- Verification: tests and acceptance checks prove behavior and contracts, not just implementation details. Acceptance criteria must be observable and evidence-backed - an independent evaluator should be able to judge pass/fail from the plan alone - and the plan's authority boundaries (executor discretion, must-ask changes, stop conditions, remediation budget) must be explicit.
 
 Flag over-planning too. Speculative abstractions, optional configurability, or broad refactors that are not needed for the requested change should be removed from the plan.
 

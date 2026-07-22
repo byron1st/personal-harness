@@ -20,7 +20,7 @@
 | Phase | 내용 | 상태 | 비고 |
 | --- | --- | --- | --- |
 | P0 | 사전 정합성 정리 | done | |
-| P1 | plan-dev 메타프롬프팅 강화 | todo | |
+| P1 | plan-dev 메타프롬프팅 강화 | done | |
 | P2 | 공통 단계 결과 계약 정렬 | todo | |
 | P3 | review-code 트리아지 + Accepted Review Exceptions | todo | |
 | T1 | 1차 변형 전파 (P0~P3 범위) | todo | |
@@ -101,13 +101,13 @@ READY_TO_COMMIT에서 정지 → 인간이 IMPL 리포트·LOOP 파일 확인 �
 
 ### P1 — plan-dev 메타프롬프팅 강화
 
-- [ ] **P1-1** [skills/claude/plan-dev/SKILL.md](skills/claude/plan-dev/SKILL.md): Process 5단계 뒤 **완료 조건 라운드** 신설 — `AskUserQuestion`으로 TODO별 관찰 가능한 완료 상태·증거·수용 가능 리스크를 합의하고 Acceptance Contract 초안을 사용자와 확정. 계획 승인 시 접근법과 합격 기준을 함께 승인하게 한다.
-- [ ] **P1-2** 동일 파일: step 8 Cold hand-off gate 확장 — 기존 "구현자가 방향을 복원할 수 있는가"에 **"독립 평가자가 이 플랜(+AC)만으로 합격/실패를 판정할 수 있는가"** 를 승인 차단 조건으로 추가.
-- [ ] **P1-3** 동일 파일: Plan granularity 절에 "일반 lint/test/build 명령은 플랜에 복제하지 않는다 — AC에는 저장소가 자동으로 알려줄 수 없는 작업 특화 결과와 증거만 기록"을 명시.
-- [ ] **P1-4** 동일 파일: planner 두 접점 명시 — step 4에서 모호·횡단·아키텍처 민감 작업일 때 planner를 dispatch해 (a) 아키텍처 뷰, (b) 사용자에게 물을 고영향 질문 목록(선택지+권장 기본값 형식)을 받고 그 질문을 step 5·완료 조건 라운드에서 메인 세션이 릴레이; step 8에서 초안 플랜+AC를 planner에 보내 Planning Lens 검토(goal/boundary/contract fit, AC의 평가 충분성, over-planning 플래그). trivial 작업은 양쪽 생략.
-- [ ] **P1-5** [references/single-step-plan.md](skills/claude/plan-dev/references/single-step-plan.md): enforced 섹션 2개 추가 — `## Acceptance Contract`(AC 테이블 + 선택 열 `Do not mark done if`, 각 TODO에 `(AC-N)` 참조)와 `## Authority Boundaries`(재량/금지/중단 조건/루프 예산 기본 3). 파일 스켈레톤 갱신.
-- [ ] **P1-6** [references/multi-steps-plan.md](skills/claude/plan-dev/references/multi-steps-plan.md): sub-plan 상속 규칙에 두 섹션 추가(각 sub-plan이 자기 AC 보유), step contract와 AC의 관계 1문단(스텝 간 seam은 계약, 스텝 내 완료는 AC).
-- [ ] **P1-7** [agents/claude/planner.md](agents/claude/planner.md): Planning Lens의 Verification 항목 확장(수용 기준의 관찰 가능성·증거·권한 경계), 기존 AR이 있으면 계획 제약에 반영, "서브에이전트로 실행될 때 질문은 사용자에게 직접 묻는 대신 **반환 형식(질문 목록)** 으로 전달"을 명문화.
+- [x] **P1-1** [skills/claude/plan-dev/SKILL.md](skills/claude/plan-dev/SKILL.md): Process 5단계 뒤 **완료 조건 라운드** 신설 — `AskUserQuestion`으로 TODO별 관찰 가능한 완료 상태·증거·수용 가능 리스크를 합의하고 Acceptance Contract 초안을 사용자와 확정. 계획 승인 시 접근법과 합격 기준을 함께 승인하게 한다.
+- [x] **P1-2** 동일 파일: step 8 Cold hand-off gate 확장 — 기존 "구현자가 방향을 복원할 수 있는가"에 **"독립 평가자가 이 플랜(+AC)만으로 합격/실패를 판정할 수 있는가"** 를 승인 차단 조건으로 추가.
+- [x] **P1-3** 동일 파일: Plan granularity 절에 "일반 lint/test/build 명령은 플랜에 복제하지 않는다 — AC에는 저장소가 자동으로 알려줄 수 없는 작업 특화 결과와 증거만 기록"을 명시.
+- [x] **P1-4** 동일 파일: planner 두 접점 명시 — step 4에서 모호·횡단·아키텍처 민감 작업일 때 planner를 dispatch해 (a) 아키텍처 뷰, (b) 사용자에게 물을 고영향 질문 목록(선택지+권장 기본값 형식)을 받고 그 질문을 step 5·완료 조건 라운드에서 메인 세션이 릴레이; step 8에서 초안 플랜+AC를 planner에 보내 Planning Lens 검토(goal/boundary/contract fit, AC의 평가 충분성, over-planning 플래그). trivial 작업은 양쪽 생략.
+- [x] **P1-5** [references/single-step-plan.md](skills/claude/plan-dev/references/single-step-plan.md): enforced 섹션 2개 추가 — `## Acceptance Contract`(AC 테이블 + 선택 열 `Do not mark done if`, 각 TODO에 `(AC-N)` 참조)와 `## Authority Boundaries`(재량/금지/중단 조건/루프 예산 기본 3). 파일 스켈레톤 갱신.
+- [x] **P1-6** [references/multi-steps-plan.md](skills/claude/plan-dev/references/multi-steps-plan.md): sub-plan 상속 규칙에 두 섹션 추가(각 sub-plan이 자기 AC 보유), step contract와 AC의 관계 1문단(스텝 간 seam은 계약, 스텝 내 완료는 AC).
+- [x] **P1-7** [agents/claude/planner.md](agents/claude/planner.md): Planning Lens의 Verification 항목 확장(수용 기준의 관찰 가능성·증거·권한 경계), 기존 AR이 있으면 계획 제약에 반영, "서브에이전트로 실행될 때 질문은 사용자에게 직접 묻는 대신 **반환 형식(질문 목록)** 으로 전달"을 명문화.
 
 완료 기준: 신규 플랜 1건에서 AC 테이블·Authority Boundaries·AC 참조 TODO가 생성되고, 본문 분량이 기존 대비 유의미하게 늘지 않는다(경계만 추가).
 
@@ -227,3 +227,9 @@ READY_TO_COMMIT에서 정지 → 인간이 IMPL 리포트·LOOP 파일 확인 �
 - 완료 기준 검증: 설치본 `~/.claude/agents/implementer.md`를 P0-1 반영본으로 동기화(1파일 선반영, 전체 설치 검증은 T2-3 유지) 후 implementer Worker로 소규모 TDD 작업 1건(scratchpad, slugify) 실행 — 테스트 스위트 10케이스를 Red→Green 순서로 작성했고 반환에 `conflict: none` 명시. 테스트 정책 해석 충돌 없음 확인.
 - 편차/결정: 없음(계획 범위 내).
 - 다음 시작점: **P1-1** (plan-dev SKILL.md 완료 조건 라운드 신설).
+
+### 2026-07-22 — P1 완료 (plan-dev 메타프롬프팅 강화)
+- 수행: P1-1(step 6 **Acceptance round** 신설, 기존 Process 6~11 → 7~12 재번호 및 참조 갱신), P1-2(Cold hand-off gate에 독립 평가자 질문 (4) 추가 — AC 관찰가능성 미달 시 `ExitPlanMode` 전달 차단), P1-3(Plan granularity에 일반 검증 명령 비복제 규칙 명문), P1-4(planner 접점 ① step 4·② step 9 명시 — 서브에이전트는 질문을 반환 형식으로 전달, 인터뷰는 메인 세션 소유; Compatibility 절의 read-only 도구 목록에 planner dispatch 추가), P1-5(single-step-plan.md §5 Acceptance Contract·§6 Authority Boundaries 신설, TODO checklist §7·File skeleton §8 재번호, AC reference 규칙과 스켈레톤 갱신), P1-6(multi-steps-plan.md sub-plan 상속 규칙에 AC/AB 추가, §6에 step contract vs Acceptance Contract 관계 1문단, sub-plan 스켈레톤 갱신), P1-7(planner.md Verification 항목 확장 + Accepted Review Exceptions 계획 제약 반영 + 서브에이전트 질문 반환 형식 명문).
+- 완료 기준 검증: scratchpad에 갱신 형식의 샘플 플랜 1건 작성 — AC 테이블(선택 열 `Do not mark done if` 포함)·Authority Boundaries·`(AC-N)` 참조 TODO 생성 확인, 본문 대비 추가 분량은 경계 2섹션(~12줄)과 `(AC-N)` 접미뿐(방향 본문 불변). 실플랜 라이브 검증은 다음 실제 plan-dev 실행(늦어도 P5 드라이런)에 포함.
+- 편차/결정: SKILL.md의 Content format 절과 step 8 Draft 열거에 AC/AB를 추가 — P1-5의 enforced 승격에 따른 같은 파일 내 정합성 편집. 설치본(`~/.claude`)의 plan-dev/planner는 이번에 동기화하지 않음(P0의 implementer 동기화는 게이트 검증 목적 예외) — 설치 반영은 사용자의 `apply-to-personal.sh` 실행 또는 T2-3.
+- 다음 시작점: **P2-1** (implement-dev worker-contract `## Stage Status` 개칭).

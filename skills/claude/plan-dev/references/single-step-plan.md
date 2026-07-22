@@ -11,7 +11,9 @@ A single-step plan is one markdown file describing the full implementation of a 
 - Frontmatter fields (section 3)
 - Body language: Korean
 - Research file links at the top of the body when research files were created or consulted, in the strengthened format with per-TODO tags (section 4)
-- A `## TODOs` checkbox list at the end of the body for progress tracking (section 5); when a TODO consults research, append the `(→ research: {file-stem})` hint
+- A `## Acceptance Contract` table agreed with the user during planning (section 5)
+- A `## Authority Boundaries` section bounding executor discretion and the loop budget (section 6)
+- A `## TODOs` checkbox list at the end of the body for progress tracking (section 7); each item carries its `(AC-N)` reference(s), and when a TODO consults research, append the `(→ research: {file-stem})` hint
 - `## Non-goals` and `## Key decisions` direction anchors, **required when the plan is non-trivial** (the cold-handoff anchors the Worker needs to not re-derive a different direction)
 
 **Flexible**:
@@ -72,7 +74,29 @@ If no research files exist, omit this block entirely.
   **TODO 5**의 대상 구조.
 ```
 
-## 5. TODO checklist
+## 5. Acceptance Contract
+
+Every plan carries a `## Acceptance Contract` section: the completion conditions agreed with the user during `plan-dev`'s acceptance round. It is the contract an independent evaluator (a reviewer, or a loop controller such as `dev-loop`) judges the finished work against, with no memory of the planning session.
+
+| ID | Observable condition | Evidence |
+| --- | --- | --- |
+| AC-1 | {an observable state a reviewer can check without asking the author} | {the work-specific proof: behavior, output, artifact} |
+
+- IDs are `AC-N`, numbered from 1.
+- An optional fourth column `Do not mark done if` names explicit disqualifiers for a row.
+- Record only work-specific outcomes and evidence the repository cannot announce on its own. Generic lint/unit/e2e/build gates are rediscovered by `implement-dev` at implementation time and are never copied here.
+- Every `## TODOs` item references the AC id(s) it fulfills as `(AC-N)` (section 7).
+
+## 6. Authority Boundaries
+
+Every plan carries a `## Authority Boundaries` section bounding the discretion of whoever executes the plan (implementer or loop controller):
+
+- **Discretion** - what the executor decides alone: how-level mechanics, per Plan granularity.
+- **Must-ask** - changes forbidden without user confirmation: direction changes (goal / approach / `## Key decisions` / `## Non-goals`), scope expansion, destructive or externally visible operations.
+- **Stop conditions** - situations that halt work immediately and go back to a human.
+- **Loop budget** - the maximum remediation rounds a fix loop may run over this plan. Default `3`; override only in this section.
+
+## 7. TODO checklist
 
 Every plan ends with a `## TODOs` section: a checkbox list of tasks. Each item is an **outcome** the implementer owns, not a keystroke-level edit: name what to achieve and where, with enough direction that `implement-dev` knows the approach, then let it resolve the mechanics itself (TDD-first). Aim for outcome-level, not edit-level:
 
@@ -81,18 +105,20 @@ Every plan ends with a `## TODOs` section: a checkbox list of tasks. Each item i
 
 The second bakes in mechanics the implementer should decide against the running code, and inflates the plan past the point a human will actually review it. This pairs with `implement-dev`, which ticks each box as it completes a task.
 
+**AC reference**: every item names the acceptance criteria it fulfills as a trailing `(AC-N)` (or `(AC-N, AC-M)`). This is how an evaluator maps completed TODOs to the `## Acceptance Contract` (section 5) without the planning session's memory.
+
 **Research hint**: when a TODO should consult a linked research file before being implemented, append `(→ research: {file-stem})` to the end of the item. This pairs with section 4's `**TODO N·M**` tagging - bidirectional, so the Worker reads research exactly once and exactly for the TODO that needs it, with no guesswork. Keep the hint terse; do not paraphrase the research in the TODO line.
 
 ```markdown
 ## TODOs
-- [ ] Add rate-limiting to the public API layer (token-bucket per API key) (→ research: rate-limit-capacity)
-- [ ] Wire the limiter into the API entrypoints (→ research: api-entrypoints)
-- [ ] Update the docs page for rate limits
+- [ ] Add rate-limiting to the public API layer (token-bucket per API key) (AC-1) (→ research: rate-limit-capacity)
+- [ ] Wire the limiter into the API entrypoints (AC-1, AC-2) (→ research: api-entrypoints)
+- [ ] Update the docs page for rate limits (AC-3)
 ```
 
 If the agent-generated plan already contains its own task list, normalize it into this section's checkbox format and place it at the end. The rest of its content stays where it was.
 
-## 6. File skeleton
+## 8. File skeleton
 
 ```markdown
 ---
@@ -113,7 +139,18 @@ Title: {title}
 <!-- ## Non-goals -->
 <!-- ## Key decisions -->
 
+## Acceptance Contract
+| ID | Observable condition | Evidence |
+| --- | --- | --- |
+| AC-1 | ... | ... |
+
+## Authority Boundaries
+- Discretion: ...
+- Must-ask: ...
+- Stop conditions: ...
+- Loop budget: 3
+
 ## TODOs
-- [ ] Task 1
-- [ ] Task 2  (→ research: relevant-file)
+- [ ] Task 1 (AC-1)
+- [ ] Task 2 (AC-1, AC-2)  (→ research: relevant-file)
 ```
