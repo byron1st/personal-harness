@@ -43,14 +43,17 @@
 기본 개발 흐름은 다음 체인으로 조립된다. 각 스킬은 단독 사용도 가능하지만, 보통 앞 스킬이 만든 산출물(플랜 / 구현 결과 / 리뷰 코멘트 등)을 다음 스킬이 입력으로 받는다.
 
 ```
-plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev → review-code → (이슈 발견 시 fix-dev 반복) → commit-code → request-merge
+plan-dev → dev-loop( implement-dev → test-dev → review-code → (fix-dev → test-dev → review-code)* ) → commit-code → request-merge
 ```
+
+`dev-loop`는 선택적 오케스트레이터다. 각 스킬을 단독 호출하는 수동 체인(`plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev → review-code → commit-code → request-merge`)도 그대로 유효하다.
 
 - `plan-dev`: 호스트 에이전트(Claude Code, Codex, OpenCode)의 내장 Plan 모드를 활용해 구현 플랜을 수립하고 프로젝트 루트의 `docs/agents/dev`와 `docs/agents/research`에 저장한다. 필요 시 다단계(main + sub-plans) 플랜으로 분할한다.
 - `implement-dev`: `plan-dev`가 생성한 구현 플랜을 실행(TDD Red-Green-Refactor)해 코드를 작성하고 `docs/agents/dev`에 완료 보고서를 저장한다. 실행 모드는 두 가지다. (1) 기본인 Dispatcher 모드 — 메인 세션이 직접 코드/테스트/리포트를 편집하지 않고, `worker-contract.md`의 표준 프롬프트로 `implementer` Worker 1개를 띄워 구현을 위임하고, Worker가 고정 `##` 헤딩으로 반환한 상태를 파싱해 사용자에게 짧은 요약과 리포트 링크만 전달한다. (2) Worker 모드 — 위 위임 프롬프트로 호출된 서브에이전트가 구현 흐름을 직접 실행하고(재-dispatch 없음) 고정 헤딩의 반환 메시지를 돌려준다. Worker capability가 없거나 spawn이 실패하면 메인 세션은 구현을 시작하지 않고 실패 원인과 direct fallback 선택을 사용자에게 보고한다. 완료 보고서는 `## TODO Fulfillment`를 축으로 TODO별 구현/테스트/편차를 묶어 제공하며, 방향 충돌 시 Worker는 `blocked`와 필요한 결정을 반환하고 인터랙티브 실행 시에는 사용자에게 직접 묻는다.
 - `fix-dev`: 리뷰 단계(단일 step 구현 완료 직후, 또는 다단계 step 사이)에서 발견된 결함을 원인 분석·수정·검증까지 처리하고 결과를 요약한다. 기본 Dispatcher 흐름에서 Codex `worker` 1개에 수정을 위임하며, Worker capability가 없거나 spawn이 실패하면 메인 세션은 수정하지 않고 실패 원인과 direct fallback 여부를 사용자에게 묻는다. 수정 후에는 해당 Implementation Report 끝에 `## Fix` 섹션을 누적해 변경 내역을 기록한다. 커밋은 하지 않고 working tree를 그대로 둔다(커밋은 흐름의 마지막 `commit-code` 단계에서).
 - `test-dev`: `implement-dev` 이후의 변경이나 사용자가 지정한 범위를 **git 기준 scope**(기본: `main` 대비 diff)로 잡아 테스트 스위트를 보강한다. 유닛/E2E 테스트 갭 채우기와 mutation testing의 LIVED mutant 제거를 순차적으로 수행하며, production/business logic은 수정하지 않는다. 기본 Dispatcher 흐름에서 단일 delegated subagent에 실제 테스트 수정을 맡기며, Worker capability가 없거나 spawn이 실패하면 메인 세션은 테스트를 수정하지 않고 실패 원인과 direct fallback 여부를 사용자에게 묻는다.
 - `review-code`: 보안·신뢰성·유지보수성을 포함한 ISO 25010 품질 속성 관점에서 코드 변경(diff, PR, 브랜치 등)을 리뷰한다. 기본 Dispatcher 흐름에서 네 persona 에이전트(`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`)를 병렬 dispatch하고 finding을 종합한다. 필요한 reviewer spawn이 실패하면 메인 세션은 리뷰를 대체 수행하지 않고 실패한 축과 direct fallback 여부를 사용자에게 묻는다.
+- `dev-loop`: 승인된 single-step 플랜(`Acceptance Contract`·`Authority Boundaries` 필수)을 입력으로 `implement-dev → test-dev → review-code`와 fix 재진입 사이클(`fix-dev → test-dev(축소) → review-code`)을 자율 반복하고, 종료 술어를 모두 충족하면 READY_TO_COMMIT에서 정지해 사람에게 넘기는 얇은 컨트롤러 스킬. 각 단계는 해당 스킬의 Dispatcher 흐름을 그대로 사용하고(dev-loop가 Worker를 직접 dispatch하지 않음), 상태는 `docs/agents/dev`의 LOOP 파일에 append-only로 체크포인트된다. 트리아지(Fix/Accept)·AR 기록 승인·커밋은 항상 사람 몫이다.
 - `commit-code`: 현재 수정된 파일을 기반으로 커밋을 생성한다.
 - `request-merge`: `gh` 또는 `glab` CLI를 사용해 Pull Request / Merge Request를 생성하거나 업데이트한다.
 
@@ -90,13 +93,11 @@ Skills 실행에 필요한 환경변수 목록. 각 Agent 의 환경변수 설�
 - Codex 전용으로 `~/.codex/hooks/`를 정리한 뒤 `hooks/codex/hooks/*`를 동기화하고, `hooks/codex/hooks.json`을 `~/.codex/hooks.json`으로 복사한다.
 - 관리 대상 설치 파일을 최신 상태로 갱신한다.
 
-## (예정) dev-loop 도입 후 사용 흐름
-
-> [UPGRADE_HARNESS_PLAN.md](UPGRADE_HARNESS_PLAN.md)가 완료된 뒤의 예상 사용법이다. dev-loop 구현(P4) 시점에 이 섹션을 실제 동작 기준으로 갱신한다.
+## dev-loop 사용 흐름
 
 1. **계획 수립**: `plan-dev` 스킬을 호출해 인터뷰로 계획을 수립한다. 완료 조건 라운드에서 TODO별 완료 조건·증거(`Acceptance Contract`)와 권한 경계·루프 예산(`Authority Boundaries`)을 함께 확정하고, 계획을 승인하면 PLAN/RESEARCH 파일이 `docs/agents/` 아래에 저장된다.
 2. **루프 실행**: 승인된 플랜 경로를 지정해 `dev-loop` 스킬을 명시적으로 호출한다. 이후 `implement-dev → test-dev → review-code → (fix-dev → test-dev → review-code)*`가 종료 술어(TODO 완료 ∧ AC 증거 충족 ∧ 검증 green ∧ 차단 finding 0)를 만족할 때까지 자율 반복된다. 멀티스텝 플랜은 sub-plan(`-STEP-N`) 단위로 `dev-loop`를 호출한다.
-3. **중간 개입은 두 경우뿐**: (a) 리뷰에서 HIGH/CRITICAL이 발견되면 항목별 Fix/Accept 분류 질문에 답한다 — Accept 항목은 `AGENTS.md`의 `Accepted Review Exceptions`에 기록되어 다음 리뷰부터 차단 finding으로 재검출되지 않는다. (b) blocked·예산 소진·no-progress로 에스컬레이션되면 지시를 내린다 — 방향 문제면 `plan-dev`로 재진입한다.
+3. **중간 개입은 두 경우뿐**: (a) 리뷰에서 HIGH/CRITICAL이 발견되면 항목별 Fix/Accept 분류 질문에 답한다 — Accept 항목은 `AGENTS.md`의 `Accepted Review Exceptions`에 기록되어 다음 리뷰부터 Waived(`Applied Exceptions`)로 강등 표시되고 차단 finding으로 계산되지 않는다. (b) blocked·예산 소진·no-progress로 에스컬레이션되면 지시를 내린다 — 방향 문제면 `plan-dev`로 재진입한다.
 4. **완료 확인과 커밋**: 루프는 READY_TO_COMMIT에서 멈춘다. Implementation Report와 LOOP 상태 파일을 확인한 뒤 `commit-code`, 필요 시 `request-merge`를 직접 호출한다 — 커밋·푸시·PR/MR 생성은 루프 권한 밖이다.
 5. **중단·재개**: 루프가 중간에 끊겨도 상태는 `docs/agents/dev/*_LOOP_*.md`에 남으므로, 같은 플랜으로 `dev-loop`를 다시 호출하면 마지막 라운드에서 이어서 진행한다.
 

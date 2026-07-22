@@ -22,14 +22,17 @@ Per-stage conversion rules are defined in the root files `MIGRATE_TO_CODEX.md`, 
 The default development flow is assembled from the chain below. Each skill can be used standalone, but typically the output of the previous skill (plan / implementation result / review comments) becomes the input for the next.
 
 ```
-plan-dev → implement-dev → (fix-dev loop on issues) → test-dev → review-code → (fix-dev loop on issues) → commit-code → request-merge
+plan-dev → dev-loop( implement-dev → test-dev → review-code → (fix-dev → test-dev → review-code)* ) → commit-code → request-merge
 ```
+
+`dev-loop` is an optional orchestrator; the manual chain (`plan-dev → implement-dev → (fix-dev loop on issues) → test-dev → review-code → commit-code → request-merge`) remains valid.
 
 - `plan-dev`: Uses the host agent's built-in Plan mode to draft an implementation plan and persists it under `docs/agents/dev` and `docs/agents/research`. Splits into multi-step (main + sub-plans) when needed.
 - `implement-dev`: Executes the plan with TDD (Red-Green-Refactor), writes code, and stores a completion report under `docs/agents/dev`. In the default Dispatcher mode, the main session delegates implementation to a single `implementer` Worker and parses its fixed-heading status to deliver a short summary. In Worker mode, the delegated subagent runs the implementation directly.
 - `fix-dev`: Handles defects found during review — root-cause analysis, fix, and verification — and appends a `## Fix` section to the Implementation Report. Does not commit; leaves the working tree as-is.
 - `test-dev`: Strengthens the test suite over a git-defined scope (default: diff against `main`). Fills unit/e2e gaps and removes LIVED mutation survivors in sequence; does not modify production/business logic.
 - `review-code`: Reviews code changes (diff, PR, branch, etc.) through ISO 25010 quality attributes. On supported platforms, dispatches four persona agents (`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`) in parallel and synthesizes findings.
+- `dev-loop`: Thin controller that drives one approved single-step plan through `implement-dev → test-dev → review-code` with `fix-dev` remediation cycles (`fix-dev → test-dev(reduced) → review-code`) until every termination predicate holds, then stops at READY_TO_COMMIT. Preflight requires the plan's `Acceptance Contract` / `Authority Boundaries`; state is checkpointed append-only to a LOOP file under `docs/agents/dev`; triage (Fix/Accept), AR approval, and commits stay human-owned.
 - `commit-code`: Creates a commit based on currently modified files. Every platform variant performs a read-only documentation-drift check after committing and reports likely documentation updates without editing them.
 - `request-merge`: Creates or updates a Pull Request / Merge Request using the `gh` or `glab` CLI.
 

@@ -24,7 +24,7 @@
 | P2 | 공통 단계 결과 계약 정렬 | done | |
 | P3 | review-code 트리아지 + Accepted Review Exceptions | done | |
 | T1 | 1차 변형 전파 (P0~P3 범위) | done | |
-| P4 | dev-loop 컨트롤러 스킬 신설 (MVP) | todo | |
+| P4 | dev-loop 컨트롤러 스킬 신설 (MVP) | done | |
 | P5 | 계측과 튜닝 | todo | |
 | T2 | 2차 변형 전파 + 문서 마감 | todo | |
 | P7 | 후속 확장 (multi-step 외곽 루프 / flywheel / 무인 모드) | on-hold | 착수 자체가 별도 사용자 결정 |
@@ -147,10 +147,10 @@ READY_TO_COMMIT에서 정지 → 인간이 IMPL 리포트·LOOP 파일 확인 �
 
 ### P4 — dev-loop 컨트롤러 스킬 신설 (MVP: single-step 플랜 전용)
 
-- [ ] **P4-1** `skills/claude/dev-loop/SKILL.md` 신설: **Preflight**(플랜 경로 수신 → `## Acceptance Contract`/`## Authority Boundaries` 존재 확인, 없으면 실행 거부 + plan-dev 라우팅 제안; `PlanType: single-step`만 허용 — multi-steps의 sub-plan은 single-step이므로 허용; `git status` 스냅샷; LOOP 파일 생성), **상태 머신**(§2 — 각 상태에서 해당 스킬을 호출하고 `## Stage Status`로 전이 결정; 각 단계는 기존 스킬의 Dispatcher 흐름 그대로, dev-loop는 Worker를 직접 dispatch하지 않음), **재진입 규칙**(fix 성공 → test-dev 축소 스코프 → review-code), **예산·중단**(§2), **인간 게이트 2종**(triage 상시 / READY_TO_COMMIT 정지 후 IMPL·LOOP 링크와 요약 보고), **금지 목록**(커밋·푸시·PR, AR 자체 작성, 테스트 약화, NORMAL/LOW 자동 수정, 스킬 병합, 훅 오케스트레이션, 예산 무시), auto-format 훅 등이 작업 트리를 바꾸면 그 변경·실패를 다음 검증의 입력으로 관찰.
-- [ ] **P4-2** `skills/claude/dev-loop/references/loop-state.md` 신설: LOOP 파일 형식 — frontmatter(plan/IMPL 경로, 시작 시각) + append-only 라운드 로그(라운드 번호, 단계별 Stage Status, AC별 증거 상태, 열린 finding ID와 분류, 적용된 AR ID, 시도한 수정과 결과, 다음 단계, 중단 사유). 원시 대화·전체 diff·테스트 원문 복제 금지 — 체크포인트이지 제2 보고서가 아님.
-- [ ] **P4-3** `skills/claude/dev-loop/references/transitions.md` 신설: 상태×Stage Status 전이표 전체 + 종료 술어 9항 + 에스컬레이션 조건.
-- [ ] **P4-4** [README.md](README.md)·[AGENTS.md](AGENTS.md) 갱신: Core Development Process를 루프 표기로 갱신, dev-loop 스킬 설명 추가, README 말미의 "(예정) dev-loop 도입 후 사용 흐름" 섹션을 실제 동작 기준으로 확정(예정 표기 제거).
+- [x] **P4-1** `skills/claude/dev-loop/SKILL.md` 신설: **Preflight**(플랜 경로 수신 → `## Acceptance Contract`/`## Authority Boundaries` 존재 확인, 없으면 실행 거부 + plan-dev 라우팅 제안; `PlanType: single-step`만 허용 — multi-steps의 sub-plan은 single-step이므로 허용; `git status` 스냅샷; LOOP 파일 생성), **상태 머신**(§2 — 각 상태에서 해당 스킬을 호출하고 `## Stage Status`로 전이 결정; 각 단계는 기존 스킬의 Dispatcher 흐름 그대로, dev-loop는 Worker를 직접 dispatch하지 않음), **재진입 규칙**(fix 성공 → test-dev 축소 스코프 → review-code), **예산·중단**(§2), **인간 게이트 2종**(triage 상시 / READY_TO_COMMIT 정지 후 IMPL·LOOP 링크와 요약 보고), **금지 목록**(커밋·푸시·PR, AR 자체 작성, 테스트 약화, NORMAL/LOW 자동 수정, 스킬 병합, 훅 오케스트레이션, 예산 무시), auto-format 훅 등이 작업 트리를 바꾸면 그 변경·실패를 다음 검증의 입력으로 관찰.
+- [x] **P4-2** `skills/claude/dev-loop/references/loop-state.md` 신설: LOOP 파일 형식 — frontmatter(plan/IMPL 경로, 시작 시각) + append-only 라운드 로그(라운드 번호, 단계별 Stage Status, AC별 증거 상태, 열린 finding ID와 분류, 적용된 AR ID, 시도한 수정과 결과, 다음 단계, 중단 사유). 원시 대화·전체 diff·테스트 원문 복제 금지 — 체크포인트이지 제2 보고서가 아님.
+- [x] **P4-3** `skills/claude/dev-loop/references/transitions.md` 신설: 상태×Stage Status 전이표 전체 + 종료 술어 9항 + 에스컬레이션 조건.
+- [x] **P4-4** [README.md](README.md)·[AGENTS.md](AGENTS.md) 갱신: Core Development Process를 루프 표기로 갱신, dev-loop 스킬 설명 추가, README 말미의 "(예정) dev-loop 도입 후 사용 흐름" 섹션을 실제 동작 기준으로 확정(예정 표기 제거).
 
 완료 기준: 소형 실작업 1건에서 plan-dev 산출 플랜을 입력으로 dev-loop가 구현→테스트→리뷰→(triage/fix)→READY_TO_COMMIT까지 진행하고, 진행된 라운드의 모든 상태가 LOOP 파일만으로 복원 가능하다.
 
@@ -251,3 +251,9 @@ READY_TO_COMMIT에서 정지 → 인간이 IMPL 리포트·LOOP 파일 확인 �
 - 완료 기준 검증: verify-sync 무오류. 신규 계약 키워드 9종(Stage Status/Evidence/Findings/Acceptance Contract/Authority Boundaries/Accepted Review Exceptions/Applied Exceptions/REVIEW-NNN/TEST-NNN)의 보유 파일 수 3변형 완전 일치, 옛 어휘 잔존 0건, Claude 전용 도구명(AskUserQuestion/ExitPlanMode) 누출 0건.
 - 편차/결정: OpenCode plan-dev의 구식 승인 흐름(수동 Tab+continue 유도)을 MIGRATE_TO_OPENCODE.md가 규정하는 `plan_exit` 흐름으로 정렬 — T1-4의 "plan_exit 표현 적용" 지시 범위이며 마이그레이션 문서가 authority.
 - 다음 시작점: **P4-1** (skills/claude/dev-loop/SKILL.md 신설).
+
+### 2026-07-22 — P4 완료 (dev-loop 컨트롤러 스킬 신설, MVP)
+- 수행: P4-1(skills/claude/dev-loop/SKILL.md 신설 — Preflight[single-step+AC+AB 강제, 없으면 refuse→plan-dev; git 스냅샷; LOOP 파일 생성/resume], 상태 머신[각 상태에서 스테이지 스킬의 Dispatcher 흐름 호출, `## Stage Status` 파싱으로 전이, Worker 직접 dispatch 안 함], 재진입[fix→test-dev 축소→review, 최종 mutation 라운드], 예산·중단[budget 기본 3, no-progress, blocked/needs-confirmation 즉시 정지], 인간 게이트 2종[triage 상시, READY_TO_COMMIT 정지], 금지 목록[커밋·AR 자체작성·테스트 약화·NORMAL/LOW 자동수정·스킬 병합·훅 오케스트레이션·예산 무시·방향 변경], 훅은 관찰 대상), P4-2(references/loop-state.md — LOOP 파일명·frontmatter·append-only 라운드 로그[Round 0=초기, 이후 remediation]·최소 필드 표·Result 섹션·resume 규칙, 원시 대화·diff·테스트 원문 복제 금지 명문), P4-3(references/transitions.md — 상태×Stage Status 전이표 전체, reduced vs final TESTING, 종료 술어 9항, 에스컬레이션 4조건), P4-4(README.md·AGENTS.md Core Development Process를 루프 표기로 갱신, dev-loop 스킬 설명 추가, README "(예정)" 섹션을 실동작 기준 "dev-loop 사용 흐름"으로 확정).
+- 완료 기준 검증(scratchpad p4-gate 실 E2E): 신규 형식 플랜(AC 테이블+Authority Boundaries+`(AC-N)` TODO)으로 durations 미니 레포 구성 → dev-loop 컨트롤러를 수동 구동(설치본이 stale이라 소스 SKILL 경로를 Worker에 명시). Preflight pass → IMPLEMENTING(implementer Worker, `## Stage Status: pass`, `## Evidence`에 AC-1·AC-2 증거) → TESTING(general-purpose Worker, pass, unit +9, e2e/mutation 사전결정 skip, Findings none) → REVIEWING(4축 병렬 dispatch, 3축이 durations.py:L5 동일 결함 지목 → Location dedup → [NORMAL] 1건, Stage Status pass) → 종료 술어 9항 전부 충족 → READY_TO_COMMIT 정지. LOOP 파일에 라운드별 Stage Status·AC 증거·Findings·Result가 append-only로 기록되어 파일만으로 복원 가능함을 확인.
+- 편차/결정: (1) 이번 주행은 리뷰가 [NORMAL] 비차단 1건만 반환해 triage→Fix/Accept→AR 경로는 발동하지 않음 — dev-loop가 비차단 finding에 트리아지를 걸지 않고 NORMAL 자동수정도 하지 않으며 깨끗이 READY_TO_COMMIT로 정지하는 설계 동작을 오히려 입증. triage/AR 왕복 자체는 P3 게이트에서 review-code 계층 E2E로 이미 검증됨(AR-001 accept→재리뷰 waive). dev-loop는 그 계층으로 라우팅만 함. (2) fix 재진입(FIXING→TESTING축소→REVIEWING) 다라운드 경로는 이번 무결함 주행에서 미발동 — P5 드라이런(결함 있는 실작업)에서 자연 검증 예정. (3) 스킬 소스가 아직 미설치라 Worker 프롬프트에 소스 SKILL 경로를 명시해 구동(정상 사용 시 apply-to-personal.sh 후 설치본 사용).
+- 다음 시작점: **P5-1** (작은 실작업 2~3건 드라이런, 지표 기록).
