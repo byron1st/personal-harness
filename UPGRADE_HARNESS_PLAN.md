@@ -21,7 +21,7 @@
 | --- | --- | --- | --- |
 | P0 | 사전 정합성 정리 | done | |
 | P1 | plan-dev 메타프롬프팅 강화 | done | |
-| P2 | 공통 단계 결과 계약 정렬 | todo | |
+| P2 | 공통 단계 결과 계약 정렬 | done | |
 | P3 | review-code 트리아지 + Accepted Review Exceptions | todo | |
 | T1 | 1차 변형 전파 (P0~P3 범위) | todo | |
 | P4 | dev-loop 컨트롤러 스킬 신설 (MVP) | todo | |
@@ -115,11 +115,11 @@ READY_TO_COMMIT에서 정지 → 인간이 IMPL 리포트·LOOP 파일 확인 �
 
 기존 스킬별 풍부한 헤딩은 유지하고 반환 맨 앞에 공통 블록을 얹는다.
 
-- [ ] **P2-1** [skills/claude/implement-dev/references/worker-contract.md](skills/claude/implement-dev/references/worker-contract.md): ② 반환의 `## Implementation Status` → `## Stage Status` 개칭, `## Evidence` 신설(실행 명령/결과 + 이행 AC ID), dispatch prompt에 "플랜의 AC를 읽고 TODO Fulfillment에 AC 매핑 기록" 지시 추가.
-- [ ] **P2-2** [skills/claude/implement-dev/SKILL.md](skills/claude/implement-dev/SKILL.md) + [references/implement-flow.md](skills/claude/implement-dev/references/implement-flow.md): 최종 검증에 "AC별 Evidence 수집·기록, AC 미충족 시 pass 불가" 추가. 단 `## Acceptance Contract`가 없는 플랜(P1 이전 legacy 플랜)은 실행 거부하지 않는다 — AC 증거 단계를 건너뛰고 기존 최종 검증(재발견된 일반 게이트)만 수행하며 보고서 `## Summary`와 반환 `## Evidence`에 `Acceptance Contract: none (legacy plan)`을 기록. 플랜 anchors 목록에 Acceptance Contract/Authority Boundaries 추가(P1 이후 생성 플랜에 한해 guaranteed, 부재 시 위 legacy fallback).
-- [ ] **P2-3** [references/report-file.md](skills/claude/implement-dev/references/report-file.md): `## TODO Fulfillment` 서브섹션에 `AC:` 줄 추가(이행한 AC ID + 증거 포인터).
-- [ ] **P2-4** [skills/claude/test-dev/SKILL.md](skills/claude/test-dev/SKILL.md) + [references/worker-contract.md](skills/claude/test-dev/references/worker-contract.md): `## Test Status` → `## Stage Status`, 어휘에 `pass-with-suspected-defects` 추가(review로 자동 진행하지 않고 사용자 통지 후 fix-dev 후보 분류), 의심 결함 목록을 `## Findings`(`TEST-NNN`)로 구조화.
-- [ ] **P2-5** [skills/claude/fix-dev/SKILL.md](skills/claude/fix-dev/SKILL.md): Return contract `Status: success` → `Stage Status: pass` 통일, 입력 brief에 선택 필드 `Finding ID`(REVIEW-NNN/TEST-NNN)와 `Loop context`(라운드 번호, LOOP 파일 경로) 추가, `## Fix` 엔트리에 finding ID 기록.
+- [x] **P2-1** [skills/claude/implement-dev/references/worker-contract.md](skills/claude/implement-dev/references/worker-contract.md): ② 반환의 `## Implementation Status` → `## Stage Status` 개칭, `## Evidence` 신설(실행 명령/결과 + 이행 AC ID), dispatch prompt에 "플랜의 AC를 읽고 TODO Fulfillment에 AC 매핑 기록" 지시 추가.
+- [x] **P2-2** [skills/claude/implement-dev/SKILL.md](skills/claude/implement-dev/SKILL.md) + [references/implement-flow.md](skills/claude/implement-dev/references/implement-flow.md): 최종 검증에 "AC별 Evidence 수집·기록, AC 미충족 시 pass 불가" 추가. 단 `## Acceptance Contract`가 없는 플랜(P1 이전 legacy 플랜)은 실행 거부하지 않는다 — AC 증거 단계를 건너뛰고 기존 최종 검증(재발견된 일반 게이트)만 수행하며 보고서 `## Summary`와 반환 `## Evidence`에 `Acceptance Contract: none (legacy plan)`을 기록. 플랜 anchors 목록에 Acceptance Contract/Authority Boundaries 추가(P1 이후 생성 플랜에 한해 guaranteed, 부재 시 위 legacy fallback).
+- [x] **P2-3** [references/report-file.md](skills/claude/implement-dev/references/report-file.md): `## TODO Fulfillment` 서브섹션에 `AC:` 줄 추가(이행한 AC ID + 증거 포인터).
+- [x] **P2-4** [skills/claude/test-dev/SKILL.md](skills/claude/test-dev/SKILL.md) + [references/worker-contract.md](skills/claude/test-dev/references/worker-contract.md): `## Test Status` → `## Stage Status`, 어휘에 `pass-with-suspected-defects` 추가(review로 자동 진행하지 않고 사용자 통지 후 fix-dev 후보 분류), 의심 결함 목록을 `## Findings`(`TEST-NNN`)로 구조화.
+- [x] **P2-5** [skills/claude/fix-dev/SKILL.md](skills/claude/fix-dev/SKILL.md): Return contract `Status: success` → `Stage Status: pass` 통일, 입력 brief에 선택 필드 `Finding ID`(REVIEW-NNN/TEST-NNN)와 `Loop context`(라운드 번호, LOOP 파일 경로) 추가, `## Fix` 엔트리에 finding ID 기록.
 
 완료 기준: 네 스킬 반환의 첫 헤딩이 모두 `## Stage Status`이고 어휘가 §1 표의 부분집합이다. 루프 밖 단독 사용 동작은 변하지 않는다.
 
@@ -233,3 +233,9 @@ READY_TO_COMMIT에서 정지 → 인간이 IMPL 리포트·LOOP 파일 확인 �
 - 완료 기준 검증: scratchpad에 갱신 형식의 샘플 플랜 1건 작성 — AC 테이블(선택 열 `Do not mark done if` 포함)·Authority Boundaries·`(AC-N)` 참조 TODO 생성 확인, 본문 대비 추가 분량은 경계 2섹션(~12줄)과 `(AC-N)` 접미뿐(방향 본문 불변). 실플랜 라이브 검증은 다음 실제 plan-dev 실행(늦어도 P5 드라이런)에 포함.
 - 편차/결정: SKILL.md의 Content format 절과 step 8 Draft 열거에 AC/AB를 추가 — P1-5의 enforced 승격에 따른 같은 파일 내 정합성 편집. 설치본(`~/.claude`)의 plan-dev/planner는 이번에 동기화하지 않음(P0의 implementer 동기화는 게이트 검증 목적 예외) — 설치 반영은 사용자의 `apply-to-personal.sh` 실행 또는 T2-3.
 - 다음 시작점: **P2-1** (implement-dev worker-contract `## Stage Status` 개칭).
+
+### 2026-07-22 — P2 완료 (공통 단계 결과 계약 정렬)
+- 수행: P2-1(implement-dev worker-contract — `## Stage Status` 개칭, 공통 블록 `Stage Status/Evidence/Decision Needed`를 반환 맨 앞으로 이동, dispatch prompt에 AC 읽기·매핑·legacy fallback 지시), P2-2(SKILL.md Completion + implement-flow §1 anchors에 AC/AB 추가·§3 Acceptance Contract check 신설 — AC 미충족 시 pass 불가, legacy 플랜은 거부 없이 `Acceptance Contract: none (legacy plan)` 기록), P2-3(report-file.md `## TODO Fulfillment`에 `AC:` 줄), P2-4(test-dev — `## Stage Status` 개칭, `## Suspected Business Logic Defects` → `## Findings`(`TEST-NNN`, Worker 부여 — 단일 Worker라 충돌 없음) 구조화·공통 블록 전진 배치, `pass-with-suspected-defects` 시 review 자동 진행 금지 + fix-dev 후보 분류 명문), P2-5(fix-dev — 반환을 `## Stage Status` 블록 선행으로 재구성, `success`→`pass`, brief 선택 필드 `Finding ID`/`Loop context` 추가, `## Fix` 엔트리·반환에 `Finding` 라인 추가).
+- 완료 기준 검증: 세 스킬 반환 템플릿의 첫 헤딩이 모두 `## Stage Status`(rg 확인), 어휘는 §1 부분집합 + P2-4가 명시 승인한 test-dev 확장(`pass-with-suspected-defects`). 네 번째 스킬(review-code)의 Stage Status는 계획대로 P3-1에서 완성. 잔존 용어(`Implementation Status`/`Test Status`/`Suspected Business Logic Defects`/`` `success` ``) 스윕 0건. 단독 사용 동작 불변 — 변경은 개칭·추가 필드(전부 optional, `none` 허용)·legacy fallback뿐.
+- 편차/결정: `## Evidence`(AC별 작업 특화 증거)와 기존 `## Verification`(재발견 일반 게이트)은 §2 종료 술어 ②·④가 별개 항목이므로 병존 유지 — Evidence는 AC 증거 전용, 중복 없음.
+- 다음 시작점: **P3-1** (review-code 상태 모델 도입).

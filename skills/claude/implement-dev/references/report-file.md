@@ -22,7 +22,7 @@ Reuse the **plan's** `{timestamp}_{Jira}_{title}` stem exactly - the plan's actu
 - Section titles in English; body content in Korean.
 - The report is an **overlay, not a copy**. Reference the change through `ReviewBase` (how to see the diff) and `file:line` anchors; never paste diffs or file bodies into the report. This keeps it small, avoids staleness, and anchors every position to one frozen revision.
 - Separate the deterministic from the narrative honestly. The implementer just wrote this code, so intent, risk, and red flags are cheap and trustworthy, but nothing here is statically verified. Anything you are unsure of belongs in `## Open Questions`, not asserted as fact.
-- The spine of the report is **`## TODO Fulfillment`**: one sub-section per plan TODO, each carrying what was implemented (`path:line` + symbol + why), the test that pins that TODO's behavior (`path:line` + test name + what behavior it pins as the executable spec for this change), and any deviation specific to that TODO. The risk/lens metadata from the old `## Review Map` has been folded into the per-TODO sub-sections as an optional `Risk / Lens` line - include it only when a single TODO is high-risk and the reviewer would benefit from being told to read it line-by-line.
+- The spine of the report is **`## TODO Fulfillment`**: one sub-section per plan TODO, each carrying what was implemented (`path:line` + symbol + why), the test that pins that TODO's behavior (`path:line` + test name + what behavior it pins as the executable spec for this change), the `AC:` line (which Acceptance Contract id(s) the TODO fulfills, with an evidence pointer; `none (legacy plan)` when the plan has no `## Acceptance Contract`), and any deviation specific to that TODO. The risk/lens metadata from the old `## Review Map` has been folded into the per-TODO sub-sections as an optional `Risk / Lens` line - include it only when a single TODO is high-risk and the reviewer would benefit from being told to read it line-by-line.
 - The completion chat output (② in delegation mode, or the direct chat summary in interactive mode) must not paste report sections verbatim. After saving the report, the implementer/dispatcher sends a short summary, not the body. Keep `## TODO Fulfillment`, `## Red Flags`, `## Open Questions`, `## Plan Divergence`, and all lower sections in the report file for on-demand reading.
 
 ```markdown
@@ -49,6 +49,7 @@ See the change: `{ReviewBase}`. Every `path:line` anchor in this report is valid
 - Risk / Lens: {high / line-by-line} (optional; only when this TODO is high-risk and needs that lens)
 - 구현: `path:line` `symbol` - what was changed and why
 - 테스트: `path:line` `TestName` - which behavior it pins (this TODO's executable spec)
+- AC: {이행한 AC id(s) + 증거 포인터, e.g. `AC-1 — make e2e 통과 로그`; 플랜에 `## Acceptance Contract`가 없으면 `none (legacy plan)`}
 - 편차: {how this TODO diverged from the plan; "none" when it did not}
 
 ### TODO 2: ...
