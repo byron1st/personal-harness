@@ -1,11 +1,11 @@
 ---
 name: plan-dev
-description: Create an implementation plan in OpenCode Plan mode, present the final plan in chat for the user to review before switching to Build mode, and persist plan/research artifacts under docs/agents after the user switches to Build mode. Use when the user wants to plan before coding; single-step by default, multi-step only on explicit request.
+description: Create an implementation plan in OpenCode Plan mode, request the Build-mode switch via plan_exit after presenting the final plan, and persist plan/research artifacts under docs/agents in the first Build-mode turn. Use when the user wants to plan before coding; single-step by default, multi-step only on explicit request.
 ---
 
 # Plan Dev
 
-Create an implementation plan through iterative refinement entirely inside OpenCode Plan mode, then persist the result as markdown file(s) under the project root's `docs/agents` directory as the very first action after the user switches from Plan mode to Build mode (Tab) and returns control to write-capable execution.
+Create an implementation plan through iterative refinement entirely inside OpenCode Plan mode, then persist the result as markdown file(s) under the project root's `docs/agents` directory as the very first action after the user approves the `plan_exit` request and OpenCode switches to Build mode, returning control to write-capable execution.
 
 ## Why this skill exists
 
@@ -13,11 +13,11 @@ OpenCode Plan mode blocks file writes while the agent researches and proposes ch
 
 ## Compatibility with plan mode
 
-Steps 1-9 below MUST run with read-only tools only (`Read`, `Grep`, `Glob`, the question tool, and other read-only queries). No writes to `docs/agents` or the working tree happen during this phase.
+Steps 1-10 below MUST run with read-only tools only (`Read`, `Grep`, `Glob`, the question tool, dispatching the read-only `planner` agent via the Task tool, and other read-only queries). No writes to `docs/agents` or the working tree happen during this phase.
 
-When the final plan is ready, present the reviewed plan in chat. The user switches from Plan mode to Build mode by pressing Tab, then replies with a continuation cue (e.g., "continue"); the agent then runs persistence in the first Build-mode turn.
+When the final plan is ready, present the reviewed plan in chat and call `plan_exit` to request the switch to Build mode. The user approves through that flow, and the agent continues into write-capable execution.
 
-The first tool calls after the user has approved the plan and OpenCode is allowed to write MUST be the persistence steps in step 11, in this exact order: research files -> plan file(s). Only after those writes are done may any further follow-up work begin.
+The first tool calls after the user has approved the plan and OpenCode is allowed to write MUST be the persistence steps in step 12, in this exact order: research files -> plan file(s). Only after those writes are done may any further follow-up work begin.
 
 ## Language Rule
 
@@ -38,7 +38,7 @@ Inside plan and research files, the **frontmatter** and **language** (Korean) ar
 
 Body shape differs by mode:
 
-- **single-step** - only the research file links (when applicable) and a final `## TODOs` checklist are enforced. The rest of the body is free-form: when the plan was produced by a planning agent, copy its output **verbatim** between those two anchors instead of normalizing it into a fixed template. See [references/single-step-plan.md](references/single-step-plan.md).
+- **single-step** - only the research file links (when applicable), the `## Acceptance Contract` / `## Authority Boundaries` boundary sections, and a final `## TODOs` checklist are enforced. The rest of the body is free-form: when the plan was produced by a planning agent, copy its output **verbatim** between those two anchors instead of normalizing it into a fixed template. See [references/single-step-plan.md](references/single-step-plan.md).
 - **multi-steps** - choose whatever section structure best fits the work. Each reference document includes a suggested default structure as a starting point. Drop sections that do not apply, add ones that do, reorder freely.
 
 File naming, storage location, and (for multi-steps) Markdown link conventions in the references *are* enforced. Those are structural metadata, not content format.
@@ -58,6 +58,8 @@ Decide altitude by what the information *is*, not by how much of it you happen t
 
 - **Coarse - defer to `implement-dev`'s discretion**: line-level edits, exact code sketches, helper signatures, pre-enumerated edge cases, library quirks. These are cheaper and more correct to settle against a running codebase than to guess in plan mode. Over-specifying them also makes the plan long and low-signal, which degrades how reliably an executor follows *any* single instruction and makes the plan too heavy for a human to actually review.
 - **Sharp - specify precisely**: the goal, the chosen approach and why, module/area boundaries, non-goals, and - for multi-steps - the contract between steps (the interfaces, types, and schemas one step exposes to the next). This is information the implementer cannot recover from environment feedback; if it is wrong or missing, the result is a direction-level error the executor cannot self-correct, not a detail it can.
+
+Generic verification commands (lint / unit / e2e / build) are never copied into the plan - `implement-dev` rediscovers them from `Makefile`, `AGENTS.md` and legacy `CLAUDE.md` when present, or `README.md` at implementation time, where they cannot drift. The `## Acceptance Contract` records only work-specific outcomes and evidence the repository cannot announce on its own.
 
 Deep investigation during planning is still encouraged - but its detailed findings belong in **research files**, not the plan body. Research holds the depth; the plan holds the direction distilled from it.
 
@@ -102,7 +104,9 @@ If research is required:
   - **Trace callers & callees** for each function to be modified; follow the chain to stable boundaries (entry points, external APIs, data stores).
   - **Check interfaces & contracts**; find all implementations and verify whether changes require updating them.
   - **Review existing tests**; read test files to understand expected behavior, edge cases, and testing patterns.
-- Draft any new research findings as research file content **in memory**. Do not write yet. The actual write happens in step 11. Use [references/research-file.md](references/research-file.md) for naming and frontmatter.
+- Draft any new research findings as research file content **in memory**. Do not write yet. The actual write happens in step 12. Use [references/research-file.md](references/research-file.md) for naming and frontmatter.
+
+**Planner touchpoint ① (conditional)**: when the work is ambiguous, cross-cutting, or architecture-sensitive, dispatch the read-only `planner` agent via OpenCode's Task tool with the collected context. It returns (a) a compact architecture view to fold into the draft, and (b) a list of high-impact questions for the user, each with options and a recommended default. Relay those questions in steps 5-6 - a subagent cannot talk to the user, so the interview always stays in the main session. Skip for trivial work.
 
 ### 5. Clarify assumptions
 
@@ -113,7 +117,19 @@ Present your understanding and assumptions for validation before drafting the pl
 - If SPEC.md had `ASSUMED` items deferred from step 3, revisit them now with concrete context.
 - Continue until critical ambiguities are resolved.
 
-### 6. Design
+### 6. Acceptance round
+
+Agree on what "done" observably means before designing how. With the question tool, settle for each outcome the plan will deliver (these become the `## TODOs`):
+
+- **Observable completion state** - what a reviewer can check without asking the author.
+- **Evidence** - the work-specific proof (a behavior, an output, an artifact). Generic lint/unit/e2e/build gates stay out - they are rediscovered at implementation time (see Plan granularity).
+- **Acceptable risk** - what is deliberately not verified, named now instead of discovered later.
+
+Distill the agreement into a draft `## Acceptance Contract` table (AC-1, AC-2, …; format in the mode's reference) and confirm it with the user. Approving the plan later approves the approach **and** these criteria together - this contract is what an independent evaluator judges the implementation against without this session's memory.
+
+Scale the round to the work: for trivial tasks a single confirmation question is enough - do not inflate it. If planner touchpoint ① returned acceptance-related questions, relay them here.
+
+### 7. Design
 
 Synthesize research and clarified requirements into an implementation approach:
 
@@ -122,14 +138,14 @@ Synthesize research and clarified requirements into an implementation approach:
 
 Every technical decision must be consistent with the key requirements in `AGENTS.md` and legacy `CLAUDE.md` when present and SPEC.md Conventions/Constraints (when present).
 
-### 7. Draft the plan in memory
+### 8. Draft the plan in memory
 
 Compose plan file content in memory according to the chosen mode's reference:
 
-- single-step -> [references/single-step-plan.md](references/single-step-plan.md). Frontmatter, the **strengthened research file links** (one-line summary + `**TODO N·M**` tags per research), and the final `## TODOs` checklist (with `(→ research: …)` hints where relevant) are enforced. The body in between is free-form; when the plan came from a planning agent, copy its output verbatim instead of reshaping it. For each research file you link, record which TODOs / areas it applies to - the Worker starts cold and relies on this annotation to read the right research for the right TODO without re-exploration.
-- multi-steps -> [references/multi-steps-plan.md](references/multi-steps-plan.md). Frontmatter and language must follow the reference. Section structure is your call. Draft the main plan and every sub-plan in memory; verify link targets match the sub-plan filenames you intend to use. Each sub-plan inherits the strengthened research links, TODO hints, and (when non-trivial) `## Non-goals` / `## Key decisions` anchors, because each sub-plan is itself a cold-handoff implementation unit.
+- single-step -> [references/single-step-plan.md](references/single-step-plan.md). Frontmatter, the **strengthened research file links** (one-line summary + `**TODO N·M**` tags per research), the `## Acceptance Contract` (from the acceptance round) and `## Authority Boundaries` sections, and the final `## TODOs` checklist (with `(AC-N)` references and `(→ research: …)` hints where relevant) are enforced. The body in between is free-form; when the plan came from a planning agent, copy its output verbatim instead of reshaping it. For each research file you link, record which TODOs / areas it applies to - the Worker starts cold and relies on this annotation to read the right research for the right TODO without re-exploration.
+- multi-steps -> [references/multi-steps-plan.md](references/multi-steps-plan.md). Frontmatter and language must follow the reference. Section structure is your call. Draft the main plan and every sub-plan in memory; verify link targets match the sub-plan filenames you intend to use. Each sub-plan inherits the strengthened research links, TODO hints, its own `## Acceptance Contract` / `## Authority Boundaries` sections, and (when non-trivial) `## Non-goals` / `## Key decisions` anchors, because each sub-plan is itself a cold-handoff implementation unit.
 
-### 8. Review
+### 9. Review
 
 Review the draft for:
 
@@ -137,21 +153,23 @@ Review the draft for:
 - **Correctness** - technical decisions are consistent with project constraints and conventions.
 - **Actionability** - `implement-dev` can start each task / step without having to re-decide the approach. It may still work out how-level details against the codebase; what it must not have to do is re-derive the direction. Do not inflate tasks with mechanics to hit this bar (see Plan granularity).
 - **Multi-steps integrity** - each step keeps the project compiling and tests passing when completed; step dependencies form a sensible DAG.
-- **Cold hand-off gate (approval-blocking)** - the default execution path is a Worker subagent with zero memory of this planning session. Before approving, ask: *Can an `implement-dev` Worker, given only this plan plus the linked research files, (1) recover the direction without re-deriving it, (2) pick exactly the research files it needs for each TODO from the strengthened links, and (3) not misread the approach?* If not, strengthen the research links (add the missing one-line summary or `**TODO N·M**` tag), or thicken `## Key decisions` / `## Non-goals` to remove the ambiguity. Do not present the plan for the user to switch to Build mode while the answer is "no" for any TODO.
+- **Cold hand-off gate (approval-blocking)** - the default execution path is a Worker subagent with zero memory of this planning session. Before approving, ask: *Can an `implement-dev` Worker, given only this plan plus the linked research files, (1) recover the direction without re-deriving it, (2) pick exactly the research files it needs for each TODO from the strengthened links, and (3) not misread the approach? And can an **independent evaluator**, given only this plan and its `## Acceptance Contract`, (4) decide pass/fail for the finished work without asking anyone?* If not, strengthen the research links (add the missing one-line summary or `**TODO N·M**` tag), thicken `## Key decisions` / `## Non-goals` to remove the ambiguity, or sharpen the Acceptance Contract until its conditions are observable and evidence-backed. Do not call `plan_exit` while the answer is "no" for any TODO or any AC.
 
-Highlight risks, edge cases, and remaining assumptions. Present the plan to the user. This is the content the user will read in chat before pressing Tab to switch to Build mode, after final refinement.
+**Planner touchpoint ② (conditional)**: for the same non-trivial work that warranted touchpoint ①, send the draft plan (including its Acceptance Contract) to the `planner` agent for a Planning Lens pass - goal/boundary/contract fit, whether the AC suffices for independent evaluation, and over-planning flags. Fold the findings into the draft before presenting it. Skip for trivial work.
 
-### 9. Refine
+Highlight risks, edge cases, and remaining assumptions. Present the plan to the user. This is the content the user reviews before approving the `plan_exit` request, after final refinement.
+
+### 10. Refine
 
 Iterate on the plan based on user feedback. Adjust scope, approach, files, or step granularity. Repeat review -> refine until the user approves.
 
-### 10. Hand off to plan mode exit
+### 11. Hand off to plan mode exit
 
-Once the reviewed plan is ready, present the final reviewed plan in chat and end with the hand-off line: *"Plan ready — switch to Build mode (Tab) and reply 'continue' to persist these files."* The user switches from Plan mode to Build mode by pressing Tab and replies with a continuation cue (e.g., "continue"); the agent then runs persistence in the first Build-mode turn.
+Once the reviewed plan is ready, present the final reviewed plan in chat and call `plan_exit` to request the switch to Build mode. Do not ask the user for a manual Tab switch or a separate "continue" reply. The user approves through the `plan_exit` flow, and the agent runs persistence as the first tool calls of the first Build-mode turn.
 
 Persistence steps are skill mechanics, not part of the plan content the user reviews. Keep the plan focused on the technical work.
 
-### 11. Persist (first actions in build/execute mode)
+### 12. Persist (first actions in build/execute mode)
 
 These are the very first tool calls after OpenCode transitions out of Plan mode, before any other follow-up:
 

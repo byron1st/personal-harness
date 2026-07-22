@@ -23,7 +23,7 @@
 | P1 | plan-dev 메타프롬프팅 강화 | done | |
 | P2 | 공통 단계 결과 계약 정렬 | done | |
 | P3 | review-code 트리아지 + Accepted Review Exceptions | done | |
-| T1 | 1차 변형 전파 (P0~P3 범위) | todo | |
+| T1 | 1차 변형 전파 (P0~P3 범위) | done | |
 | P4 | dev-loop 컨트롤러 스킬 신설 (MVP) | todo | |
 | P5 | 계측과 튜닝 | todo | |
 | T2 | 2차 변형 전파 + 문서 마감 | todo | |
@@ -137,11 +137,11 @@ READY_TO_COMMIT에서 정지 → 인간이 IMPL 리포트·LOOP 파일 확인 �
 
 ### T1 — 1차 변형 전파 (P0~P3 범위)
 
-- [ ] **T1-1** [MIGRATE_TO_CODEX.md](MIGRATE_TO_CODEX.md) 갱신: triage 질문 변환 규칙(Codex는 구조화 질문 도구 없음 → 테이블 출력 + "각 ID에 `REVIEW-001: fix` 형식으로 응답" 규약, 모호 응답 재확인, 무응답=미분류 유지), **플랫폼 불변 목록**(섹션명·상태 어휘·ID 규칙·스킬/에이전트 이름·파일명 규칙·AR 불변식 — "do not translate") 추가.
-- [ ] **T1-2** [MIGRATE_TO_OPENCODE.md](MIGRATE_TO_OPENCODE.md) 갱신: triage → question tool 매핑, 플랫폼 불변 목록 추가.
-- [ ] **T1-3** [MIGRATE_TO_CLAUDE.md](MIGRATE_TO_CLAUDE.md) 갱신: Codex발 역이식 시 Stage Status 어휘·섹션명은 변환하지 않고 보존.
-- [ ] **T1-4** sync-harness 실행: `Claude -> Codex + OpenCode` (P0~P3에서 변경된 skills/agents 범위). Codex는 `AskUserQuestion`→"ask the user", `ExitPlanMode`→plan approval flow, description 300자 압축 등 기존 규칙 적용. OpenCode는 Task tool/`general`/question tool/`plan_exit`/"legacy CLAUDE.md" 표현 적용. implementer.toml과 implementer.md(OpenCode)에 P0-1 반영.
-- [ ] **T1-5** `python3 .agents/skills/sync-harness/scripts/verify-sync.py` 통과 — 새 계약 키워드가 잔존 용어 스윕에 오탐되면 스크립트 허용 목록 갱신.
+- [x] **T1-1** [MIGRATE_TO_CODEX.md](MIGRATE_TO_CODEX.md) 갱신: triage 질문 변환 규칙(Codex는 구조화 질문 도구 없음 → 테이블 출력 + "각 ID에 `REVIEW-001: fix` 형식으로 응답" 규약, 모호 응답 재확인, 무응답=미분류 유지), **플랫폼 불변 목록**(섹션명·상태 어휘·ID 규칙·스킬/에이전트 이름·파일명 규칙·AR 불변식 — "do not translate") 추가.
+- [x] **T1-2** [MIGRATE_TO_OPENCODE.md](MIGRATE_TO_OPENCODE.md) 갱신: triage → question tool 매핑, 플랫폼 불변 목록 추가.
+- [x] **T1-3** [MIGRATE_TO_CLAUDE.md](MIGRATE_TO_CLAUDE.md) 갱신: Codex발 역이식 시 Stage Status 어휘·섹션명은 변환하지 않고 보존.
+- [x] **T1-4** sync-harness 실행: `Claude -> Codex + OpenCode` (P0~P3에서 변경된 skills/agents 범위). Codex는 `AskUserQuestion`→"ask the user", `ExitPlanMode`→plan approval flow, description 300자 압축 등 기존 규칙 적용. OpenCode는 Task tool/`general`/question tool/`plan_exit`/"legacy CLAUDE.md" 표현 적용. implementer.toml과 implementer.md(OpenCode)에 P0-1 반영.
+- [x] **T1-5** `python3 .agents/skills/sync-harness/scripts/verify-sync.py` 통과 — 새 계약 키워드가 잔존 용어 스윕에 오탐되면 스크립트 허용 목록 갱신.
 
 완료 기준: verify-sync 무오류, Codex/OpenCode 변형에서 새 섹션명·상태 어휘가 §1 불변 목록과 일치.
 
@@ -245,3 +245,9 @@ READY_TO_COMMIT에서 정지 → 인간이 IMPL 리포트·LOOP 파일 확인 �
 - 완료 기준 검증(scratchpad p3-gate 실 E2E): ctx 미전파 HIGH 결함을 심은 Go diff → reliability-reviewer dispatch → `[HIGH]` 반환 → `REVIEW-001` 부여·트리아지 테이블·AskUserQuestion → **사용자 명시 Accept** → 테스트 레포 AGENTS.md에 `AR-001` 기록 → 동일 diff 재리뷰(AR 엔트리+억제 규칙 포함) → reviewer가 4조건을 개별 판정 후 `[WAIVED:AR-001]` 강등 반환 → aggregate: `## Applied Exceptions` 표시, `## Stage Status: pass`, verdict `Correct (with accepted risks)`. 전 경로 통과.
 - 편차/결정: 게이트 테스트는 4축 대신 reliability 1축으로 축소 실행(비용 절감) — 검증 대상 메커니즘(억제 규칙 전달, waive 매칭, 트리아지, AR 기록, 재리뷰 강등)은 축 수와 독립. 4축 병렬·dedupe는 P5 드라이런에서 자연 검증.
 - 다음 시작점: **T1-1** (MIGRATE_TO_CODEX.md 트리아지 변환 규칙 + 플랫폼 불변 목록).
+
+### 2026-07-22 — T1 완료 (1차 변형 전파)
+- 수행: T1-1(MIGRATE_TO_CODEX.md — 신규 "Platform invariants (do not translate)" 섹션(공통/플랜/리뷰 섹션명·상태 어휘·ID 규칙·스킬/에이전트 이름·파일명 규칙·AR 불변식)과 "Convert structured triage questions to a text response protocol" 섹션(`REVIEW-001: fix` 응답 규약, 모호 응답 재확인, 무응답=미분류·자동 분류 금지)), T1-2(MIGRATE_TO_OPENCODE.md — 동일 Platform invariants 섹션 + 트리아지→question tool 매핑 불릿), T1-3(MIGRATE_TO_CLAUDE.md — "Preserve cross-platform contract keywords" 섹션: 역이식 시 Stage Status 어휘·섹션명·ID·AR 불변식 비변환 보존), T1-4(sync-harness Claude→Codex+OpenCode: 에이전트 4파일에 P0-1/P1-7 반영, host-neutral 파일 18건은 anchor 정확-1회 assert 스크립트로 일괄 전파, plan-dev SKILL.md 2건은 플랫폼 어휘 수동 변환(Codex: ask the user/plan approval/custom agent spawn+`explorer` 폴백, OpenCode: question tool/Task tool/`plan_exit`), review-code SKILL.md 2건은 트리아지 단계만 플랫폼 분기), T1-5(verify-sync.py 첫 실행 PASS — 허용 목록 갱신 불필요).
+- 완료 기준 검증: verify-sync 무오류. 신규 계약 키워드 9종(Stage Status/Evidence/Findings/Acceptance Contract/Authority Boundaries/Accepted Review Exceptions/Applied Exceptions/REVIEW-NNN/TEST-NNN)의 보유 파일 수 3변형 완전 일치, 옛 어휘 잔존 0건, Claude 전용 도구명(AskUserQuestion/ExitPlanMode) 누출 0건.
+- 편차/결정: OpenCode plan-dev의 구식 승인 흐름(수동 Tab+continue 유도)을 MIGRATE_TO_OPENCODE.md가 규정하는 `plan_exit` 흐름으로 정렬 — T1-4의 "plan_exit 표현 적용" 지시 범위이며 마이그레이션 문서가 authority.
+- 다음 시작점: **P4-1** (skills/claude/dev-loop/SKILL.md 신설).

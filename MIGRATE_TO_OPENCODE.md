@@ -8,6 +8,19 @@ OpenCode는 Claude Code 호환 모드를 기본 제공하여 `~/.claude/skills/`
 
 옮기는 대상은 크게 세 가지 — 스킬(`SKILL.md`), 서브에이전트(custom agent 정의 파일), 훅(hook 설정·스크립트) — 이고, 아래도 그 순서로 나눈다. 단, OpenCode의 훅은 shell script가 아니라 JS/TS plugin이므로 "Hook migration"에서는 Claude의 shell-script hook을 OpenCode plugin으로 변환하는 규칙을 다룬다.
 
+## Platform invariants (do not translate)
+
+플랫폼 간 파싱·매칭 호환성을 위해 아래 항목은 마이그레이션 시 이름·값을 그대로 보존한다. 도구명·실행모델 변환 규칙이 이 목록보다 우선하지 않는다.
+
+- **공통 반환 섹션명**: `## Stage Status`, `## Evidence`, `## Findings`, `## Decision Needed` — Worker/단계 반환 맨 앞의 공통 블록. 그 아래의 스킬별 헤딩도 개명하지 않는다.
+- **플랜 섹션명**: `## Acceptance Contract`, `## Authority Boundaries`, `## TODOs`, `## Non-goals`, `## Key decisions`.
+- **리뷰 섹션명**: `## Accepted Review Exceptions`, `## Applied Exceptions`.
+- **상태 어휘**: `pass | blocked | failed | needs-confirmation | needs-decision | changes-required` (+ test-dev 전용 `pass-with-suspected-defects`). 번역·동의어 치환 금지.
+- **ID 규칙**: `AC-N`, `AR-NNN`, `TEST-NNN`(test Worker가 부여), `REVIEW-NNN`(aggregate 시 메인 세션이 부여 — reviewer 부여 금지).
+- **스킬·에이전트 이름**: `plan-dev`, `implement-dev`, `fix-dev`, `test-dev`, `review-code`, `commit-code`, `request-merge`, (도입 시) `dev-loop`; persona `planner`, `implementer`, `security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`.
+- **파일명 규칙**: `{timestamp}_{Jira}_PLAN|IMPL|LOOP_{title}.md`와 `-STEP-N` 접미 규칙.
+- **AR 불변식**: AR 엔트리는 사용자의 명시적 Accept 응답이 있을 때만 기록한다. 어떤 플랫폼 변형에서도 이 규칙을 완화하거나 자동화하는 번역을 하지 않는다.
+
 ## Skill migration
 
 `skills/claude/<skill>`를 `skills/opencode/<skill>`로 옮길 때의 규칙이다.
@@ -26,6 +39,7 @@ Claude Code Skill에는 `Read`, `Grep`, `Glob`, `Bash`, `Edit`, `Write`, `MultiE
 - Claude Code의 `Agent` tool은 OpenCode의 **Task tool**로 바꾼다. 본문에서 "dispatch via the `Agent` tool"은 "dispatch via OpenCode's Task tool"로 적는다.
 - Claude Code의 `subagent_type: general-purpose`는 OpenCode의 **`subagent_type: general`**로 바꾼다. 현재 OpenCode의 built-in subagent 이름은 `general`, `explore`다.
 - Claude Code의 `AskUserQuestion`은 OpenCode의 **question tool**(또는 "ask the user"라는 기능 중심 표현)로 바꾼다.
+- review-code 트리아지의 `AskUserQuestion` Fix/Accept 분류는 OpenCode **question tool**로 매핑한다. 배치 규칙(한 번에 4건), 기본값 Fix, 무응답=미분류 유지, 자동 수용 금지 의미는 그대로 보존한다(Platform invariants 참조).
 - Claude Code의 `ExitPlanMode`는 OpenCode Plan agent의 **`plan_exit`** 흐름으로 바꾼다. 아래 "Convert plan-mode instructions"에서 다룬다.
 - Claude Code의 `Read`, `Grep`, `Glob`, `Bash` 도구명은 기능 중심 표현("file reads", "grep/glob searches", "shell execution")으로 바꾸거나, workflow 이해에 직접 도움이 되는 경우에만 OpenCode 도구명을 쓴다. repo 규칙(`rg`/`fd` 사용)처럼 OpenCode에서도 유효한 지시는 그대로 둔다.
 - `MultiEdit`은 OpenCode에 없다. `edit`/`write`/`apply_patch`로 바꾼다. hook이나 도구 allowlist에서는 `edit`을 기준으로 생각한다.

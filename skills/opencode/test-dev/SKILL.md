@@ -56,7 +56,7 @@ What is **not** writable here, even if a newly added test fails because of it:
 - Database migrations, schema files, infrastructure-as-code.
 - `AGENTS.md` / legacy `CLAUDE.md` when present / `README.md` content.
 
-When a legitimately written test breaks and the failure looks like a real defect in business logic, **do not fix it**. Record the suspected defect (file, line, observed vs expected behavior, the test that surfaced it) into a running list, **leave the failing test in place** unless leaving it red blocks subsequent tests from running, and continue to the next gap. After all phases finish, report the collected defects to the user as part of the final summary.
+When a legitimately written test breaks and the failure looks like a real defect in business logic, **do not fix it**. Record the suspected defect (file, line, observed vs expected behavior, the test that surfaced it) into a running list - returned as `## Findings`, each entry with a Worker-assigned `TEST-NNN` id - **leave the failing test in place** unless leaving it red blocks subsequent tests from running, and continue to the next gap. After all phases finish, report the collected defects to the user as part of the final summary.
 
 If keeping the failing test red blocks the rest of the run (e.g. it hangs the suite or corrupts shared state), **skip it** with the framework's standard skip mechanism (`t.Skip`, `it.skip`, `@pytest.mark.skip`) annotated with a comment pointing to the suspected defect, and add the skipped test to the same defect list. Do not weaken the assertions to make it pass.
 
@@ -135,14 +135,14 @@ Run the full lint + unit + e2e suites once more.
 - All previously-green tests must remain green. If a pre-existing test broke during the run, it points to a problem the skill caused — investigate by reverting the most recent test change rather than touching production code.
 - Newly added tests that surfaced suspected business-logic defects may legitimately remain red (or skipped per Global Rule 6). They do not block completion — they are reported to the user.
 
-If a pre-existing test is red and reverting recent test changes does not restore it, stop and surface the failure with what was tried — Worker mode returns `## Test Status: failed`; interactive execution surfaces it to the user.
+If a pre-existing test is red and reverting recent test changes does not restore it, stop and surface the failure with what was tried — Worker mode returns `## Stage Status: failed`; interactive execution surfaces it to the user.
 
 ## Output
 
 The result is delivered as two artifacts, defined in [references/worker-contract.md](references/worker-contract.md):
 
-- **Worker return (②)** — the fixed-heading Markdown the Worker hands back (`## Test Status` … `## Remaining Attention Items`, plus `## Decision Needed` when blocked). No file artifact is written, so the return **is** the deliverable: the Worker must emit the `## Suspected Business Logic Defects` list **verbatim**, never summarised or dropped.
-- **Dispatcher chat summary (③)** — the Dispatcher renders a short summary for the user: scope, per-phase one-liners (unit added/result, e2e added/result or skipped, mutation start→final efficacy and whether the 80% threshold was reached), and the suspected-defects list surfaced **prominently and verbatim** as the most important attention item. If the Worker returns `blocked`, surface `## Decision Needed` first and stop. Translate to Korean if the Worker returned English; keep paths and identifiers as-is.
+- **Worker return (②)** — the fixed-heading Markdown the Worker hands back (the `## Stage Status` / `## Findings` / `## Decision Needed` common block, then `## Scope` … `## Remaining Attention Items`). No file artifact is written, so the return **is** the deliverable: the Worker must emit the `## Findings` list (suspected business-logic defects, `TEST-NNN` ids) **verbatim**, never summarised or dropped.
+- **Dispatcher chat summary (③)** — the Dispatcher renders a short summary for the user: scope, per-phase one-liners (unit added/result, e2e added/result or skipped, mutation start→final efficacy and whether the 80% threshold was reached), and the `## Findings` list surfaced **prominently and verbatim** as the most important attention item. If the Worker returns `pass-with-suspected-defects`, do not auto-proceed to review-code or any next stage: notify the user and present each finding as a `fix-dev` candidate. If the Worker returns `blocked`, surface `## Decision Needed` first and stop. Translate to Korean if the Worker returned English; keep paths and identifiers as-is.
 
 In explicitly authorized direct execution, the same shape is the final chat output. Do not write a separate report file. Do not modify `docs/agents/dev` implementation reports.
 
@@ -155,4 +155,4 @@ This skill is test-code-only (Global Rule 6). Production code is **never** edite
 3. **If the test correctly expresses the intended behavior but production code disagrees** — this is a suspected business-logic defect. Do **not** edit production code. Add it to the running defect list (see Global Rule 6), leave the test red (or skip with annotation if it blocks the suite), and continue.
 4. **If a previously-green test broke** because of changes made by this skill — the most recent test-code change is the suspect. Revert the test change and re-evaluate. Do not touch production code to make a previously-green test pass under a new test infrastructure.
 5. **Never weaken tests to make them pass** — see Global Rule 3.
-6. **Stop after 3 failed attempts on the same error** — record what was tried, what was observed, and add it to the defect list. Continue to the next gap; the user gets the full picture in the final summary. If the error is irrecoverable or a previously-green test cannot be restored, Worker mode sets `## Test Status` to `failed` and returns; interactive execution asks the user for guidance. Suspected business-logic defects are never a `failed` condition — they go to the defect list and are reported.
+6. **Stop after 3 failed attempts on the same error** — record what was tried, what was observed, and add it to the defect list. Continue to the next gap; the user gets the full picture in the final summary. If the error is irrecoverable or a previously-green test cannot be restored, Worker mode sets `## Stage Status` to `failed` and returns; interactive execution asks the user for guidance. Suspected business-logic defects are never a `failed` condition — they go to the defect list and are reported.

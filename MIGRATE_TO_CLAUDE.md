@@ -50,6 +50,15 @@ Codex plan mode는 UI/CLI의 approval flow를 통해 write-capable 단계로 넘
 - 승인 후 첫 write가 Obsidian plan/report 저장 같은 persistence여야 한다는 스킬 정책은 유지한다.
 - Codex 전용 `/plan`, `/permissions`, sandbox override 표현은 Claude Code의 plan mode, permission mode, `ExitPlanMode` 표현으로 바꾼다.
 
+### Preserve cross-platform contract keywords
+
+Codex 변형을 소스로 역이식할 때도 공통 계약 키워드는 번역·개명하지 않고 그대로 보존한다 (MIGRATE_TO_CODEX.md의 "Platform invariants" 목록과 동일 항목):
+
+- 공통 반환 블록과 섹션명: `## Stage Status` / `## Evidence` / `## Findings` / `## Decision Needed`, 플랜의 `## Acceptance Contract` / `## Authority Boundaries`, 리뷰의 `## Accepted Review Exceptions` / `## Applied Exceptions`.
+- 상태 어휘: `pass | blocked | failed | needs-confirmation | needs-decision | changes-required` (+ test-dev 전용 `pass-with-suspected-defects`). Codex 소스가 이 어휘를 쓰고 있으면 그대로 둔다 — Claude식 동의어로 바꾸지 않는다.
+- ID 규칙(`AC-N`, `AR-NNN`, `REVIEW-NNN`, `TEST-NNN`)과 AR 인간-전용 기록 불변식.
+- Codex의 텍스트 트리아지 규약("각 ID에 `REVIEW-001: fix` 형식으로 응답")은 Claude Code의 `AskUserQuestion` 트리아지로 되돌리되, 무응답=미분류 유지·자동 수용 금지 의미는 바꾸지 않는다.
+
 ### Replace Codex-safe generic wording with Claude Code tool names only when useful
 
 Codex 변형은 호스트 독립성을 위해 "read files", "search", "ask the user"처럼 기능 중심 표현을 쓰는 경우가 많다. Claude Code 변형은 필요할 때 `Read`, `Grep`, `Glob`, `Bash`, `Edit`, `Write`, `MultiEdit`, `AskUserQuestion`, `ExitPlanMode`, `Agent` 같은 도구명을 직접 써도 된다.

@@ -6,6 +6,19 @@
 
 옮기는 대상은 크게 세 가지 — 스킬(`SKILL.md`), 서브에이전트(custom agent 정의 파일), 훅(hook 설정·스크립트) — 이고, 아래도 그 순서로 나눈다.
 
+## Platform invariants (do not translate)
+
+플랫폼 간 파싱·매칭 호환성을 위해 아래 항목은 마이그레이션 시 이름·값을 그대로 보존한다. 도구명·실행모델 변환 규칙이 이 목록보다 우선하지 않는다.
+
+- **공통 반환 섹션명**: `## Stage Status`, `## Evidence`, `## Findings`, `## Decision Needed` — Worker/단계 반환 맨 앞의 공통 블록. 그 아래의 스킬별 헤딩(`## TODO Fulfillment`, `## Suspected` 계열 등 현행 이름)도 개명하지 않는다.
+- **플랜 섹션명**: `## Acceptance Contract`, `## Authority Boundaries`, `## TODOs`, `## Non-goals`, `## Key decisions`.
+- **리뷰 섹션명**: `## Accepted Review Exceptions`, `## Applied Exceptions`.
+- **상태 어휘**: `pass | blocked | failed | needs-confirmation | needs-decision | changes-required` (+ test-dev 전용 `pass-with-suspected-defects`). 번역·동의어 치환 금지.
+- **ID 규칙**: `AC-N`, `AR-NNN`, `TEST-NNN`(test Worker가 부여), `REVIEW-NNN`(aggregate 시 메인 세션이 부여 — reviewer 부여 금지).
+- **스킬·에이전트 이름**: `plan-dev`, `implement-dev`, `fix-dev`, `test-dev`, `review-code`, `commit-code`, `request-merge`, (도입 시) `dev-loop`; persona `planner`, `implementer`, `security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`.
+- **파일명 규칙**: `{timestamp}_{Jira}_PLAN|IMPL|LOOP_{title}.md`와 `-STEP-N` 접미 규칙.
+- **AR 불변식**: AR 엔트리는 사용자의 명시적 Accept 응답이 있을 때만 기록한다. 어떤 플랫폼 변형에서도 이 규칙을 완화하거나 자동화하는 번역을 하지 않는다.
+
 ## Skill migration
 
 `skills/claude/<skill>`를 `skills/codex/<skill>`로 옮길 때의 규칙이다.
@@ -67,6 +80,15 @@ Claude Code Skill에는 `Read`, `Grep`, `Glob`, `Bash`, `Edit`, `Write`, `AskUse
 - `AskUserQuestion` 같은 Claude 전용 이름은 "ask the user"나 Codex의 현재 사용자 입력 메커니즘으로 바꾼다.
 - 검색 지시는 `rg` 같은 실제 명령이나 "read/search tools"처럼 Codex에서 수행 가능한 방식으로 적는다.
 - 전역 지시 파일은 Codex가 자동으로 읽는 `AGENTS.md`를 우선하되, cross-agent repo에서 `CLAUDE.md`가 병존할 수 있으면 필요한 경우 둘 다 확인하도록 둔다.
+
+### Convert structured triage questions to a text response protocol
+
+Claude Code의 review-code 트리아지는 `AskUserQuestion`으로 blocking finding을 항목별 Fix/Accept 분류한다. Codex에는 구조화 질문 도구가 없으므로 텍스트 응답 규약으로 변환한다.
+
+- 요약 테이블(`| ID | Severity | Finding | Recommendation |`)을 그대로 출력한 뒤, 사용자에게 "각 ID에 `REVIEW-001: fix` 또는 `REVIEW-001: accept` 형식으로 응답해 달라"고 요청한다.
+- 모호한 응답(형식 불일치, 존재하지 않는 ID, fix/accept 외 단어)은 임의로 해석하지 말고 해당 ID를 재확인한다.
+- 응답이 없는 ID는 **미분류로 유지**한다 — 자동 수용 금지, Fix로의 자동 분류도 금지(분류는 사용자의 명시 응답만으로 확정되고, 미분류 잔존 시 Stage Status는 `needs-decision`).
+- Accept 분류 항목의 AR 기록 위치·형식·불변식은 Platform invariants 목록을 따른다.
 
 ### Handle Codex skill UI metadata
 

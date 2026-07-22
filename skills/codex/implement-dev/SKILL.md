@@ -59,7 +59,7 @@ The plan is a coarse, human-approved **direction**. Detail-level obstacles it de
 
 **Escalation routing depends on mode:**
 
-- **Worker mode** - you are an isolated subagent and **cannot ask the user**. On a direction-level conflict, stop, do not write code for the conflicting TODO, set `## Implementation Status` to `blocked`, and surface the conflict plus the choices in `## Decision Needed` (see [references/worker-contract.md](references/worker-contract.md)). Detail-level obstacles stay yours to resolve and record; never escalate them.
+- **Worker mode** - you are an isolated subagent and **cannot ask the user**. On a direction-level conflict, stop, do not write code for the conflicting TODO, set `## Stage Status` to `blocked`, and surface the conflict plus the choices in `## Decision Needed` (see [references/worker-contract.md](references/worker-contract.md)). Detail-level obstacles stay yours to resolve and record; never escalate them.
 - **Interactive (direct main-session) execution** - ask the user before writing code for the conflicting TODO, then resume after they decide.
 
 The Dispatcher itself never makes direction decisions for the Worker; if the Worker returns `blocked`, the Dispatcher surfaces `## Decision Needed` to the user and stops - it does not retry or self-decide.
@@ -93,11 +93,12 @@ When verification fails:
 2. **Fix production code first** - if a test fails, the bug is likely in the implementation, not the test. Only adjust the test if the expectation itself is wrong.
 3. **Never weaken tests to pass** - do not remove assertions, loosen checks, or skip tests.
 4. **Fix immediately** - if you notice a failure mid-work, fix it before moving on. Do not accumulate failures.
-5. **Stop after 3 failed attempts on the same error** - describe what you tried and what you observed. In interactive mode, ask the user for guidance; in Worker mode, set `## Implementation Status` to `failed` and return.
+5. **Stop after 3 failed attempts on the same error** - describe what you tried and what you observed. In interactive mode, ask the user for guidance; in Worker mode, set `## Stage Status` to `failed` and return.
 
 ## Completion
 
 - All plan TODO checkboxes are up to date.
+- Every AC in the plan's `## Acceptance Contract` has its work-specific evidence collected and recorded (report `AC:` lines + return `## Evidence`) - an unproven AC blocks `pass`. Plans without `## Acceptance Contract` (legacy) are not refused: skip AC evidence, run only the rediscovered generic gates, and record `Acceptance Contract: none (legacy plan)` in the report's `## Summary` and the return's `## Evidence`.
 - The completion report (①) is saved under `docs/agents/dev`, and the plan/report Markdown links are bidirectional.
 - If running as a Worker, the return message ② uses the fixed headings and links ① by absolute path.
 - The completion report's `## Summary` records every language-specific convention file consulted and any de facto fallback used, or states that no table mapping applied.
