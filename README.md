@@ -89,3 +89,15 @@ Skills 실행에 필요한 환경변수 목록. 각 Agent 의 환경변수 설�
 - Codex 전용으로 `~/.codex/agents/`를 정리한 뒤 `agents/codex/*.toml`을 동기화한다.
 - Codex 전용으로 `~/.codex/hooks/`를 정리한 뒤 `hooks/codex/hooks/*`를 동기화하고, `hooks/codex/hooks.json`을 `~/.codex/hooks.json`으로 복사한다.
 - 관리 대상 설치 파일을 최신 상태로 갱신한다.
+
+## (예정) dev-loop 도입 후 사용 흐름
+
+> [UPGRADE_HARNESS_PLAN.md](UPGRADE_HARNESS_PLAN.md)가 완료된 뒤의 예상 사용법이다. dev-loop 구현(P4) 시점에 이 섹션을 실제 동작 기준으로 갱신한다.
+
+1. **계획 수립**: `plan-dev` 스킬을 호출해 인터뷰로 계획을 수립한다. 완료 조건 라운드에서 TODO별 완료 조건·증거(`Acceptance Contract`)와 권한 경계·루프 예산(`Authority Boundaries`)을 함께 확정하고, 계획을 승인하면 PLAN/RESEARCH 파일이 `docs/agents/` 아래에 저장된다.
+2. **루프 실행**: 승인된 플랜 경로를 지정해 `dev-loop` 스킬을 명시적으로 호출한다. 이후 `implement-dev → test-dev → review-code → (fix-dev → test-dev → review-code)*`가 종료 술어(TODO 완료 ∧ AC 증거 충족 ∧ 검증 green ∧ 차단 finding 0)를 만족할 때까지 자율 반복된다. 멀티스텝 플랜은 sub-plan(`-STEP-N`) 단위로 `dev-loop`를 호출한다.
+3. **중간 개입은 두 경우뿐**: (a) 리뷰에서 HIGH/CRITICAL이 발견되면 항목별 Fix/Accept 분류 질문에 답한다 — Accept 항목은 `AGENTS.md`의 `Accepted Review Exceptions`에 기록되어 다음 리뷰부터 차단 finding으로 재검출되지 않는다. (b) blocked·예산 소진·no-progress로 에스컬레이션되면 지시를 내린다 — 방향 문제면 `plan-dev`로 재진입한다.
+4. **완료 확인과 커밋**: 루프는 READY_TO_COMMIT에서 멈춘다. Implementation Report와 LOOP 상태 파일을 확인한 뒤 `commit-code`, 필요 시 `request-merge`를 직접 호출한다 — 커밋·푸시·PR/MR 생성은 루프 권한 밖이다.
+5. **중단·재개**: 루프가 중간에 끊겨도 상태는 `docs/agents/dev/*_LOOP_*.md`에 남으므로, 같은 플랜으로 `dev-loop`를 다시 호출하면 마지막 라운드에서 이어서 진행한다.
+
+기존처럼 각 스킬을 단독 호출하는 수동 체인(`plan-dev → implement-dev → … → commit-code`)도 그대로 유효하다. `dev-loop`는 그 위에 얹힌 선택적 오케스트레이터다.

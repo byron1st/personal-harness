@@ -31,7 +31,7 @@ These are **required when the plan is non-trivial**. Omit either only when the p
 `{timestamp}_{Jira ticket number}_PLAN_{title}.md`
 
 - `{timestamp}` - local time in `YYYYMMDDHHMMSS` format.
-- `{Jira ticket number}` - extract from the current branch name using the regex `[A-Z]+-[0-9]+`. If it cannot be extracted, ask the user unless they explicitly confirm `NO-JIRA`.
+- `{Jira ticket number}` - extract from the current branch name using the regex `[A-Z]+-[0-9]+`. If it cannot be extracted, ask the user unless they explicitly confirm `NO-JIRA`. **Session-context shortcut**: when the session context classifies this repo as personal (SessionStart `repo_type: personal`) and the branch carries no Jira key, propose `NO-JIRA` as the default — the confirmation question may be skipped.
 - `{title}` - short, concise, hyphen-separated description. No spaces. Example: `refactor-service-layer-to-resolve-cycle-dependencies`.
 
 Example: `20260622153045_BLC-692_PLAN_refactor-service-layer.md`.
