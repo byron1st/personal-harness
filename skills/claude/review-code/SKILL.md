@@ -37,6 +37,7 @@ Before dispatching, do these once. The result becomes part of every dispatch pro
    - On `main`: `git diff HEAD` for staged+unstaged and `git status` for untracked files.
 2. Read `AGENTS.md` / `CLAUDE.md` at the repo root and any nested copies in directories the diff touches. Extract any rules relevant to the four axes.
 3. List the touched files with absolute paths and the language(s) involved.
+4. From the same instruction files, load the `## Accepted Review Exceptions` registry (see "Accepted Review Exceptions registry" below) and keep the entries whose `Applies to` scope plausibly overlaps the diff. When none exist or none overlap, pass nothing — do not mention the mechanism to the reviewers.
 
 If the diff is very large (roughly >2000 changed lines), review one file at a time and use one set of four reviewers per file (still four in parallel each round). If the user explicitly authorizes direct fallback after a delegation failure, run the missing main-session reviewer passes per file. Note the file-by-file mode at the end of the final output so the user knows the review was chunked.
 
@@ -52,6 +53,7 @@ Each dispatch prompt contains:
 - The bug bar (see "What counts as a bug" below).
 - The priority tag definitions (see "Priority levels" below).
 - The output format (see "Per-finding block" below).
+- The relevant `## Accepted Review Exceptions` entries (only when step 4 of gather found any), with this suppression rule verbatim: *"A finding is waived only when ALL four conditions hold: (1) its file·symbol·behavior scope exactly matches the entry's `Applies to`; (2) the entry's premises and compensating controls are still valid in this diff; (3) the impact has not expanded beyond the accepted behavior; (4) no `Re-open when` condition is met. A waived finding is downgraded, never deleted: keep its block but replace the priority tag with `[WAIVED:AR-NNN]`. Any doubt about any condition = not waived; return the finding normally."*
 - An explicit reminder that the agent stays in its own lane and silently defers findings the other reviewers would cover.
 
 The agents do not see each other's output. They each return a list of per-finding blocks plus a one-sentence axis verdict (e.g., *"보안 축은 깨끗합니다"* / *"신뢰성 측면에서 차단성 이슈 1건과 비차단성 2건이 있습니다"*).
@@ -61,8 +63,45 @@ The agents do not see each other's output. They each return a list of per-findin
 Once all four delegated returns arrive:
 
 1. **Deduplicate by `Location`.** If two reviewers flagged the same file and overlapping line range with the same root issue, keep the framing that is most specific (usually the specialist whose axis the issue most closely sits in). If both framings add value, keep the better-worded one and append a one-line note that another persona corroborated. Do not stack two entries for the same defect.
-2. **Sort by priority** (`[CRITICAL]` → `[HIGH]` → `[NORMAL]` → `[LOW]`). Within the same priority, group by file path.
-3. **Compose the overall verdict**: `Correct` if no blocking findings (`[CRITICAL]` or `[HIGH]`); `Incorrect` otherwise. One Korean sentence explaining why. When an axis returned clean, you may surface that explicitly in the verdict sentence (e.g., *"보안·유지보수성 축은 깨끗하나 신뢰성에서 컨텍스트 전파 누락이 발견되었습니다."*).
+2. **Collect Applied Exceptions.** Pull findings tagged `[WAIVED:AR-NNN]` out of the finding list and collapse each to one line under `## Applied Exceptions` (AR id + what was waived). Waived findings are excluded from the Stage Status / verdict computation but always displayed — a waiver downgrades, it never hides.
+3. **Sort by priority** (`[CRITICAL]` → `[HIGH]` → `[NORMAL]` → `[LOW]`). Within the same priority, group by file path.
+4. **Assign finding ids.** Give each blocking finding (`[CRITICAL]` / `[HIGH]`) a sequential `REVIEW-NNN` id (REVIEW-001, REVIEW-002, …) and prefix it to the block title: `### [HIGH] REVIEW-001 — {title}`. The main session assigns ids, never the reviewers — four parallel reviewers would collide.
+5. **Triage** when any blocking finding exists — see "Triage blocking findings" below.
+6. **Compose the Stage Status and overall verdict** — see "Stage Status and overall verdict" under Output format.
+
+## Triage blocking findings (main session)
+
+When at least one non-waived `[CRITICAL]` / `[HIGH]` finding remains after aggregation:
+
+1. **Print the summary table first**: `| ID | Severity | Finding | Recommendation |` — one row per blocking finding (`REVIEW-NNN`, severity, short title, one-line recommended action).
+2. **Classify each finding with `AskUserQuestion`**: one question per finding with options `Fix (Recommended)` / `Accept`. A call carries at most four questions, so run findings in batches of four. The default is **Fix**; a finding the user leaves unanswered stays **unclassified** — never auto-accept, never infer acceptance.
+3. **State the classification in the final output**: the Fix list, the Accept list (with recorded AR ids), and any unclassified remainder.
+4. **Record an AR entry for each Accept** per "Accepted Review Exceptions registry" below — only on the user's explicit Accept answer.
+
+`[NORMAL]` / `[LOW]` findings are reported but never trigger triage, never block, and are not auto-fix targets.
+
+## Accepted Review Exceptions registry
+
+**Invariant — human-only acceptance**: an AR entry is written only on the user's explicit Accept answer in triage. The skill, its reviewers, and any loop controller never infer acceptance, never self-record an entry, and never accept on the user's behalf. Waiving instead of fixing is a human decision, in the same class as "never weaken tests to make them pass".
+
+**Location (single copy)**: record the entry in the instruction file closest to the affected code — a nested `AGENTS.md` in the touched directory tree first, else the repo-root `AGENTS.md`, else `CLAUDE.md`. One entry lives in exactly one file; never duplicate it. When neither `AGENTS.md` nor `CLAUDE.md` exists in the repo, do not create a file silently — confirm the location with the user (default suggestion: create a root `AGENTS.md`).
+
+**Entry format** — appended under a `## Accepted Review Exceptions` section (create the section at the end of the file when absent). `AR-NNN` is one greater than the highest existing id in that repo:
+
+```markdown
+### AR-001
+- Applies to: {exact file/symbol/behavior scope}
+- Original severity: {CRITICAL | HIGH}
+- Accepted behavior: {what stays as-is}
+- Rationale: {why accepting is right here}
+- Compensating controls: {what limits the risk, or "none"}
+- Re-open when: {conditions that void this waiver}
+- Approved: {user} / {YYYY-MM-DD}
+```
+
+Never record secrets, credentials, or attack payloads in an entry — describe the risk abstractly.
+
+**Matching on later reviews**: the suppression rule lives in the dispatch prompt (see "Dispatch the four reviewers") — all four conditions (exact scope match ∧ premises/controls valid ∧ impact not expanded ∧ no `Re-open when` met) or the finding is returned normally. Waiving downgrades to `## Applied Exceptions`; it never deletes.
 
 ## Using the Requirements Catalog
 
@@ -80,7 +119,7 @@ A finding is raised only if every one of these holds:
 4. It was introduced by the proposed change, or uncovered by it.
 5. It does not depend on unstated assumptions about the author's intent.
 6. Impact on other parts of the codebase is provable via a specific call site or reference, not speculative.
-7. It is not clearly an intentional choice by the author (deliberate refactor, feature flag kept off, etc.).
+7. It is not clearly an intentional choice by the author (deliberate refactor, feature flag kept off, etc.). The `## Accepted Review Exceptions` registry is the official channel for that intent — a registry entry waives its finding per the suppression rule; intent merely guessed at does not.
 
 Ignore style, formatting, typos, and nits unless they obscure meaning or violate a project rule.
 
@@ -116,22 +155,49 @@ Specificity rules for findings (pass these in each dispatch prompt):
 - Code fragments under three lines, in `` `inline` `` or fenced code blocks.
 - Matter-of-fact tone — no flattery, no apology.
 
-### Overall verdict
+### Applied Exceptions
 
-The main session writes this after aggregation. One of `Correct` or `Incorrect`, plus one Korean sentence explaining why. `Correct` means existing code and tests will not break and the patch is free of blocking issues; ignore non-blocking nits when judging.
+When any finding was waived by an `## Accepted Review Exceptions` entry, list the waivers after the findings and before the verdict — one line per waiver:
+
+```
+## Applied Exceptions
+- AR-003 — {what was waived, one line}
+```
+
+Always shown when non-empty; omit the section only when no exception was applied.
+
+### Stage Status and overall verdict
+
+The main session writes this after aggregation and triage. The final output opens with the common stage heading and closes with the verdict sentence:
+
+```
+## Stage Status
+pass | needs-decision | changes-required
+```
+
+- `pass` — no unresolved blocking items: every `[CRITICAL]` / `[HIGH]` finding is either waived (Applied Exceptions) or Accept-classified in triage. `[NORMAL]` / `[LOW]` never block.
+- `needs-decision` — blocking findings exist and at least one is still unclassified (triage unanswered). Takes precedence over `changes-required` when both apply — classification is still owed.
+- `changes-required` — every blocking finding is classified and at least one is Fix.
+
+The human-readable verdict sentence stays, as the closing line: `Correct` when Stage Status is `pass` with no exceptions applied and no Accept items; `Correct (with accepted risks)` when `pass` was reached through Applied Exceptions or Accept classifications; `Incorrect` otherwise. One Korean sentence explaining why; when an axis returned clean, you may surface that explicitly. `Correct` means existing code and tests will not break and the patch is free of blocking issues; ignore non-blocking nits when judging.
 
 ### Language rule
 
-Prose inside the comment body and the verdict sentence is in **Korean**. Titles, labels, priority tags, field names (`Location`, `Related Requirements`, `Overall Correctness`), and code fragments stay in English.
+Prose inside the comment body and the verdict sentence is in **Korean**. Titles, labels, priority tags, field names (`Location`, `Related Requirements`, `Stage Status`, `Overall Correctness`), and code fragments stay in English.
 
 ### When all four reviewers return clean
 
-Output only the Overall Correctness verdict. Do not fabricate findings to fill space.
+Output the Stage Status and the Overall Correctness verdict, plus `## Applied Exceptions` when any waiver was applied — a clean result that leaned on waivers must still show them. Do not fabricate findings to fill space.
 
 ### Example output
 
 ```
-### [HIGH] Context not propagated to downstream call
+## Stage Status
+changes-required
+```
+
+```
+### [HIGH] REVIEW-001 — Context not propagated to downstream call
 - Location: `internal/billing/service.go:L88-L92`
 - Related Requirements: Reliability > Fault tolerance; AGENTS.md §3 "Always pass ctx"
 
@@ -139,5 +205,6 @@ Output only the Overall Correctness verdict. Do not fabricate findings to fill s
 ```
 
 ```
+Classification: Fix — REVIEW-001. Accept — none. Unclassified — none.
 Overall Correctness: Incorrect — 결제 경로에서 컨텍스트 전파가 누락되어 취소/타임아웃 동작이 보장되지 않습니다.
 ```

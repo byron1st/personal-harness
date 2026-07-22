@@ -22,7 +22,7 @@
 | P0 | 사전 정합성 정리 | done | |
 | P1 | plan-dev 메타프롬프팅 강화 | done | |
 | P2 | 공통 단계 결과 계약 정렬 | done | |
-| P3 | review-code 트리아지 + Accepted Review Exceptions | todo | |
+| P3 | review-code 트리아지 + Accepted Review Exceptions | done | |
 | T1 | 1차 변형 전파 (P0~P3 범위) | todo | |
 | P4 | dev-loop 컨트롤러 스킬 신설 (MVP) | todo | |
 | P5 | 계측과 튜닝 | todo | |
@@ -127,11 +127,11 @@ READY_TO_COMMIT에서 정지 → 인간이 IMPL 리포트·LOOP 파일 확인 �
 
 대상 파일: [skills/claude/review-code/SKILL.md](skills/claude/review-code/SKILL.md). reviewer 에이전트 4종은 수정하지 않는다(억제 규칙은 dispatch prompt로 전달 — diff·마이그레이션 최소화).
 
-- [ ] **P3-1** 상태 모델: `## Stage Status: pass | needs-decision | changes-required` 도입(pass = 미해결 차단 항목 없음; needs-decision = HIGH/CRITICAL 발견됐으나 미분류; changes-required = fix 분류 항목 잔존). verdict 문장 유지 + `Correct (with accepted risks)` 표현.
-- [ ] **P3-2** gather 단계: AGENTS.md(없으면 CLAUDE.md)에서 `## Accepted Review Exceptions` 로드 → dispatch prompt에 포함, 억제 4조건 지시, 매칭 finding은 삭제가 아니라 **Waived 강등**(verdict 계산 제외 + `## Applied Exceptions`에 AR ID 표시).
-- [ ] **P3-3** aggregate 단계: dedupe 후 차단 finding에 `REVIEW-NNN` ID 부여(메인 세션), HIGH/CRITICAL 존재 시 triage — 요약 테이블(`ID/Severity/Finding/Recommendation`) 출력 후 `AskUserQuestion`으로 항목별 Fix/Accept(질문당 옵션 4개 제한 → 4건씩 배치, 기본값 Fix, 무응답 항목은 미분류 유지). Fix/Accept 목록을 결과에 명시.
-- [ ] **P3-4** AR 기록 절차: Accept 시 메인 세션이 AR 엔트리 기록 — 위치·형식·매칭 규칙은 §1 확정안, "AR 작성은 사용자의 명시적 Accept 응답이 있을 때만"을 불변식으로 명문. `AGENTS.md`와 `CLAUDE.md`가 둘 다 없는 레포에서는 파일을 자동 생성하지 않고 기록 위치를 사용자에게 확인한다(기본 제안: 루트 `AGENTS.md` 신규 생성).
-- [ ] **P3-5** 문서 연결: bug bar 7번(intentional choice)에 "AR 레지스트리가 그 의도의 공식 채널" 1문장, "When all four reviewers return clean" 절에 Applied Exceptions 표시 규칙 반영.
+- [x] **P3-1** 상태 모델: `## Stage Status: pass | needs-decision | changes-required` 도입(pass = 미해결 차단 항목 없음; needs-decision = HIGH/CRITICAL 발견됐으나 미분류; changes-required = fix 분류 항목 잔존). verdict 문장 유지 + `Correct (with accepted risks)` 표현.
+- [x] **P3-2** gather 단계: AGENTS.md(없으면 CLAUDE.md)에서 `## Accepted Review Exceptions` 로드 → dispatch prompt에 포함, 억제 4조건 지시, 매칭 finding은 삭제가 아니라 **Waived 강등**(verdict 계산 제외 + `## Applied Exceptions`에 AR ID 표시).
+- [x] **P3-3** aggregate 단계: dedupe 후 차단 finding에 `REVIEW-NNN` ID 부여(메인 세션), HIGH/CRITICAL 존재 시 triage — 요약 테이블(`ID/Severity/Finding/Recommendation`) 출력 후 `AskUserQuestion`으로 항목별 Fix/Accept(질문당 옵션 4개 제한 → 4건씩 배치, 기본값 Fix, 무응답 항목은 미분류 유지). Fix/Accept 목록을 결과에 명시.
+- [x] **P3-4** AR 기록 절차: Accept 시 메인 세션이 AR 엔트리 기록 — 위치·형식·매칭 규칙은 §1 확정안, "AR 작성은 사용자의 명시적 Accept 응답이 있을 때만"을 불변식으로 명문. `AGENTS.md`와 `CLAUDE.md`가 둘 다 없는 레포에서는 파일을 자동 생성하지 않고 기록 위치를 사용자에게 확인한다(기본 제안: 루트 `AGENTS.md` 신규 생성).
+- [x] **P3-5** 문서 연결: bug bar 7번(intentional choice)에 "AR 레지스트리가 그 의도의 공식 채널" 1문장, "When all four reviewers return clean" 절에 Applied Exceptions 표시 규칙 반영.
 
 완료 기준: HIGH finding이 있는 diff에서 triage가 발동하고, Accept 항목이 AGENTS.md에 기록되며, 같은 diff 재리뷰에서 해당 항목이 Waived(Applied Exceptions)로 강등되고 Stage Status가 pass가 된다.
 
@@ -239,3 +239,9 @@ READY_TO_COMMIT에서 정지 → 인간이 IMPL 리포트·LOOP 파일 확인 �
 - 완료 기준 검증: 세 스킬 반환 템플릿의 첫 헤딩이 모두 `## Stage Status`(rg 확인), 어휘는 §1 부분집합 + P2-4가 명시 승인한 test-dev 확장(`pass-with-suspected-defects`). 네 번째 스킬(review-code)의 Stage Status는 계획대로 P3-1에서 완성. 잔존 용어(`Implementation Status`/`Test Status`/`Suspected Business Logic Defects`/`` `success` ``) 스윕 0건. 단독 사용 동작 불변 — 변경은 개칭·추가 필드(전부 optional, `none` 허용)·legacy fallback뿐.
 - 편차/결정: `## Evidence`(AC별 작업 특화 증거)와 기존 `## Verification`(재발견 일반 게이트)은 §2 종료 술어 ②·④가 별개 항목이므로 병존 유지 — Evidence는 AC 증거 전용, 중복 없음.
 - 다음 시작점: **P3-1** (review-code 상태 모델 도입).
+
+### 2026-07-22 — P3 완료 (review-code 트리아지 + Accepted Review Exceptions)
+- 수행: P3-1(최종 출력이 `## Stage Status`(`pass|needs-decision|changes-required`)로 시작해 verdict 문장으로 닫힘, `Correct (with accepted risks)` 추가, needs-decision > changes-required 우선순위 명시), P3-2(gather step 4 — AR 레지스트리 로드 후 diff 겹침 엔트리만 dispatch prompt에 포함 + 억제 4조건 verbatim 지시, 매칭 finding은 `[WAIVED:AR-NNN]` 태그로 강등 — reviewer 에이전트 4종 무수정 유지), P3-3(aggregate 확장 — Applied Exceptions 수집, 메인 세션의 `REVIEW-NNN` 부여·블록 제목 접두, 신규 "Triage blocking findings" 섹션: 요약 테이블 → AskUserQuestion 4건 배치, 기본 Fix, 무응답=미분류 유지, Fix/Accept/미분류 목록 출력, NORMAL/LOW 비차단·비트리아지), P3-4(신규 "Accepted Review Exceptions registry" 섹션 — 인간 전용 Accept 불변식 명문, 단일 사본 위치 규칙(영향 코드 최근접 AGENTS.md → 루트 AGENTS.md → CLAUDE.md), CODEX §9.4 엔트리 형식, 지침 파일 없는 레포는 자동 생성 금지+위치 확인(기본 제안: 루트 AGENTS.md), 비밀값·공격 payload 기록 금지), P3-5(bug bar 7에 "AR 레지스트리가 그 의도의 공식 채널" 문장, clean 절에 Stage Status·Applied Exceptions 표시 규칙).
+- 완료 기준 검증(scratchpad p3-gate 실 E2E): ctx 미전파 HIGH 결함을 심은 Go diff → reliability-reviewer dispatch → `[HIGH]` 반환 → `REVIEW-001` 부여·트리아지 테이블·AskUserQuestion → **사용자 명시 Accept** → 테스트 레포 AGENTS.md에 `AR-001` 기록 → 동일 diff 재리뷰(AR 엔트리+억제 규칙 포함) → reviewer가 4조건을 개별 판정 후 `[WAIVED:AR-001]` 강등 반환 → aggregate: `## Applied Exceptions` 표시, `## Stage Status: pass`, verdict `Correct (with accepted risks)`. 전 경로 통과.
+- 편차/결정: 게이트 테스트는 4축 대신 reliability 1축으로 축소 실행(비용 절감) — 검증 대상 메커니즘(억제 규칙 전달, waive 매칭, 트리아지, AR 기록, 재리뷰 강등)은 축 수와 독립. 4축 병렬·dedupe는 P5 드라이런에서 자연 검증.
+- 다음 시작점: **T1-1** (MIGRATE_TO_CODEX.md 트리아지 변환 규칙 + 플랫폼 불변 목록).
