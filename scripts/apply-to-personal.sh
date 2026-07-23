@@ -110,7 +110,7 @@ if [[ -f "${OPENCODE_HOOKS_SOURCE_DIR}/personal-harness.js" ]]; then
 fi
 
 if [[ -f "${OPENCODE_CONFIG_FILE}" ]]; then
-  if jq -e 'any(.plugin[]; . == "./personal-harness.js")' "${OPENCODE_CONFIG_FILE}" >/dev/null 2>&1; then
+  if jq -e 'any(.plugin[]; . == "./personal-harness.js" or (type == "array" and .[0] == "./personal-harness.js"))' "${OPENCODE_CONFIG_FILE}" >/dev/null 2>&1; then
     opencode_config_status="✓ plugin registered"
   else
     opencode_config_status="⚠ plugin not registered in opencode.json"
