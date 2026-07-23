@@ -1,4 +1,4 @@
-# NEXT_HARNESS_CLAUDE.md — 메타프롬프팅 & 루프 엔지니어링 적용 방향
+# RESEARCH_CLAUDE.md — 메타프롬프팅 & 루프 엔지니어링 적용 방향
 
 이 문서는 `feature/next-harness` 브랜치에서 진행할 차기 하네스 개편의 트렌드 조사 결과와 설계 결론을 기록한다. 모든 스킬·에이전트·훅 분석은 Claude 변형(`skills/claude/`, `agents/claude/`, `hooks/claude/`) 기준이며, 조사일은 2026-07-21이다.
 

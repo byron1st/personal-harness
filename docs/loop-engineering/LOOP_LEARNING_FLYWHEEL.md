@@ -1,6 +1,6 @@
 # Loop Learning Flywheel — learn-from-manual-edits와 루프 실패 로그의 연결
 
-[UPGRADE_HARNESS_PLAN.md](../UPGRADE_HARNESS_PLAN.md)의 **P7-2** 태스크 상세 설계 근거 문서다. 착수는 P5 완료 후 별도 사용자 결정이며(on-hold), 착수 시 이 문서를 plan-dev의 입력으로 사용한다.
+[PLAN_TO_UPGRADE.md](PLAN_TO_UPGRADE.md)의 **P7-2** 태스크 상세 설계 근거 문서다. 착수는 P5 완료 후 별도 사용자 결정이며(on-hold), 착수 시 이 문서를 plan-dev의 입력으로 사용한다.
 
 한 문장으로: **dev-loop가 돌 때마다 디스크에 쌓이는 실패·개입 기록을 학습 신호로 승격시켜, "같은 실수를 다음 루프에서 반복하지 않는" 세 번째 루프를 닫는 작업**이다.
 
@@ -16,7 +16,7 @@ P4~P5까지 완성되는 것은 두 개의 루프다 — dev-loop의 내부 검�
 
 ## 3. LOOP 파일의 신호와 각각의 교훈
 
-LOOP 파일 형식(라운드별 Stage Status, finding ID와 분류, 시도한 수정과 결과, 중단 사유 — UPGRADE_HARNESS_PLAN.md P4-2)을 여러 루프에 걸쳐 모아 보면, 신호 유형별로 서로 다른 하네스 개선이 도출된다:
+LOOP 파일 형식(라운드별 Stage Status, finding ID와 분류, 시도한 수정과 결과, 중단 사유 — PLAN_TO_UPGRADE.md P4-2)을 여러 루프에 걸쳐 모아 보면, 신호 유형별로 서로 다른 하네스 개선이 도출된다:
 
 | LOOP 파일의 신호 | 반복되면 의미하는 것 | 도출되는 개선 |
 | --- | --- | --- |
@@ -42,7 +42,7 @@ LOOP 파일 형식(라운드별 Stage Status, finding ID와 분류, 시도한 �
 ## 5. 경계 (불변식과의 관계)
 
 - **하네스 자동 수정 금지**: 루프가 자기 게이트를 스스로 고치는 순간 reward hacking 경로가 열린다(까다로운 reviewer 프롬프트를 "학습"이라는 명목으로 완화하는 식). AR 인간 전용 불변식과 동일한 이유로, 하네스 수준 변경은 항상 제안 → 사용자 승인이다.
-- **AR과의 분리**: 반복 Accept 패턴을 발견해도 이 스킬이 AR을 만들지 않는다. AR 생성은 review-code triage의 전용 경로(UPGRADE_HARNESS_PLAN.md §1 불변식 ①)이고, 여기서는 "이 패턴이 반복된다"는 관찰과 개선 제안까지만 한다.
+- **AR과의 분리**: 반복 Accept 패턴을 발견해도 이 스킬이 AR을 만들지 않는다. AR 생성은 review-code triage의 전용 경로(PLAN_TO_UPGRADE.md §1 불변식 ①)이고, 여기서는 "이 패턴이 반복된다"는 관찰과 개선 제안까지만 한다.
 
 ## 6. 착수 전제 (왜 on-hold인가)
 

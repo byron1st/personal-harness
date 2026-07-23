@@ -11,7 +11,7 @@ personal-harness/
 ├── hooks/            # 플랫폼별 훅 (claude: settings.json + *.sh · codex: hooks.json + *.sh · opencode: JS plugin)
 ├── instructions/     # 전역 지침 AGENTS.md 배포 소스
 ├── scripts/          # 설치·동기화 스크립트 (apply-to-personal.sh · apply-to-work.sh · apply-to-all.sh · setup-ctx7.sh)
-├── docs/             # 하네스 문서 (sync-harness/: SYNC_TO_* 변환 규칙 · archive/: 아카이브된 조사 문서)
+├── docs/             # 하네스 문서 (sync-harness/: SYNC_TO_* 변환 규칙 · loop-engineering/: 루프 엔지니어링 계획·조사 문서)
 └── .agents/skills/   # 하네스 자체용 메타 스킬 (sync-harness; .claude/skills/에 동일 사본)
 ```
 
