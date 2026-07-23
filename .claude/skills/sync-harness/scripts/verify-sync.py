@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """sync-harness verifier.
 
-Mechanizes the "Verify" checklists from MIGRATE_TO_CODEX.md and
-MIGRATE_TO_CLAUDE.md so a migration can be checked without eyeballing:
+Mechanizes the "Verify" checklists from docs/sync-harness/SYNC_TO_CODEX.md
+and SYNC_TO_CLAUDE.md so a migration can be checked without eyeballing:
 
   - tree parity across claude/ codex/ opencode/ (skills, agents, hooks)
   - sub-agent frontmatter parses as YAML (the colon-space trap)
@@ -48,7 +48,7 @@ def find_root(argv: list[str]) -> Path:
         pass
     here = Path.cwd()
     for cand in [here, *here.parents]:
-        if (cand / "MIGRATE_TO_CODEX.md").exists():
+        if (cand / "docs" / "sync-harness" / "SYNC_TO_CODEX.md").exists():
             return cand
     return here
 
@@ -197,8 +197,8 @@ def check_hooks(root: Path) -> None:
 
 def main() -> int:
     root = find_root(sys.argv)
-    if not (root / "MIGRATE_TO_CODEX.md").exists():
-        print(f"warning: {root} doesn't look like the harness root (no MIGRATE_TO_CODEX.md)", file=sys.stderr)
+    if not (root / "docs" / "sync-harness" / "SYNC_TO_CODEX.md").exists():
+        print(f"warning: {root} doesn't look like the harness root (no docs/sync-harness/SYNC_TO_CODEX.md)", file=sys.stderr)
     for fn in (check_agents, check_skills,
                check_codex_residuals, check_hooks):
         try:

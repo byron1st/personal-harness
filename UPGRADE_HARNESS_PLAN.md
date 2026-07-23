@@ -173,7 +173,7 @@ READY_TO_COMMIT에서 정지 → 인간이 IMPL 리포트·LOOP 파일 확인 �
 ### P7 — 후속 확장 (on-hold, 착수는 별도 사용자 결정)
 
 - [ ] **P7-1** multi-step 외곽 루프: main plan의 step DAG를 순회하며 step마다 dev-loop 실행("한 루프 = 한 STEP"). 전제: P5에서 single-step 루프 안정화.
-- [ ] **P7-2** learn-from-manual-edits 연결: LOOP 파일의 실패 로그·사용자 개입 기록을 입력으로 컨벤션 추출(on-the-loop flywheel).
+- [ ] **P7-2** learn-from-manual-edits 연결: LOOP 파일의 실패 로그·사용자 개입 기록을 입력으로 컨벤션 추출(on-the-loop flywheel). 상세 설계 근거·신호 유형·착수 시 확정할 결정 목록: [docs/LOOP_LEARNING_FLYWHEEL.md](docs/LOOP_LEARNING_FLYWHEEL.md).
 - [ ] **P7-3** Claude 전용 무인 모드: `/goal` 래핑 또는 Ralph식 Stop hook. 무인 모드에서 triage 게이트 도달 시 전부 Fix 취급 또는 정지 — **자동 Accept 절대 금지**. Codex 이식은 가능(Stop hook 스키마 동일)하나 Work 환경 특성상 보류, OpenCode는 불가.
 
 ---
@@ -214,6 +214,10 @@ READY_TO_COMMIT에서 정지 → 인간이 IMPL 리포트·LOOP 파일 확인 �
 
 ### 2026-07-21 — 계획 보완 (단독 사용 분석)
 - 수행: implement-dev/fix-dev/review-code의 dev-loop 밖 단독 사용 분석. 공백 2건을 계획에 반영 — P2-2에 AC 없는 legacy 플랜의 graceful degradation, P3-4에 지침 파일 없는 레포의 AR 기록 위치 확인 절차. §1 불변식에 ⑨(단독 사용 보장) 추가.
+- 다음 시작점: **P0-1** (변동 없음).
+
+### 2026-07-21 — P7-2 상세 설계 문서화
+- 수행: P7-2(learn-from-manual-edits ↔ LOOP 파일 연결)의 상세 설계 근거를 [docs/LOOP_LEARNING_FLYWHEEL.md](docs/LOOP_LEARNING_FLYWHEEL.md)로 작성하고 P7-2 태스크에 링크. (참고: NEXT_HARNESS_* 3개 문서의 `docs/archive/` 이동과 그에 따른 본 문서의 링크·T2-4 현행화는 사용자가 직접 수행 — T2-4는 이 시점에 완료 처리됨.)
 - 다음 시작점: **P0-1** (변동 없음).
 
 ### 2026-07-22 — P0 완료 (사전 정합성 정리)
@@ -276,3 +280,11 @@ READY_TO_COMMIT에서 정지 → 인간이 IMPL 리포트·LOOP 파일 확인 �
 ### 2026-07-22 — T2-2 보정 (역방향 대칭성)
 - 수행: 사용자 지적 — T2-2가 MIGRATE_TO_CODEX/OPENCODE에만 controller skill(dev-loop) 절을 추가하고 MIGRATE_TO_CLAUDE에는 누락. Migration은 Codex→Claude도 지원되므로(Work 중심 Codex에서 dev-loop 수정 후 역이식 가능) 대칭 가이드 필요. MIGRATE_TO_CLAUDE.md "Preserve cross-platform contract keywords" 뒤에 "Migrate controller skills (dev-loop) back to Claude Code" 절 신설 — custom subagent 미생성, description은 Claude에 300자 제약 없으니 필요 시 보강, 트리아지 변환은 review-code 소유, 루프 불변식은 본문으로만 보장, 계약 키워드 비번역.
 - 편차/결정: 없음(누락 보완).
+
+### 2026-07-22 — README 구조 리팩토링 (사용자 요청, 계획 범위 밖 문서 정비)
+- 수행: README.md를 재구성 — `## Prerequisites` 아래 `### 환경변수` 서브섹션 이동, `## Development`(`### Loop Engineering` = 기존 "dev-loop 사용 흐름" 흡수 / `### Manual Development` = 수동 체인) 신설, `## Harness`(`### Skills` = Core+Misc 스킬 목록 이동 / `### Custom Agents` 신설 / `### Hooks` 신설) 신설, `## Scripts` 유지. 내용은 기존 서술 보존 + Custom Agents/Hooks 설명 신규 작성.
+- 편차/결정: P4-4 완료 기록이 참조하는 옛 섹션명("dev-loop 사용 흐름")은 이 리팩토링으로 `## Development > ### Loop Engineering`이 되었다 — 완료 태스크 텍스트는 이력이므로 수정하지 않고 이 엔트리로 현행 위치를 기록. AGENTS.md는 독자 구조를 유지(리팩토링 범위 밖).
+
+### 2026-07-23 — MIGRATE_TO_* 문서 이동·개명 (사용자 요청, 계획 범위 밖 문서 정비)
+- 수행: 루트의 MIGRATE_TO_CODEX.md / MIGRATE_TO_CLAUDE.md / MIGRATE_TO_OPENCODE.md를 `docs/sync-harness/SYNC_TO_CODEX.md` / `SYNC_TO_CLAUDE.md` / `SYNC_TO_OPENCODE.md`로 git mv 개명·이동. 참조 갱신: README.md·AGENTS.md 링크, sync-harness SKILL.md(.agents/.claude 두 사본), verify-sync.py(루트 감지 경로·docstring, 두 사본), 세 문서 간 상호 링크, docs/archive/NEXT_HARNESS_OPENCODE_GROK.md의 `MIGRATE_TO_*` 표기.
+- 편차/결정: 이 문서의 기존 태스크·로그 텍스트가 참조하는 옛 파일명(MIGRATE_TO_*)은 이력이므로 수정하지 않고 이 엔트리로 현행 위치를 기록(2026-07-22 README 리팩토링 엔트리와 동일 방식).

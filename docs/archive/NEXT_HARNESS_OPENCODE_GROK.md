@@ -392,7 +392,7 @@ HIGH/CRITICAL이어도 **의도된 사항**인 경우가 있다. 예: 보안 위
 
 ### 10.4 플랫폼 동기화
 
-Personal 중심은 Claude → OpenCode 파생. OpenCode에서 확정한 뒤 `MIGRATE_TO_*` / `sync-harness`로 Claude·Codex에 반영하는 순서를 권장 (또는 Claude를 먼저 고치고 OpenCode로 내릴지 정책에 따름). 이 문서는 OpenCode 기준 설계 메모다.
+Personal 중심은 Claude → OpenCode 파생. OpenCode에서 확정한 뒤 `SYNC_TO_*` / `sync-harness`로 Claude·Codex에 반영하는 순서를 권장 (또는 Claude를 먼저 고치고 OpenCode로 내릴지 정책에 따름). 이 문서는 OpenCode 기준 설계 메모다.
 
 ---
 

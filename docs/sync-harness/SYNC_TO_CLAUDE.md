@@ -52,7 +52,7 @@ Codex plan mode는 UI/CLI의 approval flow를 통해 write-capable 단계로 넘
 
 ### Preserve cross-platform contract keywords
 
-Codex 변형을 소스로 역이식할 때도 공통 계약 키워드는 번역·개명하지 않고 그대로 보존한다 (MIGRATE_TO_CODEX.md의 "Platform invariants" 목록과 동일 항목):
+Codex 변형을 소스로 역이식할 때도 공통 계약 키워드는 번역·개명하지 않고 그대로 보존한다 (SYNC_TO_CODEX.md의 "Platform invariants" 목록과 동일 항목):
 
 - 공통 반환 블록과 섹션명: `## Stage Status` / `## Evidence` / `## Findings` / `## Decision Needed`, 플랜의 `## Acceptance Contract` / `## Authority Boundaries`, 리뷰의 `## Accepted Review Exceptions` / `## Applied Exceptions`.
 - 상태 어휘: `pass | blocked | failed | needs-confirmation | needs-decision | changes-required` (+ test-dev 전용 `pass-with-suspected-defects`). Codex 소스가 이 어휘를 쓰고 있으면 그대로 둔다 — Claude식 동의어로 바꾸지 않는다.
