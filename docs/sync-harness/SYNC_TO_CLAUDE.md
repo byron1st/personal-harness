@@ -39,7 +39,7 @@ Codex와 Claude Code 모두 활성 skill이 위임을 요구하면 사용자가 
 - 병렬 reviewer 중 일부만 실패하면 성공한 결과를 보존하고 실패한 axis를 보고한 뒤, 누락된 pass를 main session에서 수행할지 사용자에게 묻는다.
 - Worker는 다시 subagent를 dispatch하지 않는다.
 - 사용자가 명시적으로 "main session only", "no subagents" 같은 제한을 둔 경우에는 그 지시가 우선한다.
-- 이 repo의 reviewer persona는 세 플랫폼에서 같은 이름(`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`)을 유지한다.
+- 이 repo의 reviewer persona는 두 플랫폼에서 같은 이름(`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`)을 유지한다.
 
 ### Convert plan-mode instructions to Claude Code plan mode
 

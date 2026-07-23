@@ -10,9 +10,9 @@ trap 'rm -rf "${TMP_DIR}"' EXIT
 echo "Check if there is any update for ctx7"
 ctx7 upgrade
 
-PLATFORMS=(claude codex opencode)
+PLATFORMS=(claude codex)
 
-# Phase 1: generate every platform variant in tmp and validate before touching the repo.
+# Phase 1: generate both platform variants in tmp and validate before touching the repo.
 for platform in "${PLATFORMS[@]}"; do
   workdir="${TMP_DIR}/${platform}"
   mkdir -p "${workdir}"
@@ -40,7 +40,7 @@ fi
 
 sed -i '' 's/npx ctx7@latest/ctx7/g' "${CONTEXT7_RULE_SRC}"
 
-# Phase 2: copy each platform's own variant into the repo.
+# Phase 2: copy both platform variants into the repo.
 for platform in "${PLATFORMS[@]}"; do
   case "${platform}" in
     claude) skill_src="${TMP_DIR}/${platform}/.claude/skills/find-docs" ;;

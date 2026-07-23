@@ -1,5 +1,7 @@
 # NEXT_HARNESS — Meta-Prompting & Loop Engineering (OpenCode)
 
+> 아카이브 안내: OpenCode 실행 변형은 2026-07-23에 지원 대상에서 제거되었다. 이 문서는 당시의 조사·설계 근거를 보존하며 현재 구현 지침으로 사용하지 않는다.
+
 조사·해석·설계 방향 메모. OpenCode 변형(`skills/opencode/`, `agents/opencode/`, `hooks/opencode/`)을 기준으로 한다. 구현 스펙이 아니라 다음 하네스 개선의 근거 문서다.
 
 - 작성 기준일: 2026-07-21

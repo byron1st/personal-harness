@@ -1,19 +1,18 @@
 # personal-harness
 
-A harness of Agent Skills, global instructions, and install scripts for personal use. It supports three platforms — Claude Code, Codex, and OpenCode — and migrates platform variants using the topology below.
+A harness of Agent Skills, global instructions, and install scripts for personal use. It supports two platforms — Claude Code and Codex — and migrates platform variants using the topology below.
 
 - Claude ↔ Codex (bidirectional; Personal center is Claude Code, Work center is Codex)
-- Claude → OpenCode (Personal sub-variant; reverse direction not supported)
 
-Per-stage conversion rules are defined in `docs/sync-harness/` (`SYNC_TO_CODEX.md`, `SYNC_TO_CLAUDE.md`, and `SYNC_TO_OPENCODE.md`).
+Per-stage conversion rules are defined in `docs/sync-harness/` (`SYNC_TO_CODEX.md` and `SYNC_TO_CLAUDE.md`).
 
 ## Folder Structure
 
 ```
 personal-harness/
-├── skills/           # Per-platform Agent Skills (claude/ · codex/ · opencode/; one folder per skill)
-├── agents/           # Persona sub-agent definitions (claude/*.md · codex/*.toml · opencode/*.md)
-├── hooks/            # Per-platform hooks (claude: settings.json + *.sh · codex: hooks.json + *.sh · opencode: JS plugin)
+├── skills/           # Per-platform Agent Skills (claude/ · codex/; one folder per skill)
+├── agents/           # Persona sub-agent definitions (claude/*.md · codex/*.toml)
+├── hooks/            # Per-platform hooks (claude: settings.json + *.sh · codex: hooks.json + *.sh)
 ├── instructions/     # Distribution source of the global AGENTS.md instructions
 ├── scripts/          # Install/sync scripts (apply-to-personal.sh · apply-to-work.sh · apply-to-all.sh · setup-ctx7.sh)
 ├── docs/             # Harness docs (sync-harness/: SYNC_TO_* conversion rules · loop-engineering/: loop-engineering plan & research docs)
@@ -72,7 +71,7 @@ Each skill under `skills/<platform>/` is managed in its own folder. See each ski
 
 ### Custom Agents
 
-Persona sub-agent definitions under `agents/<platform>/`. Formats differ by platform (Claude/OpenCode: `.md`, Codex: `.toml`). Skills dispatch them; direct user invocation is not the norm.
+Persona sub-agent definitions under `agents/<platform>/`. Formats differ by platform (Claude: `.md`, Codex: `.toml`). Skills dispatch them; direct user invocation is not the norm.
 
 | Agent | Persona · Scope | Dispatched by | Access |
 | --- | --- | --- | --- |
@@ -95,11 +94,11 @@ Hook definitions and scripts under `hooks/<platform>/`. Common shell hooks (`hoo
 | `enforce-fd.sh` | Before Bash | Enforces `fd` over `find` |
 | `auto-format.sh` | After file edits | Runs the project Makefile's `fmt`/`format` target |
 
-Platform-specific config files: Claude Code uses the `hooks` block in `settings.json`, Codex uses `hooks.json`, and OpenCode uses the `personal-harness.js` JS plugin. Hooks are guardrails; they take no part in `dev-loop` stage transitions or completion decisions. `jq`·`git`·`make`·`rg`·`fd`·`node` are required (see README.md Prerequisites for details).
+Platform-specific config files: Claude Code uses the `hooks` block in `settings.json`, and Codex uses `hooks.json`. Hooks are guardrails; they take no part in `dev-loop` stage transitions or completion decisions. `jq`·`git`·`make`·`rg`·`fd` are required (see README.md Prerequisites for details).
 
 ## Environment Variables
 
-Skills and hooks read these from the host agent's env configuration (Claude Code `settings.json` `env`, Codex `config.toml` `shell_environment_policy.set`, OpenCode `opencode.json`):
+Skills and hooks read these from the host agent's env configuration (Claude Code `settings.json` `env`, Codex `config.toml` `shell_environment_policy.set`):
 
 | Variable | Purpose |
 | --- | --- |

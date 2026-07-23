@@ -6,9 +6,9 @@
 
 ```
 personal-harness/
-├── skills/           # 플랫폼별 Agent Skills (claude/ · codex/ · opencode/, 스킬마다 별도 폴더)
-├── agents/           # persona 서브에이전트 정의 (claude/*.md · codex/*.toml · opencode/*.md)
-├── hooks/            # 플랫폼별 훅 (claude: settings.json + *.sh · codex: hooks.json + *.sh · opencode: JS plugin)
+├── skills/           # 플랫폼별 Agent Skills (claude/ · codex/, 스킬마다 별도 폴더)
+├── agents/           # persona 서브에이전트 정의 (claude/*.md · codex/*.toml)
+├── hooks/            # 플랫폼별 훅 (claude: settings.json + *.sh · codex: hooks.json + *.sh)
 ├── instructions/     # 전역 지침 AGENTS.md 배포 소스
 ├── scripts/          # 설치·동기화 스크립트 (apply-to-personal.sh · apply-to-work.sh · apply-to-all.sh · setup-ctx7.sh)
 ├── docs/             # 하네스 문서 (sync-harness/: SYNC_TO_* 변환 규칙 · loop-engineering/: 루프 엔지니어링 계획·조사 문서)
@@ -17,9 +17,7 @@ personal-harness/
 
 훅의 상세 동작은 [Harness > Hooks](#hooks) 참조. 훅이 `rg`/`fd` 사용을 강제하므로 [ripgrep](https://github.com/BurntSushi/ripgrep)과 [fd](https://github.com/sharkdp/fd) 설치가 필요하다(Prerequisites 참조).
 
-플랫폼 변형은 **Claude ↔ Codex**, 그리고 **Claude → OpenCode** 토폴로지로 마이그레이션한다. Personal 환경의 중심은 Claude Code이고 Work 환경의 중심은 Codex이므로, Claude Code와 Codex 변형은 양방향으로 공유할 수 있다. OpenCode는 Personal의 하위 변형이므로 Claude Code에서만 파생되며 OpenCode를 소스로 쓰는 역방향은 지원하지 않는다. 각 단계의 변환 규칙은 [SYNC_TO_CODEX.md](docs/sync-harness/SYNC_TO_CODEX.md)(Claude → Codex), [SYNC_TO_CLAUDE.md](docs/sync-harness/SYNC_TO_CLAUDE.md)(Codex → Claude Code), [SYNC_TO_OPENCODE.md](docs/sync-harness/SYNC_TO_OPENCODE.md)(Claude → OpenCode)에 정리되어 있다.
-
-> Cursor 연동: 이 harness는 Cursor 변형을 직접 제공하지 않는다. Cursor 사용자는 [opencode-cursor](https://github.com/Nomadcxx/opencode-cursor)를 이용해 OpenCode 환경을 Cursor에 연동해 사용한다.
+플랫폼 변형은 **Claude ↔ Codex** 토폴로지로 마이그레이션한다. Personal 환경의 중심은 Claude Code이고 Work 환경의 중심은 Codex이므로, 두 변형은 양방향으로 공유할 수 있다. 각 방향의 변환 규칙은 [SYNC_TO_CODEX.md](docs/sync-harness/SYNC_TO_CODEX.md)(Claude → Codex), [SYNC_TO_CLAUDE.md](docs/sync-harness/SYNC_TO_CLAUDE.md)(Codex → Claude Code)에 정리되어 있다.
 
 ## Prerequisites
 
@@ -32,7 +30,6 @@ personal-harness/
 | `make` | 전체 `auto-format` hook | 프로젝트 Makefile의 `fmt`/`format` 타겟 실행 | macOS: Xcode Command Line Tools, Linux: `build-essential` |
 | `rg` (ripgrep) | 전체 `enforce-rg` hook + AGENTS.md | 재귀 `grep` 대신 코드 검색 강제 | `brew install ripgrep` |
 | `fd` | 전체 `enforce-fd` hook + AGENTS.md | 파일명/경로 검색용 `find` 대체 강제 | `brew install fd` |
-| `node` | OpenCode plugin(`hooks/opencode/personal-harness.js`) | OpenCode용 JS plugin 실행 | `brew install node` 또는 Node Version Manager |
 | `ctx7` | AGENTS.md context7 룰 + `scripts/setup-ctx7.sh` | 라이브러리/프레임워크 공식 문서 fetch | `npm install -g ctx7` 후 `ctx7 login`(또는 `CONTEXT7_API_KEY` 설정) |
 | `gh` | `request-merge`(personal), `setup-initial-repo`(personal 원격 생성) | GitHub PR 생성/업데이트, 개인 private repo 자동 생성 | `brew install gh` 후 `gh auth login` |
 | `glab` | `request-merge`(work) | GitLab MR 생성/업데이트 | `brew install glab` 후 `glab auth login` |
@@ -45,7 +42,7 @@ personal-harness/
 
 ### 환경변수
 
-Skills 실행에 필요한 환경변수 목록. 각 Agent 의 환경변수 설정에 등록되어 있어야 한다 (예: Claude Code 의 settings.json 파일 내 `env` 설정, Codex 의 config.toml 파일 내 `shell_environment_policy` 항목의 `set` 설정, 또는 OpenCode 의 opencode.json 설정)
+Skills 실행에 필요한 환경변수 목록. 각 Agent 의 환경변수 설정에 등록되어 있어야 한다 (예: Claude Code 의 settings.json 파일 내 `env` 설정 또는 Codex 의 config.toml 파일 내 `shell_environment_policy` 항목의 `set` 설정)
 
 - `PERSONAL_GIT_EMAIL`: 개인 저장소 커밋 시 사용할 Git 이메일
 - `PERSONAL_GIT_NAME`: 개인 저장소 커밋 시 사용할 Git 이름
@@ -91,7 +88,7 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 
 ### Skills
 
-각 스킬은 `skills/<platform>/`(claude/codex/opencode) 아래 플랫폼 변형으로 관리되며, 스킬마다 별도 폴더를 갖는다. 상세 계약은 각 스킬의 `SKILL.md` 참조.
+각 스킬은 `skills/<platform>/`(claude/codex) 아래 플랫폼 변형으로 관리되며, 스킬마다 별도 폴더를 갖는다. 상세 계약은 각 스킬의 `SKILL.md` 참조.
 
 **Core Development Process:**
 
@@ -119,7 +116,7 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 
 ### Custom Agents
 
-`agents/<platform>/`의 persona 서브에이전트 정의. 포맷은 Claude Code·OpenCode가 Markdown(YAML frontmatter), Codex가 TOML이다. 사용자가 직접 호출하기보다 스킬이 위임(dispatch)하는 것이 기본이다.
+`agents/<platform>/`의 persona 서브에이전트 정의. 포맷은 Claude Code가 Markdown(YAML frontmatter), Codex가 TOML이다. 사용자가 직접 호출하기보다 스킬이 위임(dispatch)하는 것이 기본이다.
 
 | 에이전트 | 페르소나 · 담당 | 호출 스킬 | 권한 |
 | --- | --- | --- | --- |
@@ -142,7 +139,7 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 | `enforce-fd.sh` | Bash 실행 전 | 파일/경로 검색에 `find` 대신 `fd` 강제 |
 | `auto-format.sh` | 파일 편집 후 | 프로젝트 Makefile의 `fmt`/`format` 타겟 실행 |
 
-플랫폼별 설정 형식: Claude Code는 `hooks/claude/settings.json`의 `hooks` 블록, Codex는 `hooks/codex/hooks.json`, OpenCode는 위 셸 훅들을 하나로 통합한 JS plugin(`hooks/opencode/personal-harness.js`). 훅은 정책을 강제하는 가드레일이며 `dev-loop`의 단계 전환·재시도·완료 판정에는 관여하지 않는다.
+플랫폼별 설정 형식: Claude Code는 `hooks/claude/settings.json`의 `hooks` 블록, Codex는 `hooks/codex/hooks.json`을 사용한다. 훅은 정책을 강제하는 가드레일이며 `dev-loop`의 단계 전환·재시도·완료 판정에는 관여하지 않는다.
 
 ## Scripts
 
@@ -150,12 +147,10 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 
 ### apply-to-personal.sh
 
-Personal 환경(Claude Code + OpenCode) 설치 스크립트다.
+Personal 환경(Claude Code) 설치 스크립트다.
 
 - Claude Code: `instructions/AGENTS.md`를 `~/.claude/CLAUDE.md`로 복사하고, `~/.claude/skills`·`~/.claude/agents`·`~/.claude/hooks`를 비운 뒤 각각 `skills/claude/`·`agents/claude/`·`hooks/claude/hooks/`의 내용으로 다시 채운다.
 - Claude Code 설정: `hooks/claude/settings.json`의 `hooks` 블록을 `~/.claude/settings.json`에 `jq`로 머지한다. 사용자의 `permissions`/`model`/`env` 등 다른 설정은 보존되며, 대상 파일이 없으면 통째로 생성한다 (jq 필요).
-- OpenCode: `instructions/AGENTS.md`를 `~/.config/opencode/AGENTS.md`로 복사하고, `~/.config/opencode/skills`·`~/.config/opencode/agents`를 비운 뒤 각각 `skills/opencode/`·`agents/opencode/`의 내용으로 다시 채우며, `hooks/opencode/personal-harness.js`를 `~/.config/opencode/personal-harness.js`로 설치한다.
-- OpenCode plugin 등록은 검사만 한다: `~/.config/opencode/opencode.jsonc`(있으면 우선) 또는 `opencode.json`의 `plugin` 배열에 `./personal-harness.js`가 있는지 확인해 결과를 보고할 뿐, 설정 파일을 수정하지는 않는다. 미등록 경고가 나오면 사용자가 직접 등록해야 한다.
 - 마지막에 항목별 설치 개수와 상태 요약을 출력한다.
 
 ### apply-to-work.sh
@@ -177,7 +172,7 @@ Work 환경(Codex) 설치 스크립트다.
 Context7이 배포하는 서드파티 `find-docs` 스킬과 context7 지침 블록을 최신 버전으로 재생성해 레포 소스에 반영한다. 설치 환경(`~/.claude` 등)이 아니라 레포 안의 소스를 갱신하는 스크립트이며, 갱신 결과는 이후 `apply-to-*.sh` 실행 시 배포된다 (`ctx7` CLI 필요).
 
 - `ctx7 upgrade`로 CLI 업데이트 여부를 먼저 확인한다 (업데이트가 있으면 안내만 출력하고 자동 설치하지는 않는다).
-- 임시 디렉토리에서 플랫폼별로 `ctx7 setup --cli --claude|--codex|--opencode -y -p`를 실행해 각 플랫폼 전용 `find-docs` 스킬을 생성한다. 생성물은 플랫폼마다 다르다 (예: Codex 변형에는 샌드박스 밖에서 네트워크 요청을 재시도하라는 지침이 포함된다).
+- 임시 디렉토리에서 `ctx7 setup --cli --claude|--codex -y -p`를 실행해 각 플랫폼 전용 `find-docs` 스킬을 생성한다. 생성물은 플랫폼마다 다르다 (예: Codex 변형에는 샌드박스 밖에서 네트워크 요청을 재시도하라는 지침이 포함된다).
 - 생성물의 `npx ctx7@latest` 호출을 전역 설치된 `ctx7` 명령으로 치환한다.
-- 세 변형이 모두 정상 생성된 것을 확인한 뒤 각 생성물을 대응하는 `skills/<platform>/find-docs`로 복사한다 (부분 갱신 방지를 위해 생성·검증 완료 후 일괄 복사).
-- `instructions/AGENTS.md`의 `<!-- context7 -->` 블록을 Claude 룰 내용으로 교체한다 (세 플랫폼이 공유하는 지침 파일이므로 플랫폼 중립적인 Claude 룰을 쓴다).
+- 두 변형이 모두 정상 생성된 것을 확인한 뒤 각 생성물을 대응하는 `skills/<platform>/find-docs`로 복사한다 (부분 갱신 방지를 위해 생성·검증 완료 후 일괄 복사).
+- `instructions/AGENTS.md`의 `<!-- context7 -->` 블록을 Claude 룰 내용으로 교체한다 (두 플랫폼이 공유하는 지침 파일이므로 플랫폼 중립적인 Claude 룰을 쓴다).

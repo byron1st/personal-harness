@@ -1,5 +1,7 @@
 # PLAN_TO_UPGRADE.md — 메타프롬프팅 & 루프 엔지니어링 적용 실행 계획
 
+> 현재 상태 안내: OpenCode 실행 변형은 2026-07-23에 지원 대상에서 제거되었다. 아래 OpenCode 관련 태스크와 Progress Log는 당시의 승인·실행 기록이므로 유지하며 현재 플랫폼 토폴로지로 해석하지 않는다.
+
 이 문서는 personal-harness에 메타프롬프팅과 루프 엔지니어링을 적용하는 **실행 계약이자 진행 추적 문서**다. 조사 근거는 [RESEARCH_CLAUDE.md](RESEARCH_CLAUDE.md), [RESEARCH_CODEX.md](RESEARCH_CODEX.md), [RESEARCH_OPENCODE_GROK.md](RESEARCH_OPENCODE_GROK.md) 3개 문서(T2-4에서 아카이브)이며, 이 계획은 세 문서의 통합·조정 결과다. 이 문서만 읽고 작업을 이어갈 수 있도록 작성되었다 — 이전 대화의 기억은 필요 없다.
 
 - 작성일: 2026-07-21 (사용자 승인 동일)
@@ -288,3 +290,8 @@ READY_TO_COMMIT에서 정지 → 인간이 IMPL 리포트·LOOP 파일 확인 �
 ### 2026-07-23 — MIGRATE_TO_* 문서 이동·개명 (사용자 요청, 계획 범위 밖 문서 정비)
 - 수행: 루트의 MIGRATE_TO_CODEX.md / MIGRATE_TO_CLAUDE.md / MIGRATE_TO_OPENCODE.md를 `docs/sync-harness/SYNC_TO_CODEX.md` / `SYNC_TO_CLAUDE.md` / `SYNC_TO_OPENCODE.md`로 git mv 개명·이동. 참조 갱신: README.md·AGENTS.md 링크, sync-harness SKILL.md(.agents/.claude 두 사본), verify-sync.py(루트 감지 경로·docstring, 두 사본), 세 문서 간 상호 링크, docs/loop-engineering/RESEARCH_OPENCODE_GROK.md의 `MIGRATE_TO_*` 표기.
 - 편차/결정: 이 문서의 기존 태스크·로그 텍스트가 참조하는 옛 파일명(MIGRATE_TO_*)은 이력이므로 수정하지 않고 이 엔트리로 현행 위치를 기록(2026-07-22 README 리팩토링 엔트리와 동일 방식).
+
+### 2026-07-23 — OpenCode 실행 변형 제거 (사용자 요청, 계획 범위 밖 플랫폼 정비)
+- 수행: `skills/opencode/` 46개·`agents/opencode/` 6개·`hooks/opencode/` 1개 파일을 제거하고, sync-harness·검증기·설치/Context7 스크립트·README·AGENTS를 Claude↔Codex 2플랫폼 구조로 정리했다. `SYNC_TO_OPENCODE.md`와 기존 loop-engineering 문서의 OpenCode 서술은 사용자 결정에 따라 참고·역사 자료로 보존하고 상단에 지원 종료 안내를 추가했다.
+- 완료 기준 검증: sync-harness verifier PASS, `.agents`/`.claude` 메타 스킬·검증기 사본 일치, 전체 셸 스크립트 `bash -n` 통과, 임시 HOME 설치에서 Claude 스킬 14개 설치 및 기존 OpenCode sentinel 불변 확인, 현행 영역 OpenCode 참조 0건.
+- 편차/결정: 레포 밖 `~/.config/opencode`와 로컬 Git 메타데이터 `.git/opencode`는 범위 밖으로 유지했으며 커밋·푸시는 수행하지 않았다.

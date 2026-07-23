@@ -1,5 +1,7 @@
 # Migrating Claude Code to OpenCode
 
+> 참고용 아카이브: OpenCode 실행 변형은 2026-07-23에 이 저장소의 지원 대상에서 제거되었다. 아래 내용은 과거 변환 규칙을 보존한 자료이며 현재 `sync-harness`의 지원 방향이나 실행 지침으로 사용하지 않는다.
+
 이 문서는 **Claude Code → OpenCode** 마이그레이션 점검표다. 특정 스킬에 묶이지 않도록 작성하며, 새 스킬·서브에이전트·훅이 추가될 때도 같은 기준으로 검사한다.
 
 마이그레이션 토폴로지는 **Claude ↔ Codex**, 그리고 **Claude → OpenCode**다. Personal 환경의 중심은 Claude Code이고 OpenCode는 Personal의 하위 변형이므로, OpenCode는 Claude Code에서만 파생되며 OpenCode를 소스로 쓰는 역방향은 지원하지 않는다. Work 환경의 중심은 Codex이고 Claude Code와 Codex 변형은 양방향으로 공유할 수 있다. 이 문서의 소스는 Claude 변형(`skills/claude/`, `agents/claude/`, `hooks/claude/`)이고, 대상은 OpenCode 변형(`skills/opencode/`, `agents/opencode/`, `hooks/opencode/`)이다. Claude → Codex 단계는 [SYNC_TO_CODEX.md](SYNC_TO_CODEX.md), Codex → Claude Code 단계는 [SYNC_TO_CLAUDE.md](SYNC_TO_CLAUDE.md)를 참고한다.
