@@ -17,7 +17,7 @@ personal-harness/
 
 훅의 상세 동작은 [Harness > Hooks](#hooks) 참조. 훅이 `rg`/`fd` 사용을 강제하므로 [ripgrep](https://github.com/BurntSushi/ripgrep)과 [fd](https://github.com/sharkdp/fd) 설치가 필요하다(Prerequisites 참조).
 
-플랫폼 변형은 **Claude ↔ Codex** 토폴로지로 마이그레이션한다. Personal 환경의 중심은 Claude Code이고 Work 환경의 중심은 Codex이므로, 두 변형은 양방향으로 공유할 수 있다. 각 방향의 변환 규칙은 [SYNC_TO_CODEX.md](docs/sync-harness/SYNC_TO_CODEX.md)(Claude → Codex), [SYNC_TO_CLAUDE.md](docs/sync-harness/SYNC_TO_CLAUDE.md)(Codex → Claude Code)에 정리되어 있다.
+플랫폼 변형은 **Claude ↔ Codex** 토폴로지로 마이그레이션한다. Personal 환경에서는 Claude Code를 중심으로 Grok Build도 사용하지만, Grok Build는 Claude Code와 완벽히 호환되므로 별도 변형을 유지하지 않는다. Work 환경의 중심은 Codex이며, Claude Code와 Codex 두 변형은 양방향으로 공유할 수 있다. 각 방향의 변환 규칙은 [SYNC_TO_CODEX.md](docs/sync-harness/SYNC_TO_CODEX.md)(Claude Code → Codex), [SYNC_TO_CLAUDE.md](docs/sync-harness/SYNC_TO_CLAUDE.md)(Codex → Claude Code)에 정리되어 있다.
 
 ## Prerequisites
 
