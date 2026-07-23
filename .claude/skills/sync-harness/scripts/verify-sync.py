@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """sync-harness verifier.
 
-Mechanizes the "Verify" checklists from MIGRATE_TO_CODEX.md and
-MIGRATE_TO_CLAUDE.md so a migration can be checked without eyeballing:
+Mechanizes the "Verify" checklists from docs/sync-harness/SYNC_TO_CODEX.md
+and SYNC_TO_CLAUDE.md so a migration can be checked without eyeballing:
 
-  - tree parity across claude/ codex/ opencode/ (skills, agents, hooks)
+  - tree parity across claude/ codex/ (skills, agents, hooks)
   - sub-agent frontmatter parses as YAML (the colon-space trap)
   - skill / agent `name` matches its directory or filename across variants
   - residual sweep: leftover Claude-only references in the Codex variants
@@ -48,7 +48,7 @@ def find_root(argv: list[str]) -> Path:
         pass
     here = Path.cwd()
     for cand in [here, *here.parents]:
-        if (cand / "MIGRATE_TO_CODEX.md").exists():
+        if (cand / "docs" / "sync-harness" / "SYNC_TO_CODEX.md").exists():
             return cand
     return here
 
@@ -132,16 +132,14 @@ def check_skills(root: Path) -> None:
     cl, cx = root / "skills/claude", root / "skills/codex"
     if not cl.is_dir():
         return
-    op = root / "skills/opencode"
     sc, sx = skill_dirs(cl), skill_dirs(cx)
-    so = skill_dirs(op)
 
-    if not (sc == sx == so):
-        fail("skills/tree-parity", f"skill sets differ: claude={sc} codex={sx} opencode={so}")
+    if sc != sx:
+        fail("skills/tree-parity", f"skill sets differ: claude={sc} codex={sx}")
 
-    for name in sorted(sc & sx & so):
-        # name frontmatter must match dir across all three variants
-        for plat, base in (("claude", cl), ("codex", cx), ("opencode", op)):
+    for name in sorted(sc & sx):
+        # name frontmatter must match dir across both variants
+        for plat, base in (("claude", cl), ("codex", cx)):
             sk = base / name / "SKILL.md"
             if not sk.exists():
                 fail("skills/structure", f"{plat}/{name} missing SKILL.md")
@@ -153,8 +151,8 @@ def check_skills(root: Path) -> None:
                 fail(f"skills/{plat}", f"{name}/SKILL.md name `{data.get('name')}` != dir `{name}`")
         # references/ and scripts/ copy verbatim — trees must be identical
         for sub in ("references", "scripts"):
-            t = {plat: subtree(base / name / sub) for plat, base in (("claude", cl), ("codex", cx), ("opencode", op))}
-            if not (t["claude"] == t["codex"] == t["opencode"]):
+            t = {plat: subtree(base / name / sub) for plat, base in (("claude", cl), ("codex", cx))}
+            if t["claude"] != t["codex"]:
                 fail("skills/subtree-parity", f"{name}/{sub} trees differ: {t}")
 
 
@@ -197,8 +195,8 @@ def check_hooks(root: Path) -> None:
 
 def main() -> int:
     root = find_root(sys.argv)
-    if not (root / "MIGRATE_TO_CODEX.md").exists():
-        print(f"warning: {root} doesn't look like the harness root (no MIGRATE_TO_CODEX.md)", file=sys.stderr)
+    if not (root / "docs" / "sync-harness" / "SYNC_TO_CODEX.md").exists():
+        print(f"warning: {root} doesn't look like the harness root (no docs/sync-harness/SYNC_TO_CODEX.md)", file=sys.stderr)
     for fn in (check_agents, check_skills,
                check_codex_residuals, check_hooks):
         try:

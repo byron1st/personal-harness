@@ -7,15 +7,31 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "${TMP_DIR}"' EXIT
 
-(cd "${TMP_DIR}" && ctx7 setup --cli --claude -y -p)
+echo "Check if there is any update for ctx7"
+ctx7 upgrade
 
-FIND_DOCS_SRC="${TMP_DIR}/.claude/skills/find-docs"
-CONTEXT7_RULE_SRC="${TMP_DIR}/.claude/rules/context7.md"
+PLATFORMS=(claude codex)
 
-if [[ ! -d "${FIND_DOCS_SRC}" ]]; then
-  echo "Error: find-docs skill not found at ${FIND_DOCS_SRC}" >&2
-  exit 1
-fi
+# Phase 1: generate both platform variants in tmp and validate before touching the repo.
+for platform in "${PLATFORMS[@]}"; do
+  workdir="${TMP_DIR}/${platform}"
+  mkdir -p "${workdir}"
+  (cd "${workdir}" && ctx7 setup --cli "--${platform}" -y -p)
+
+  case "${platform}" in
+    claude) skill_src="${workdir}/.claude/skills/find-docs" ;;
+    *)      skill_src="${workdir}/.agents/skills/find-docs" ;;
+  esac
+
+  if [[ ! -d "${skill_src}" ]]; then
+    echo "Error: find-docs skill for ${platform} not found at ${skill_src}" >&2
+    exit 1
+  fi
+
+  find "${skill_src}" -type f -exec sed -i '' 's/npx ctx7@latest/ctx7/g' {} +
+done
+
+CONTEXT7_RULE_SRC="${TMP_DIR}/claude/.claude/rules/context7.md"
 
 if [[ ! -f "${CONTEXT7_RULE_SRC}" ]]; then
   echo "Error: context7 rule not found at ${CONTEXT7_RULE_SRC}" >&2
@@ -23,14 +39,18 @@ if [[ ! -f "${CONTEXT7_RULE_SRC}" ]]; then
 fi
 
 sed -i '' 's/npx ctx7@latest/ctx7/g' "${CONTEXT7_RULE_SRC}"
-find "${FIND_DOCS_SRC}" -type f -exec sed -i '' 's/npx ctx7@latest/ctx7/g' {} +
 
-for agent_dir in "${REPO_ROOT}"/skills/*/; do
-  agent_name="$(basename "${agent_dir}")"
-  dest="${agent_dir}find-docs"
+# Phase 2: copy both platform variants into the repo.
+for platform in "${PLATFORMS[@]}"; do
+  case "${platform}" in
+    claude) skill_src="${TMP_DIR}/${platform}/.claude/skills/find-docs" ;;
+    *)      skill_src="${TMP_DIR}/${platform}/.agents/skills/find-docs" ;;
+  esac
+
+  dest="${REPO_ROOT}/skills/${platform}/find-docs"
   rm -rf "${dest}"
-  cp -r "${FIND_DOCS_SRC}" "${dest}"
-  echo "  find-docs -> skills/${agent_name}/find-docs"
+  cp -r "${skill_src}" "${dest}"
+  echo "  find-docs (${platform}) -> skills/${platform}/find-docs"
 done
 
 AGENTS_MD="${REPO_ROOT}/instructions/AGENTS.md"

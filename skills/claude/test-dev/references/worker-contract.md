@@ -36,7 +36,7 @@ Run the three phases in order — unit gaps, then e2e gaps, then mutation LIVED 
 
 You operate cold and cannot ask the user. If a required verification/mutation command is missing, or a direction-level decision is needed, stop that phase and return `blocked` with the choice laid out in `## Decision Needed`. Suspected business-logic defects are NOT blockers — record them per Global Rule 6 and continue.
 
-When done, return only the fixed-heading Markdown in section C of `references/worker-contract.md` - do not summarise the `## Suspected Business Logic Defects` list, return it verbatim.
+When done, return only the fixed-heading Markdown in section C of `references/worker-contract.md` - do not summarise the `## Findings` list (suspected business-logic defects with `TEST-NNN` ids), return it verbatim.
 ```
 
 ## C. Worker return message (②)
@@ -44,8 +44,14 @@ When done, return only the fixed-heading Markdown in section C of `references/wo
 Fixed `##` headings, Markdown. The dispatcher parses these headings by name, so the Worker must emit them **exactly** and must not invent or rename headings. Anything empty becomes `none` (or its bullets, `none`); never drop a heading.
 
 ```markdown
-## Test Status
+## Stage Status
 pass | pass-with-suspected-defects | blocked | failed
+
+## Findings
+{suspected business-logic defects, one bullet per finding with a Worker-assigned sequential `TEST-NNN` id (TEST-001, TEST-002, …): file:line, test path (Phase 1/2/3), observed vs expected, red/skipped status. "none" when empty}
+
+## Decision Needed
+{only when status is blocked: the obstacle + the choices the user must pick between. Otherwise "none"}
 
 ## Scope
 {files or packages tested}
@@ -62,17 +68,13 @@ pass | pass-with-suspected-defects | blocked | failed
 ## Mutation
 {starting efficacy -> final efficacy, LIVED before -> after, whether 80% reached, or skipped reason}
 
-## Suspected Business Logic Defects
-{bullets with file:line, test path (Phase 1/2/3), observed vs expected, red/skipped status, or "none"}
-
 ## Remaining Attention Items
 {bullets, or "none"}
-
-## Decision Needed
-{only when status is blocked: the obstacle + the choices the user must pick between. Otherwise "none"}
 ```
 
-`pass` = gaps filled, all suites green, defect list empty. `pass-with-suspected-defects` = suites green but the `## Suspected Business Logic Defects` list is non-empty. `blocked` = a required verification/mutation command or tooling is missing, or a direction-level decision is needed (no further phase work past it). `failed` = a pre-existing test broke and reverting recent test changes did not restore it, or an irrecoverable hard error.
+The first three headings are the **common stage block** shared across Worker-returning skills (`## Stage Status` / `## Findings` / `## Decision Needed`; other skills add `## Evidence`); the headings below it are test-dev's own. The Worker assigns the `TEST-NNN` ids itself - it is the single writer, so there is no collision risk.
+
+`pass` = gaps filled, all suites green, `## Findings` empty. `pass-with-suspected-defects` = suites green but `## Findings` is non-empty. `blocked` = a required verification/mutation command or tooling is missing, or a direction-level decision is needed (no further phase work past it). `failed` = a pre-existing test broke and reverting recent test changes did not restore it, or an irrecoverable hard error.
 
 ## D. Dispatcher chat summary (③)
 
@@ -80,8 +82,9 @@ After the dispatcher receives ②, it renders a short summary for the user in ch
 
 - Scope one-liner.
 - Per-phase one-liners: unit (added/result), e2e (added/result or skipped), mutation (start→final efficacy, threshold reached?).
-- The `## Suspected Business Logic Defects` list surfaced **prominently and verbatim** - this is the headline attention item, never summarised away.
-- If `## Test Status` is `blocked`, surface `## Decision Needed` first and prominently, then stop - do not proceed to additional stages.
+- The `## Findings` list (suspected business-logic defects, `TEST-NNN`) surfaced **prominently and verbatim** - this is the headline attention item, never summarised away.
+- If `## Stage Status` is `pass-with-suspected-defects`, do **not** auto-proceed to review-code or any next stage: notify the user and present each finding as a `fix-dev` candidate - fixing or proceeding anyway is the user's call.
+- If `## Stage Status` is `blocked`, surface `## Decision Needed` first and prominently, then stop - do not proceed to additional stages.
 
 Translate to Korean if the Worker returned English; keep paths, command names, and code identifiers in their original form.
 

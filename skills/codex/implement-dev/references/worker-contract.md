@@ -21,6 +21,8 @@ You operate cold: this is a fresh subagent session with no memory of the plannin
 
 Whenever a `## TODOs` checkbox completes, flip `- [ ]` to `- [x]` in the plan file immediately - do not batch.
 
+Read the plan's `## Acceptance Contract` and `## Authority Boundaries` when present. Record, in the report's `## TODO Fulfillment`, which AC id(s) each TODO fulfills (`AC:` line), and collect each AC's work-specific evidence for your return's `## Evidence`. If the plan has no `## Acceptance Contract` (legacy plan), do not refuse the run: skip AC evidence and record `Acceptance Contract: none (legacy plan)` in the report's `## Summary` and the return's `## Evidence`.
+
 If you hit a direction-level conflict - the plan's goal / chosen approach / `## Key decisions` / `## Non-goals` turn out wrong or unworkable - you cannot ask the user (you are an isolated subagent). Stop, do not write code for the conflicting TODO, and return `blocked` with the decision needed laid out in `## Decision Needed`. Detail-level obstacles (a helper, an edge case, the *how* of a TODO) are yours to resolve and record in the report; do not escalate them.
 
 Do not re-dispatch another implementation subagent. Do not run `test-dev` or `review-code`. Do not revert edits made by others. Follow the repository's AGENTS.md / CLAUDE.md / README.md / Makefile instructions.
@@ -35,8 +37,14 @@ When done, return only the fixed-heading Markdown in section C of `references/wo
 Fixed `##` headings, Markdown. The dispatcher parses these headings by name, so the Worker must emit them **exactly** and must not invent or rename headings. Anything empty becomes `none` (or its bullets, `none`); never drop a heading.
 
 ```markdown
-## Implementation Status
+## Stage Status
 pass | blocked | failed
+
+## Evidence
+{one line per AC from the plan's `## Acceptance Contract`: "AC-N: {work-specific proof - command/observation and its result}". When the plan has no `## Acceptance Contract` (legacy plan): exactly "Acceptance Contract: none (legacy plan)"}
+
+## Decision Needed
+{only when status is blocked: the direction conflict + the choices the user must pick between. Otherwise "none"}
 
 ## TODO Status
 - TODO1: done
@@ -57,12 +65,11 @@ pass | blocked | failed
 
 ## Open Questions
 {bullets, or "none"}
-
-## Decision Needed
-{only when status is blocked: the direction conflict + the choices the user must pick between. Otherwise "none"}
 ```
 
-`pass` = every TODO fulfilled, verification green. `blocked` = at least one TODO is blocked on a direction-level decision (no further code should be written past that conflict; detail-level obstacles are not blockers). `failed` = verification failed irrecoverably after `implement-dev`'s Error Recovery, or an unexpected hard error.
+The first three headings are the **common stage block** shared across Worker-returning skills (`## Stage Status` / `## Evidence` / `## Decision Needed`; other skills add `## Findings`); the headings below it are implement-dev's own. `## Evidence` carries AC-specific proof only - generic gate results stay under `## Verification` (they are separate completion predicates).
+
+`pass` = every TODO fulfilled, verification green, and every AC evidenced under `## Evidence` (legacy plans: the `none (legacy plan)` line recorded instead - an unproven AC blocks `pass`). `blocked` = at least one TODO is blocked on a direction-level decision (no further code should be written past that conflict; detail-level obstacles are not blockers). `failed` = verification failed irrecoverably after `implement-dev`'s Error Recovery, or an unexpected hard error.
 
 ## D. Dispatcher chat summary (③)
 
@@ -70,7 +77,7 @@ After the dispatcher receives ②, it renders a short summary for the user in ch
 
 - 2-4 bullets: what changed / verification status / red-flag and open-question gist / TODO completion at a glance (e.g. "7개 중 6개 완료, TODO4 blocked").
 - A clickable Markdown link to the ① report file by absolute path.
-- If `## Implementation Status` is `blocked`, surface `## Decision Needed` first and prominently so the user sees what to decide, then stop - do not proceed to additional stages.
+- If `## Stage Status` is `blocked`, surface `## Decision Needed` first and prominently so the user sees what to decide, then stop - do not proceed to additional stages.
 
 When `implement-dev` runs in explicitly authorized direct mode, the same shape applies as the final chat output: short bullets + report link, with report sections kept in the file.
 

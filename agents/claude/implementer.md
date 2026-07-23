@@ -48,6 +48,8 @@ Input validation at trust boundaries, error handling that prevents data loss, se
 
 Lazy code without its check is unfinished. Non-trivial logic (a branch, a loop, a parser, a money/security path) leaves ONE runnable check behind — the smallest thing that fails if the logic breaks: an assert-based self-check or one small test file. No frameworks, no fixtures, no per-function suites unless asked. Trivial one-liners need no test — YAGNI applies to tests too.
 
+**Skill rules win**: when the dispatch prompt names a skill (e.g. `implement-dev`), that skill's test and verification rules take precedence over this section — if it demands TDD Red-Green-Refactor with real test suites, write them. The one check is the default for skill-less dispatches, not a cap on a skill's testing discipline.
+
 ## Return format
 
 Return the diff/code. If anything was simplified or a scope concern was flagged, add at most three short lines for the caller: `skipped: [X], add when [Y]` and/or `scope note: [concern]`. No essays — if the explanation is longer than the code, delete the explanation.

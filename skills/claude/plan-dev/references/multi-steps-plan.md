@@ -23,7 +23,7 @@ Each step is a complete "develop -> test -> build" cycle. After finishing step N
 - Markdown link conventions (section 3)
 - Frontmatter fields for both main and sub-plans (sections 4 and 5)
 - Body language: Korean
-- Each sub-plan inherits single-step enforcement: strengthened research links with per-TODO tags, `## TODOs` with `(→ research: …)` hints when applicable, and `## Non-goals` / `## Key decisions` anchors **required when the sub-plan is non-trivial** (the same cold-handoff rationale as single-step - the Worker running this sub-plan has no memory of the planning session)
+- Each sub-plan inherits single-step enforcement: strengthened research links with per-TODO tags, its own `## Acceptance Contract` and `## Authority Boundaries` sections (each sub-plan is evaluated and budgeted on its own), `## TODOs` with `(AC-N)` references and `(→ research: …)` hints when applicable, and `## Non-goals` / `## Key decisions` anchors **required when the sub-plan is non-trivial** (the same cold-handoff rationale as single-step - the Worker running this sub-plan has no memory of the planning session)
 
 **Flexible**:
 
@@ -139,7 +139,7 @@ The main plan's `Related research` block is optional - the Worker reads research
 
 ## 5. Sub-plan (`-STEP-N.md`)
 
-A sub-plan **is a single-step plan**. Follow [single-step-plan.md](single-step-plan.md) in full: frontmatter, **strengthened research links** (one-line summary + `**TODO N·M**` tags) at the top when applicable, the free-form body, the **`## Non-goals` / `## Key decisions` anchors required when the sub-plan is non-trivial** (the cold-handoff anchors the Worker running this sub-plan needs; recommended only when the sub-plan is genuinely trivial), the `## TODOs` checklist **with `(→ research: …)` hints** on items that consult research, and the outcome-level granularity rules. A sub-plan is itself the implementation unit the Worker executes, so the strengthened rules matter here, not at the main-plan level. `implement-dev` runs it exactly as it runs any single-step plan.
+A sub-plan **is a single-step plan**. Follow [single-step-plan.md](single-step-plan.md) in full: frontmatter, **strengthened research links** (one-line summary + `**TODO N·M**` tags) at the top when applicable, the free-form body, the **`## Non-goals` / `## Key decisions` anchors required when the sub-plan is non-trivial** (the cold-handoff anchors the Worker running this sub-plan needs; recommended only when the sub-plan is genuinely trivial), its own **`## Acceptance Contract` and `## Authority Boundaries`** sections (scoped to this step), the `## TODOs` checklist **with `(AC-N)` references and `(→ research: …)` hints** on items that consult research, and the outcome-level granularity rules. A sub-plan is itself the implementation unit the Worker executes, so the strengthened rules matter here, not at the main-plan level. `implement-dev` runs it exactly as it runs any single-step plan.
 
 A sub-plan differs from a lone single-step plan in only three ways, all of which serve the parent's organization:
 
@@ -191,9 +191,20 @@ Prior steps that must be completed first, or "None".
 <!-- ## Non-goals -->
 <!-- ## Key decisions -->
 
+## Acceptance Contract
+| ID | Observable condition | Evidence |
+| --- | --- | --- |
+| AC-1 | ... | ... |
+
+## Authority Boundaries
+- Discretion: ...
+- Must-ask: ...
+- Stop conditions: ...
+- Loop budget: 3
+
 ## TODOs
-- [ ] Task 1
-- [ ] Task 2  (→ research: relevant-file)
+- [ ] Task 1 (AC-1)
+- [ ] Task 2 (AC-1, AC-2)  (→ research: relevant-file)
 ```
 
 ## 6. Step decomposition guidance
@@ -204,6 +215,8 @@ Prior steps that must be completed first, or "None".
 - **Test-first thinking**: if you cannot define clear tests for a step, the step's scope is probably wrong.
 - **Explicit step contracts**: because steps are planned together but implemented in separate `implement-dev` runs, whatever a step exposes to later steps (interfaces, types, schemas, function signatures) must be stated precisely in the plan, so later sub-plans can be written against a stable seam and a reader can see how the steps compose. This is the one place detail is required - step-internal mechanics stay coarse, but the seams between steps do not.
 - **Common first step**: project scaffold: module/package init, directory structure, linting/formatting config, CI setup, convention infrastructure (error types, logger setup, response helpers).
+
+**Step contract vs. Acceptance Contract**: they answer different questions. The step contract fixes the *seam between steps* - the interfaces, types, and schemas later sub-plans are written against. A sub-plan's `## Acceptance Contract` fixes *completion inside the step* - the observable conditions under which that one step counts as done. A stable seam can exist while its step is unfinished, and a finished step can still expose the wrong seam; keep both, and do not substitute one for the other.
 
 Adapt the breakdown to the project's nature. TUI, backend service, CLI, library, and full-stack apps each have different natural decomposition patterns. Do not force a one-size-fits-all structure.
 

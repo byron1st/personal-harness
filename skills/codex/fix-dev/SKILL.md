@@ -43,6 +43,8 @@ The user-facing input is only the defect, expected behavior, and any known point
 - **What is wrong** — one or two sentences describing the observed defect: error message, wrong output, broken UI, failing test, etc.
 - **Expected behavior** — what the user wanted to happen instead. Quote the user's words when useful.
 - **Known location or reproduction** — file path, line, function, failing test, reproduction command, or review finding; use `none` if unavailable.
+- **Finding ID** — optional: the review/test finding this fix addresses (`REVIEW-NNN` / `TEST-NNN`); use `none` when not applicable.
+- **Loop context** — optional: when dispatched from a `dev-loop` run, the remediation round number and the LOOP file's absolute path; use `none` otherwise.
 - **Workspace context** — capture `git status --short` before dispatch, then include the current branch and any pre-existing changes in known target files; gather this automatically.
 - **Plan context** — absolute paths to the plan file (and the `-STEP-N.md` sub-plan, if multi-steps), plus the related step; use `none` if no plan exists or it is not known.
 - **Implementation Report path** — absolute path to the existing report under `docs/agents/dev/` that this fix amends. For single-step, the single report; for a multi-steps step, the `{timestamp}_{Jira}_IMPL_{title}-STEP-N.md` per-step report; for fixes raised after the final summary already exists, still amend the relevant `-STEP-N` report (the per-step report is closer to the change set than the summary). Use `none` if no report exists or it cannot be identified; the executor will skip the report update.
@@ -97,6 +99,7 @@ Append using exactly this shape. Heading and field labels in English; the prose 
 ## Fix
 
 ### Fix {N} — {YYYY-MM-DD HH:MM} — {짧은 제목}
+- **Finding**: {이 수정이 해결한 finding ID (`REVIEW-NNN` / `TEST-NNN`). brief의 Finding ID가 `none`이면 줄 자체를 생략.}
 - **Root cause**: 무엇이 왜 잘못되어 있었는지 한 문장으로.
 - **Change**: 어떤 변경을 가했고 왜 그것이 가장 작은 올바른 수정인지 한 문장으로.
 - **Regression test**: 추가하거나 사용한 회귀 테스트와 결과, 또는 테스트를 생략한 사유.
@@ -111,16 +114,21 @@ Timestamps use the local timezone of the project (the value `date "+%Y-%m-%d %H:
 
 ## Return contract
 
-Return a **single concise message** containing the fields below. The full diff lives on disk; do not paste it into the return. Do not include raw test output or grep dumps — summarise. When running in the main session, use the same fields in the final response.
+Return a **single concise message** that leads with the common stage block, then the fields below. The full diff lives on disk; do not paste it into the return. Do not include raw test output or grep dumps — summarise. When running in the main session, use the same shape in the final response.
 
-- **Status**: `success` | `needs-confirmation` | `blocked` | `failed`.
+```markdown
+## Stage Status
+pass | needs-confirmation | blocked | failed
+```
+
 - **Root cause**: one paragraph describing what was actually wrong (not what was changed). Omit if status is `blocked` and the cause could not be located.
-- **Fix summary**: one paragraph describing the change applied and why it is the smallest correct fix. Omit if status ≠ `success`.
-- **Regression test**: the existing or newly added regression test and outcome, or the reason it was not appropriate. Omit if status ≠ `success`.
-- **Files changed**: bullet list of paths (no diffs). Omit if status ≠ `success`.
+- **Finding**: the finding ID this fix resolves (`REVIEW-NNN` / `TEST-NNN`). Omit when the brief's Finding ID was `none`.
+- **Fix summary**: one paragraph describing the change applied and why it is the smallest correct fix. Omit if status ≠ `pass`.
+- **Regression test**: the existing or newly added regression test and outcome, or the reason it was not appropriate. Omit if status ≠ `pass`.
+- **Files changed**: bullet list of paths (no diffs). Omit if status ≠ `pass`.
 - **Verification**: selected commands and their pass/fail outcome, any skipped broad checks and why, and whether a failure was change-caused, pre-existing, or environmental. Omit when no verification was performed (scope-guard or blocked returns).
-- **Worktree check**: whether pre-existing changes were preserved and only expected files changed. Omit if status ≠ `success`.
-- **Report update**: absolute path of the Implementation Report that was amended and the heading of the new entry (e.g. `Fix 2 — 2026-05-18 14:30 — …`). Use `skipped (no report)` when the brief passed `Implementation Report path: none`. Omit if status ≠ `success`.
+- **Worktree check**: whether pre-existing changes were preserved and only expected files changed. Omit if status ≠ `pass`.
+- **Report update**: absolute path of the Implementation Report that was amended and the heading of the new entry (e.g. `Fix 2 — 2026-05-18 14:30 — …`). Use `skipped (no report)` when the brief passed `Implementation Report path: none`. Omit if status ≠ `pass`.
 - **Notes**: anything else the user should see — adjacent bugs the executor suspects but deliberately did not touch, follow-ups worth filing, unrelated cleanups intentionally skipped, etc. Omit if there is nothing.
 
 The worker must **not** dump file contents, full diffs, or full test output into the return.
