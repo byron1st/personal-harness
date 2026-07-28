@@ -6,6 +6,10 @@
 
 옮기는 대상은 크게 세 가지 — 스킬(`SKILL.md`), 서브에이전트(custom agent 정의 파일), 훅(hook 설정·스크립트) — 이고, 아래도 그 순서로 나눈다.
 
+## Platform-specific exception
+
+`skills/codex/review-code-claude`는 Claude Code의 `/review-code`를 별도 프로세스로 호출하는 Codex 전용 어댑터다. Claude 소스에서 생성하는 공유 스킬이 아니며 `skills/claude/review-code-claude` counterpart를 만들지 않는다. verifier는 이 이름 하나만 필수 Codex-only 예외로 허용하고 그 밖의 스킬 집합 차이는 계속 실패시켜야 한다.
+
 ## Platform invariants (do not translate)
 
 플랫폼 간 파싱·매칭 호환성을 위해 아래 항목은 마이그레이션 시 이름·값을 그대로 보존한다. 도구명·실행모델 변환 규칙이 이 목록보다 우선하지 않는다.

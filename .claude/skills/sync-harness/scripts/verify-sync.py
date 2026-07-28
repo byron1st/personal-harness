@@ -24,6 +24,7 @@ from pathlib import Path
 
 FAILURES: list[tuple[str, str]] = []
 WARNINGS: list[tuple[str, str]] = []
+CODEX_ONLY_SKILLS = {"review-code-claude"}
 
 
 def fail(section: str, msg: str) -> None:
@@ -134,12 +135,18 @@ def check_skills(root: Path) -> None:
         return
     sc, sx = skill_dirs(cl), skill_dirs(cx)
 
-    if sc != sx:
-        fail("skills/tree-parity", f"skill sets differ: claude={sc} codex={sx}")
+    only_claude = sc - sx
+    only_codex = sx - sc
+    if only_claude or only_codex != CODEX_ONLY_SKILLS:
+        fail(
+            "skills/tree-parity",
+            "unexpected platform-specific skills: "
+            f"only-claude={only_claude} only-codex={only_codex} "
+            f"expected-only-codex={CODEX_ONLY_SKILLS}",
+        )
 
-    for name in sorted(sc & sx):
-        # name frontmatter must match dir across both variants
-        for plat, base in (("claude", cl), ("codex", cx)):
+    for plat, base, names in (("claude", cl, sc), ("codex", cx, sx)):
+        for name in sorted(names):
             sk = base / name / "SKILL.md"
             if not sk.exists():
                 fail("skills/structure", f"{plat}/{name} missing SKILL.md")
@@ -149,6 +156,8 @@ def check_skills(root: Path) -> None:
                 fail(f"skills/{plat}", f"{name}/SKILL.md frontmatter: {err}")
             elif data and str(data.get("name")) != name:
                 fail(f"skills/{plat}", f"{name}/SKILL.md name `{data.get('name')}` != dir `{name}`")
+
+    for name in sorted(sc & sx):
         # references/ and scripts/ copy verbatim — trees must be identical
         for sub in ("references", "scripts"):
             t = {plat: subtree(base / name / sub) for plat, base in (("claude", cl), ("codex", cx))}

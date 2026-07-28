@@ -17,7 +17,7 @@ personal-harness/
 
 훅의 상세 동작은 [Harness > Hooks](#hooks) 참조. 훅이 `rg`/`fd` 사용을 강제하므로 [ripgrep](https://github.com/BurntSushi/ripgrep)과 [fd](https://github.com/sharkdp/fd) 설치가 필요하다(Prerequisites 참조).
 
-플랫폼 변형은 **Claude ↔ Codex** 토폴로지로 마이그레이션한다. Personal 환경에서는 Claude Code를 중심으로 Grok Build도 사용하지만, Grok Build는 Claude Code와 완벽히 호환되므로 별도 변형을 유지하지 않는다. Work 환경의 중심은 Codex이며, Claude Code와 Codex 두 변형은 양방향으로 공유할 수 있다. 각 방향의 변환 규칙은 [SYNC_TO_CODEX.md](docs/sync-harness/SYNC_TO_CODEX.md)(Claude Code → Codex), [SYNC_TO_CLAUDE.md](docs/sync-harness/SYNC_TO_CLAUDE.md)(Codex → Claude Code)에 정리되어 있다.
+플랫폼 변형은 **Claude ↔ Codex** 토폴로지로 마이그레이션한다. Personal 환경에서는 Claude Code를 중심으로 Grok Build도 사용하지만, Grok Build는 Claude Code와 완벽히 호환되므로 별도 변형을 유지하지 않는다. Work 환경의 중심은 Codex이며, Claude Code와 Codex 두 변형은 양방향으로 공유할 수 있다. `review-code-claude`만 Claude Code를 외부 프로세스로 호출하는 Codex 전용 어댑터이므로 Claude counterpart를 두지 않는다. 각 방향의 변환 규칙은 [SYNC_TO_CODEX.md](docs/sync-harness/SYNC_TO_CODEX.md)(Claude Code → Codex), [SYNC_TO_CLAUDE.md](docs/sync-harness/SYNC_TO_CLAUDE.md)(Codex → Claude Code)에 정리되어 있다.
 
 ## Prerequisites
 
@@ -31,6 +31,7 @@ personal-harness/
 | `rg` (ripgrep) | 전체 `enforce-rg` hook + AGENTS.md | 재귀 `grep` 대신 코드 검색 강제 | `brew install ripgrep` |
 | `fd` | 전체 `enforce-fd` hook + AGENTS.md | 파일명/경로 검색용 `find` 대체 강제 | `brew install fd` |
 | `ctx7` | AGENTS.md context7 룰 + `scripts/setup-ctx7.sh` | 라이브러리/프레임워크 공식 문서 fetch | `npm install -g ctx7` 후 `ctx7 login`(또는 `CONTEXT7_API_KEY` 설정) |
+| `claude` | Codex `review-code-claude` | 설치된 Claude `review-code`와 reviewer agent 4개를 비대화형으로 실행 | [Claude Code 설치](https://code.claude.com/docs/en/setup) 후 인증 |
 | `gh` | `request-merge`(personal), `setup-initial-repo`(personal 원격 생성) | GitHub PR 생성/업데이트, 개인 private repo 자동 생성 | `brew install gh` 후 `gh auth login` |
 | `glab` | `request-merge`(work) | GitLab MR 생성/업데이트 | `brew install glab` 후 `glab auth login` |
 | `gcx` | `loki-log-search` | Grafana Loki 로그 조회용 `gcx api` passthrough | `gcx` 배포본 설치 후 `gcx config current-context`로 컨텍스트 구성 |
@@ -99,6 +100,7 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 | `fix-dev` | 리뷰·검증에서 발견된 결함을 한 건씩 원인 분석·수정·검증. 커밋하지 않음 | Dispatcher → Worker | IMPL 리포트에 `## Fix` 누적 |
 | `test-dev` | git scope(기본: `main` 대비 diff) 기준으로 유닛/E2E 갭 채움과 mutation LIVED 제거. production 코드는 불변 | Dispatcher → Worker | 테스트 코드 (파일 아티팩트 없음) |
 | `review-code` | 4 리뷰 페르소나 병렬 dispatch 후 finding 종합. HIGH/CRITICAL은 사용자 Fix/Accept 트리아지, Accept는 AR로 기록해 이후 리뷰에서 Waived 강등 | Dispatcher → 4 reviewers | finding 리포트, `Accepted Review Exceptions` |
+| `review-code-claude` | 명시적 `$review-code-claude` 호출에만 Claude Code의 `review-code`를 별도 읽기 전용 프로세스로 실행하고 Codex에서 트리아지 | Codex → Claude CLI → 4 Claude reviewers | finding 리포트, `Accepted Review Exceptions` |
 | `dev-loop` | 승인된 플랜(AC·AB 필수)으로 구현→테스트→리뷰→fix 사이클을 종료 술어 충족까지 자율 반복, READY_TO_COMMIT에서 정지. 트리아지·AR 승인·커밋은 사람 몫 | 메인 세션 (각 단계 스킬의 Dispatcher 흐름 호출) | LOOP 파일 (append-only) |
 | `commit-code` | 수정된 파일 기반 커밋 생성 + 커밋 후 문서 드리프트 검사(읽기 전용 보고) | 메인 세션 | 커밋 |
 | `request-merge` | `gh`(personal) / `glab`(work)로 PR/MR 생성·업데이트 | 메인 세션 | PR/MR |
@@ -166,6 +168,8 @@ Work 환경(Codex) 설치 스크립트다.
 ### apply-to-all.sh
 
 `apply-to-personal.sh`와 `apply-to-work.sh`를 순서대로 실행하는 래퍼다. 내부 경로가 레포 루트 기준 상대 경로이므로 레포 루트에서 실행해야 한다.
+
+Codex에서 `review-code-claude`를 사용하려면 Claude `review-code`와 reviewer agent 4개도 필요하므로 `apply-to-all.sh`로 두 플랫폼을 함께 설치한다. 스킬은 명시적 `$review-code-claude` 호출에만 활성화된다.
 
 ### setup-ctx7.sh
 

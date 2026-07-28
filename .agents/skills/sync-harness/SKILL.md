@@ -5,7 +5,9 @@ description: Sync this personal-harness repo's platform variants between Claude 
 
 # Sync Harness
 
-This repo keeps two platform variants of every skill, sub-agent, and hook: `claude/` and `codex/`. The supported migration topology is `Claude <-> Codex`: Claude Code is the center of Personal and Codex is the center of Work.
+This repo keeps two platform variants of every shared skill, sub-agent, and hook: `claude/` and `codex/`. The supported migration topology is `Claude <-> Codex`: Claude Code is the center of Personal and Codex is the center of Work.
+
+`review-code-claude` is the only platform-specific exception. It is a Codex-only adapter that launches Claude Code, so never create, migrate, or expect a `skills/claude/review-code-claude` counterpart.
 
 Your job is to regenerate target variant(s) so they match the chosen source variant.
 
@@ -73,7 +75,7 @@ After migrating, run the bundled checker from the repo root:
 python3 .agents/skills/sync-harness/scripts/verify-sync.py
 ```
 
-It checks tree parity, frontmatter parsing, skill and agent names, residual platform-specific terms, hook JSON shape, and `bash -n` for hook scripts. It exits non-zero when failures remain.
+It checks tree parity, the required `review-code-claude` Codex-only exception, frontmatter parsing, skill and agent names, residual platform-specific terms, hook JSON shape, and `bash -n` for hook scripts. It exits non-zero when failures remain.
 
 The script catches mechanical regressions for the Claude/Codex variants. You still need to read the regenerated files and confirm the meaning survived the transform, especially for `Codex -> Claude` because platform-specific tool, permission, hook, and plan-mode restoration requires judgment. If the checker flags something, fix the file and rerun until it is clean.
 
@@ -81,6 +83,7 @@ The script catches mechanical regressions for the Claude/Codex variants. You sti
 
 - Never write to the source variant of the chosen direction.
 - Claude and Codex can be sources for each other.
+- Never propagate the Codex-only `review-code-claude` adapter to Claude.
 - Do not deploy; `scripts/apply-to-personal.sh` handles Claude Code installation, and `scripts/apply-to-work.sh` handles Codex installation.
 - Do not commit unless the user asks.
 - If a migration document and this skill disagree, the migration document wins; mention the drift so the user can reconcile it.

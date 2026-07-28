@@ -8,6 +8,10 @@
 
 옮기는 대상은 크게 세 가지 — 스킬(`SKILL.md`), 서브에이전트(custom agent 정의 파일), 훅(hook 설정·스크립트) — 이고, 아래도 그 순서로 나눈다.
 
+## Platform-specific exception
+
+`skills/codex/review-code-claude`는 Claude Code를 호출하기 위한 Codex 전용 어댑터이므로 Claude 대상에 이식하지 않는다. `SKILL.md`, `scripts/`, `agents/openai.yaml` 중 어느 것도 `skills/claude/review-code-claude`로 복사하지 않으며, verifier의 유일한 필수 Codex-only 예외로 유지한다.
+
 ## Skill migration
 
 `skills/codex/<skill>`를 `skills/claude/<skill>`로 옮길 때의 규칙이다.
