@@ -45,7 +45,7 @@ If the diff is very large (roughly >2000 changed lines), review one file at a ti
 
 ## Run the four reviewers
 
-Spawn all four Codex custom reviewer agents in parallel so they run concurrently. A successful `explorer` fallback for an unavailable custom persona still counts as a Worker dispatch. If no fallback can spawn or any required spawn fails, stop the review run, preserve any successful returns, report the failed axes, and do not begin a main-session pass until the user explicitly authorizes direct fallback.
+Spawn all four Codex custom reviewer agents in parallel with `fork_turns="none"` on every spawn so they run concurrently. A successful `explorer` fallback for an unavailable custom persona still counts as a Worker dispatch. If no fallback can spawn or any required spawn fails, stop the review run, preserve any successful returns, report the failed axes, and do not begin a main-session pass until the user explicitly authorizes direct fallback.
 
 Each delegated prompt, or each main-session reviewer pass, contains:
 

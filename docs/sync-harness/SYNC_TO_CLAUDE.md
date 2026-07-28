@@ -34,6 +34,8 @@ Codex는 시작 시 skill `name`, `description`, 경로만 예산 제한 안에�
 Codex와 Claude Code 모두 활성 skill이 위임을 요구하면 사용자가 같은 요청을 반복하지 않아도 Dispatcher-first 흐름을 시작할 수 있다. Codex 변형의 기본 위임 의미와 명시적 실패 gate를 유지하되, 실제 dispatch와 사용자 질문은 Claude Code 도구로 바꾼다.
 
 - Codex `worker` 또는 custom agent dispatch는 Claude Code의 `Agent` tool과 적절한 `subagent_type`으로 바꾼다. Codex `explorer` fallback은 Claude Code에서 사용할 수 있는 읽기 중심 subagent나 custom agent prompt로 바꾼다.
+- Claude Code의 named/custom subagent에는 `fork_turns` 옵션이 없다. Codex custom agent spawn의 필수 `fork_turns="none"`은 Claude Code로 옮기지 말고 제거한다. Named/custom subagent는 기본적으로 부모 대화 기록을 상속하지 않는 fresh context에서 시작하므로, 필요한 입력은 self-contained task prompt로 전달한다.
+- `fork_turns="none"`을 Claude Code의 fork subagent나 Skill의 `context: fork`로 변환하지 않는다. 둘은 부모 대화 전체를 상속하는 별도 동작이며, 사용자가 전체 대화 상속을 명시적으로 요구한 경우에만 사용한다.
 - 위임형 skill의 기본 Dispatcher 동작을 유지한다. Claude 변형에 별도의 "explicit user request only" gate를 추가하지 않는다.
 - `Agent` tool이나 호환 subagent capability가 없거나 dispatch가 실패하면 substantive 작업 전에 중단하고, `Delegation status: unavailable` 또는 `failed`와 관찰된 원인을 보고한 뒤 `AskUserQuestion`으로 direct fallback 여부를 묻는다. 사용자의 명시적 선택 전에는 main-session 작업으로 대체하지 않는다.
 - 병렬 reviewer 중 일부만 실패하면 성공한 결과를 보존하고 실패한 axis를 보고한 뒤, 누락된 pass를 main session에서 수행할지 사용자에게 묻는다.
@@ -93,6 +95,7 @@ Codex는 sandbox mode와 approval policy를 중심으로 권한을 설명한다.
 - skill-local `agents/openai.yaml`이 Claude 대상에 복사되지 않았는가. Claude custom subagent는 repo-level `agents/claude/*.md`로만 관리한다.
 - frontmatter `name`이 디렉터리명과 일치하고 YAML이 파싱되는가.
 - 잔존 스윕(`rg`): `Codex`, `worker`, `explorer`, `sandbox and approval`, `apply_patch`, `.agents/skills`, `~/.codex`, `ExitPlanMode` 누락, `AskUserQuestion` 누락이 문맥상 의도된 것인지 확인한다. `Codex`가 제품명 예시로 필요한 경우만 허용한다.
+- Claude 대상 Skill의 named/custom subagent dispatch에 Codex 전용 `fork_turns`가 남아 있거나, 이를 fork subagent 또는 `context: fork`로 잘못 변환하지 않았는가.
 - 위임형 skill은 기본 Dispatcher 동작, `Agent` tool / `subagent_type` 변환, 명시적 실패 gate, Worker의 재-dispatch 금지를 보존하며 실패 시 main session으로 조용히 대체하지 않는가.
 - plan-mode skill은 최종 계획 후 `ExitPlanMode`로 승인받는 흐름을 갖는가.
 

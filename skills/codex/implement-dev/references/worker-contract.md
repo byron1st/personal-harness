@@ -1,6 +1,6 @@
 # Worker delegation contract
 
-`implement-dev`'s **Dispatch mode** (the default main-session mode) delegates the actual implementation to a single `implementer` subagent (the **Worker**, spawned as the custom `implementer` agent, falling back to the built-in `worker` agent if unavailable). This file is the **single source of truth** for that delegation: the prompt the dispatcher hands the Worker, the structured Markdown the Worker must return (② in [report-file.md](report-file.md)'s terminology - ① is the on-disk report, ② is the Worker's return message, ③ is the dispatcher's chat summary), and the chat summary the dispatcher owes the user.
+`implement-dev`'s **Dispatch mode** (the default main-session mode) delegates the actual implementation to a single `implementer` subagent (the **Worker**, spawned as the custom `implementer` agent with `fork_turns="none"`, falling back to the built-in `worker` agent if unavailable). This file is the **single source of truth** for that delegation: the prompt the dispatcher hands the Worker, the structured Markdown the Worker must return (② in [report-file.md](report-file.md)'s terminology - ① is the on-disk report, ② is the Worker's return message, ③ is the dispatcher's chat summary), and the chat summary the dispatcher owes the user.
 
 `implement-dev` Dispatch references this contract instead of restating it. Do not duplicate these templates elsewhere; update them here.
 
