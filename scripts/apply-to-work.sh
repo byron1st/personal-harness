@@ -61,10 +61,10 @@ if [[ -f "${CODEX_HOOKS_SOURCE_DIR}/hooks.json" ]]; then
   codex_hooks_json_status="✓ installed"
 fi
 
-echo ""
 echo "Work harness applied:"
 echo "  Codex skills:       ${codex_skills_count} directories installed to ${CODEX_SKILLS_DIR}"
 echo "  Codex instructions: ${codex_md}"
 echo "  Codex custom agents: ${codex_agents_count} files installed to ${CODEX_AGENTS_DIR} (${codex_agents_status})"
 echo "  Codex hook scripts:  ${codex_hooks_count} files installed to ${CODEX_HOOKS_DIR} (${codex_hooks_status})"
 echo "  Codex hooks.json:    ${codex_hooks_json_status}"
+echo ""
