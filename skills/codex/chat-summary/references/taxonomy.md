@@ -96,7 +96,7 @@ summary. New tags only when they'll plausibly land on three or more future notes
  
 **Tooling & workflow**
 `cli` · `git` · `zsh` · `macos` · `neovim` · `obsidian` · `homelab` · `tailscale` · `automation`
-· `goreleaser` · `diff-algorithm` · `tmux`
+· `goreleaser` · `diff-algorithm` · `tmux` · `side-project`
  
 **Career & writing**
 `resume` · `cover-letter` · `job-description` · `interview` · `translation` · `english-writing`
@@ -129,6 +129,7 @@ merging a split tag later.
 | `cost-optimization` | `cost`, `cost-saving`, `비용최적화` |
 | `real-estate` | `부동산`, `property` |
 | `cover-letter` | `자기소개서`, `self-introduction` |
+| `side-project` | `sideproject`, `개인프로젝트`, `toy-project` |
  
 Composite cases — one concept, two tags:
  
