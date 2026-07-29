@@ -113,6 +113,7 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 | `setup-initial-repo` | SPEC.md 기반 신규 저장소 부트스트랩 — 지침 파일, 빌드 스크립트, .gitignore, git identity, remote origin | 초기 레포 스캐폴드 |
 | `application-research-sync` | 코드 변경을 분석해 Research 파일 일괄 갱신 (index 먼저, 필요한 본문만) | `docs/agents/research/*` |
 | `learn-from-manual-edits` | 에이전트 작성 코드 위의 사용자 수동 편집에서 일반 선호를 추론해 컨벤션으로 기록 | CLAUDE.md/AGENTS.md 컨벤션 섹션 |
+| `chat-summary` | 대화 내용을 vault 기존 category/tag 어휘로 정리한 자기완결 Obsidian 노트(YAML frontmatter + 본문)로 작성 | Obsidian 노트 (.md) |
 | `find-docs` | 라이브러리/프레임워크 공식 문서를 Context7(`ctx7`)로 조회. Context7이 자동 설치하는 서드파티 스킬(이 harness가 직접 작성한 것이 아님) | 없음 (채팅 보고) |
 | `loki-log-search` | Grafana Loki 로그를 `gcx api` 경유로 조회 | 없음 (채팅 보고) |
 

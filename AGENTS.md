@@ -66,6 +66,7 @@ Each skill under `skills/<platform>/` is managed in its own folder. See each ski
 | `setup-initial-repo` | Bootstraps a new repository from a SPEC.md (instruction files, build scripts, .gitignore, git identity, remote origin) |
 | `application-research-sync` | Analyzes code changes and batch-updates Research files under `docs/agents/research` |
 | `learn-from-manual-edits` | Infers preferences from the user's manual edits on agent-written code and records them as conventions |
+| `chat-summary` | Turns the conversation into a self-contained Obsidian note (YAML frontmatter + body) reusing the vault's category/tag vocabulary |
 | `find-docs` | Fetches official library/framework documentation via Context7 (`ctx7`). Third-party skill auto-installed by Context7, not authored by this harness |
 | `loki-log-search` | Queries Grafana Loki logs via `gcx api` |
 
