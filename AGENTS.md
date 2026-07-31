@@ -15,7 +15,7 @@ personal-harness/
 ├── hooks/            # Per-platform hooks (claude: settings.json + *.sh · codex: hooks.json + *.sh)
 ├── instructions/     # Distribution source of the global AGENTS.md instructions
 ├── scripts/          # Install/sync scripts (apply-to-personal.sh · apply-to-work.sh · apply-to-all.sh · setup-ctx7.sh)
-├── docs/             # Harness docs (sync-harness/: SYNC_TO_* conversion rules · loop-engineering/: loop-engineering plan & research docs)
+├── docs/             # Harness docs (sync-harness/: SYNC_TO_* conversion rules · loop-engineering/: loop-engineering plan & research docs · cost-effective/: model-tiering cost analysis)
 └── .agents/skills/   # Meta-skills for the harness itself (sync-harness; mirrored in .claude/skills/)
 ```
 
