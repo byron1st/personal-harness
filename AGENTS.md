@@ -1,21 +1,22 @@
 # personal-harness
 
-A harness of Agent Skills, global instructions, and install scripts for personal use. It supports three platforms — Claude Code, Codex, and Cursor — and migrates platform variants using the topology below.
+A harness of Agent Skills, global instructions, and install scripts for personal use. It supports four platforms — Claude Code, Codex, Cursor, and Grok Build — and migrates platform variants using the topology below.
 
 - Claude ↔ Codex (bidirectional; Personal center is Claude Code, Work center is Codex)
 - Claude → Cursor (one-way; a change that starts in Cursor lands in the Claude variant first)
+- Claude → Grok Build (one-way; pure Grok paths only — do not rely on Grok's Claude/Cursor compat scanners)
 
-Per-stage conversion rules are defined in `docs/sync-harness/` (`SYNC_TO_CODEX.md`, `SYNC_TO_CLAUDE.md`, and `SYNC_TO_CURSOR.md`).
+Per-stage conversion rules are defined in `docs/sync-harness/` (`SYNC_TO_CODEX.md`, `SYNC_TO_CLAUDE.md`, `SYNC_TO_CURSOR.md`, and `SYNC_TO_GROK.md`).
 
 ## Folder Structure
 
 ```
 personal-harness/
-├── skills/           # Per-platform Agent Skills (claude/ · codex/ · cursor/; one folder per skill)
-├── agents/           # Persona sub-agent definitions (claude/*.md · codex/*.toml · cursor/*.md)
-├── hooks/            # Per-platform hooks (claude: settings.json + *.sh · codex/cursor: hooks.json + *.sh)
+├── skills/           # Per-platform Agent Skills (claude/ · codex/ · cursor/ · grok/; one folder per skill)
+├── agents/           # Persona sub-agent definitions (claude/*.md · codex/*.toml · cursor/*.md · grok/*.md)
+├── hooks/            # Per-platform hooks (claude: settings.json + *.sh · codex/cursor/grok: hooks.json + *.sh)
 ├── instructions/     # Distribution source of the global AGENTS.md instructions
-├── scripts/          # Install/sync scripts (apply-to-personal.sh · apply-to-work.sh · apply-to-cursor.sh · apply-to-all.sh · setup-ctx7.sh) + runtime/: platform-neutral runtime scripts installed to ~/.claude/scripts/, ~/.cursor/scripts/, and ~/.codex/scripts/
+├── scripts/          # Install/sync scripts (apply-to-personal.sh · apply-to-work.sh · apply-to-cursor.sh · apply-to-grok.sh · apply-to-all.sh · setup-ctx7.sh) + runtime/: platform-neutral runtime scripts installed to ~/.claude/scripts/, ~/.cursor/scripts/, ~/.codex/scripts/, and ~/.grok/scripts/
 ├── docs/             # Harness docs (sync-harness/: SYNC_TO_* conversion rules · loop-engineering/: loop-engineering plan & research docs · cost-effective/: model-tiering cost analysis)
 └── .agents/skills/   # Meta-skills for the harness itself (sync-harness; mirrored in .claude/skills/)
 ```
@@ -30,13 +31,13 @@ The default flow can run in two modes. Both share the same skill set and artifac
 plan-dev → dev-loop*( implement-dev → test-dev → [review-code] → (fix-dev → test-dev → [review-code])* ) → commit-code → request-merge
 ```
 
-A loop drives one approved single-step plan (its `Acceptance Contract` / `Authority Boundaries` are required at preflight) through the cycle until every termination predicate holds, then stops at READY_TO_COMMIT. State is checkpointed append-only to a LOOP file under `docs/agents/dev` (one shared format across all three variants); triage (Fix/Accept), AR approval, and commits stay human-owned.
+A loop drives one approved single-step plan (its `Acceptance Contract` / `Authority Boundaries` are required at preflight) through the cycle until every termination predicate holds, then stops at READY_TO_COMMIT. State is checkpointed append-only to a LOOP file under `docs/agents/dev` (one shared format across all platform variants); triage (Fix/Accept), AR approval, and commits stay human-owned.
 
 **Three variants coexist — pick before starting, the loop does not switch mid-run:**
 
 | Skill | Review | Mutation | Use for |
 | --- | --- | --- | --- |
-| `dev-loop-noreview` | none | no | **Claude / Cursor default.** Ordinary everyday work |
+| `dev-loop-noreview` | none | no | **Claude / Cursor / Grok Build default.** Ordinary everyday work |
 | `dev-loop-light` | `maintainability` + `senior-generalist` | no | **Codex default.** Wants a review, but not all four axes |
 | `dev-loop` | all four axes | yes | Genuinely serious or large work, or anything touching security-/reliability-sensitive paths |
 
@@ -71,7 +72,7 @@ Each skill under `skills/<platform>/` is managed in its own folder. See each ski
 | `review-code` | Dispatches reviewer personas in parallel (4 by default, or a caller-named subset) and aggregates findings; reviewers report everything with a `Confidence` tag and **this skill filters**; HIGH/CRITICAL go through user Fix/Accept triage, accepted items recorded as AR and waived in later reviews | Dispatcher → reviewers | Findings, `Accepted Review Exceptions` |
 | `dev-loop` | Thin controller repeating implement→test→review(4축)→fix until termination predicates hold; stops at READY_TO_COMMIT. **Heavy — serious or large work only** | Main session (invokes each stage skill's Dispatcher flow) | LOOP file (append-only) |
 | `dev-loop-light` | Same controller with review narrowed to 2 axes and no mutation (**Codex default**) | Main session | LOOP file (append-only) |
-| `dev-loop-noreview` | Same controller with no review and no mutation; the TESTING Fix/Accept gate remains (**Claude / Cursor default**) | Main session | LOOP file (append-only) |
+| `dev-loop-noreview` | Same controller with no review and no mutation; the TESTING Fix/Accept gate remains (**Claude / Cursor / Grok Build default**) | Main session | LOOP file (append-only) |
 | `commit-code` | Creates a commit; runs a read-only documentation-drift check afterward | Main session | Commit |
 | `request-merge` | Creates/updates a PR (`gh`, personal) or MR (`glab`, work) | Main session | PR/MR |
 
@@ -89,7 +90,7 @@ Each skill under `skills/<platform>/` is managed in its own folder. See each ski
 
 ### Custom Agents
 
-Persona sub-agent definitions under `agents/<platform>/`. Formats differ by platform (Claude: `.md`, Codex: `.toml`). Skills dispatch them; direct user invocation is not the norm.
+Persona sub-agent definitions under `agents/<platform>/`. Formats differ by platform (Claude / Cursor / Grok: `.md`, Codex: `.toml`). Skills dispatch them; direct user invocation is not the norm.
 
 Every agent pins its own `model` and `effort` — see [Model Tier](#model-tier). `inherit` appears nowhere in this harness by design.
 
@@ -124,14 +125,14 @@ Platform-specific config files: Claude Code uses the `hooks` block in `settings.
 
 ### Runtime Scripts
 
-`scripts/runtime/*.sh` is installed to `~/.claude/scripts/` by `apply-to-personal.sh`, to `~/.cursor/scripts/` by `apply-to-cursor.sh`, and to `~/.codex/scripts/` by `apply-to-work.sh` (distinct from the repo's top-level `scripts/`, which is installer-only and never copied). The source is platform-neutral — it reads `Makefile`, `package.json`, and git, nothing else — so all three installers copy the same files rather than maintaining platform forks. Skills call these instead of re-deriving the same facts with an LLM on every cold Worker:
+`scripts/runtime/*.sh` is installed to `~/.claude/scripts/` by `apply-to-personal.sh`, to `~/.cursor/scripts/` by `apply-to-cursor.sh`, to `~/.codex/scripts/` by `apply-to-work.sh`, and to `~/.grok/scripts/` by `apply-to-grok.sh` (distinct from the repo's top-level `scripts/`, which is installer-only and never copied). The source is platform-neutral — it reads `Makefile`, `package.json`, and git, nothing else — so all four installers copy the same files rather than maintaining platform forks. Skills call these instead of re-deriving the same facts with an LLM on every cold Worker:
 
 | Script | Consumers | Returns |
 | --- | --- | --- |
 | `detect-commands.sh` | `implement-dev` · `test-dev` · `fix-dev` | lint/format/test/build/mutation/e2e commands from `Makefile` targets and `package.json` scripts, as JSON. `null` for anything only named in prose — the caller reads that itself |
 | `resolve-scope.sh` | `test-dev` · `review-code` | diff range, changed-file absolute paths, and languages involved, as JSON |
 
-Consumers call them by literal `$HOME/.claude/scripts/…` (Claude), `$HOME/.cursor/scripts/…` (Cursor), or `$HOME/.codex/scripts/…` (Codex) path. `${CLAUDE_SKILL_DIR}` is unavailable here because the scripts live outside any skill folder; `$HOME` stays literal and the shell expands it at run time. Claude skills pre-approve the same literal in `allowed-tools`; Cursor and Codex have no skill-level pre-approval, so the first call may prompt. A mismatch costs one permission prompt, nothing more.
+Consumers call them by literal `$HOME/.claude/scripts/…` (Claude), `$HOME/.cursor/scripts/…` (Cursor), `$HOME/.codex/scripts/…` (Codex), or `$HOME/.grok/scripts/…` (Grok) path. `${CLAUDE_SKILL_DIR}` is unavailable here because the scripts live outside any skill folder; `$HOME` stays literal and the shell expands it at run time. Claude skills pre-approve the same literal in `allowed-tools`; Cursor, Codex, and Grok have no skill-level pre-approval, so the first call may prompt. A mismatch costs one permission prompt, nothing more.
 
 ## Model Tier
 
@@ -139,29 +140,29 @@ Every agent's model and effort is pinned in its own frontmatter. `inherit` is no
 
 The tier of a role is a property of the work, not of the model generation. Each agent body carries a one-line `Tier:` rationale so the reasoning survives when the model names change.
 
-| Tier | Definition | Claude | Codex | Cursor |
-| --- | --- | --- | --- | --- |
-| **T1 judgment** | Irreversible decisions that cannot be machine-verified | `opus` | `gpt-5.6-sol` | `grok-4.5` |
-| **T2 execution** | Specified work whose result is machine-checkable | `sonnet` | **Terra** (long-context) or **Luna** (small context) | `composer-2.5`, except the agentic role |
-| **T3 mechanical** | Transformation and aggregation with no real judgement | *(unused — see below)* | *(unused)* | *(unused)* |
+| Tier | Definition | Claude | Codex | Cursor | Grok Build |
+| --- | --- | --- | --- | --- | --- |
+| **T1 judgment** | Irreversible decisions that cannot be machine-verified | `opus` | `gpt-5.6-sol` | `grok-4.5` | `grok-4.5` |
+| **T2 execution** | Specified work whose result is machine-checkable | `sonnet` | **Terra** (long-context) or **Luna** (small context) | `composer-2.5`, except the agentic role | **same `grok-4.5`** (effort only) |
+| **T3 mechanical** | Transformation and aggregation with no real judgement | *(unused — see below)* | *(unused)* | *(unused)* | *(unused)* |
 
-**T3 is empty on purpose.** Haiku's 200K context, 4096-token minimum cache prefix, and lack of model-level effort make it a poor fit for this harness, whose T2 work is mostly repo-slice reasoning — the thing the smallest tier is worst at. Composer 2.5's 200K context and Luna's long-context cliff (MRCR 41.3%) put the other platforms' lowest tiers out for the same reason. Genuinely mechanical work goes to the shell (Runtime Scripts above), not to a smaller model.
+**T3 is empty on purpose.** Haiku's 200K context, 4096-token minimum cache prefix, and lack of model-level effort make it a poor fit for this harness, whose T2 work is mostly repo-slice reasoning — the thing the smallest tier is worst at. Composer 2.5's 200K context and Luna's long-context cliff (MRCR 41.3%) put those platforms' lowest tiers out for the same reason. **Grok Build has only one catalog model today**, so T2 is not a cheaper model — it is lower effort on the same model. Genuinely mechanical work goes to the shell (Runtime Scripts above), not to a smaller model.
 
 ### Agent placement
 
-Claude keeps `model` and `effort` as two fields. **Codex** uses TOML `model` + `model_reasoning_effort` (+ `sandbox_mode` for read-only). **Cursor** has neither `effort` nor `tools`: effort folds into the model string, and read-only is a single `readonly` boolean.
+Claude keeps `model` and `effort` as two fields. **Codex** uses TOML `model` + `model_reasoning_effort` (+ `sandbox_mode` for read-only). **Cursor** has neither `effort` nor `tools`: effort folds into the model string, and read-only is a single `readonly` boolean. **Grok Build** uses `model` + `effort` + `permission_mode` (plan = read-only edits blocked, read shell allowed); spawn may also pass `capability_mode: read-only`.
 
-| Agent | Claude `model` / `effort` | Codex `model` / `effort` | Cursor `model` | Codex `sandbox` / Cursor `readonly` | Why this tier |
+| Agent | Claude | Codex | Cursor | Grok Build `model` / `effort` | Why this tier |
 | --- | --- | --- | --- | --- | --- |
-| `planner` | `opus` / `high` | `gpt-5.6-sol` / `high` | `grok-4.5[effort=high]` | read-only / `true` | Architecture calls are irreversible and unverifiable |
-| `plan-consultant` | `opus` / `high` | `gpt-5.6-sol` / `high` | `grok-4.5[effort=high]` | read-only / `true` | Exists precisely for calls the executor cannot verify or cheaply undo |
-| `security-reviewer` | `opus` / `medium` | `gpt-5.6-sol` / `medium` | `grok-4.5[effort=high]` | read-only / `true` | A missed authz bypass is unrecoverable — highest miss cost of the four axes |
-| `reliability-reviewer` | `opus` / `medium` | `gpt-5.6-sol` / `medium` | `grok-4.5[effort=high]` | read-only / `true` | Counterfactual simulation is the first thing weaker models lose |
-| `implementer` | `sonnet` / `high` | **`gpt-5.6-terra` / `high`** | `grok-4.5[effort=medium]` | workspace-write / `false` | Long-context role — Luna fails MRCR here; Terra ≈ Sol quality at ~2–2.5× lower cost |
-| `tester` | `sonnet` / `medium` | `gpt-5.6-luna` / `high` | `composer-2.5[fast=false]` | workspace-write / `false` | Mutation score ≥80% is a machine goal; barred from production code |
-| `fixer` | `sonnet` / `medium` | `gpt-5.6-luna` / `high` | `composer-2.5[fast=false]` | workspace-write / `false` | The review finding is the spec; a re-test verifies the result |
-| `maintainability-reviewer` | `sonnet` / `medium` | `gpt-5.6-luna` / `high` | `composer-2.5[fast=false]` | read-only / `true` | Style and rule matching against the surrounding code is specified pattern matching |
-| `senior-generalist-reviewer` | `sonnet` / `medium` | `gpt-5.6-luna` / `high` | `composer-2.5[fast=false]` | read-only / `true` | Calibrated catch-all, lowest miss cost |
+| `planner` | `opus` / `high` | `gpt-5.6-sol` / `high` | `grok-4.5[effort=high]` | `grok-4.5` / `high` (plan) | Architecture calls are irreversible and unverifiable |
+| `plan-consultant` | `opus` / `high` | `gpt-5.6-sol` / `high` | `grok-4.5[effort=high]` | `grok-4.5` / `high` (plan) | Exists for calls the executor cannot verify; **on Grok the main session spawns it** (depth 1) |
+| `security-reviewer` | `opus` / `medium` | `gpt-5.6-sol` / `medium` | `grok-4.5[effort=high]` | `grok-4.5` / `high` (plan) | Missed authz bypass is unrecoverable |
+| `reliability-reviewer` | `opus` / `medium` | `gpt-5.6-sol` / `medium` | `grok-4.5[effort=high]` | `grok-4.5` / `high` (plan) | Counterfactual simulation is the first thing weaker models lose |
+| `implementer` | `sonnet` / `high` | **`gpt-5.6-terra` / `high`** | `grok-4.5[effort=medium]` | `grok-4.5` / **`medium`** (default) | Long-context agentic role; Grok has no second model, so effort drops instead |
+| `tester` | `sonnet` / `medium` | `gpt-5.6-luna` / `high` | `composer-2.5[fast=false]` | `grok-4.5` / `medium` | Mutation score ≥80%; barred from production code |
+| `fixer` | `sonnet` / `medium` | `gpt-5.6-luna` / `high` | `composer-2.5[fast=false]` | `grok-4.5` / `medium` | Finding is the spec; re-test verifies |
+| `maintainability-reviewer` | `sonnet` / `medium` | `gpt-5.6-luna` / `high` | `composer-2.5[fast=false]` | `grok-4.5` / `medium` (plan) | Specified pattern matching |
+| `senior-generalist-reviewer` | `sonnet` / `medium` | `gpt-5.6-luna` / `high` | `composer-2.5[fast=false]` | `grok-4.5` / `medium` (plan) | Calibrated catch-all, lowest miss cost |
 
 **effort follows two rules.** Do not buy the top of the scale — the jump from a model's default effort to `max` is worth a couple of points across the board, so `xhigh` is reserved for decisions that cannot be revisited. And when a model comes down a tier, effort does not follow it down: Claude `implementer` moved to `sonnet` and kept `effort: high`; Codex T2 rows use `high` on Luna/Terra for the same reason (cheap model, high effort).
 
@@ -173,14 +174,16 @@ Claude keeps `model` and `effort` as two fields. **Codex** uses TOML `model` + `
 
 **The Cursor table rows and `hooks/cursor/hooks/model-pin-guard.sh` are one fact in two files.** Change a Cursor row and change the guard's `case` statement with it, or the guard starts rejecting healthy dispatches.
 
+**Grok Build-specific:** catalog is **`grok-4.5` only** (SuperGrok subscription quota). Effort menu is `low|medium|high` only. Subagent nesting depth is **1** — the implementer must not spawn `plan-consultant`; the Dispatcher returns on `needs-design-decision` and spawns the consultant. No multi-model cascade and no `implementer-strict`. Default loop is **`dev-loop-noreview`**. Turn off Grok `[compat.claude]` / `[compat.cursor]` so pure `~/.grok/{agents,skills,hooks,scripts,rules}` paths win. Global instructions install to **`~/.grok/rules/AGENTS.md`**.
+
 ### Session operating rules
 
 A skill's `model:` frontmatter applies **only to the current turn** and reverts to the session model at the next prompt. `plan-dev` is a multi-turn interview and every loop breaks turns at its human gates, so neither can be pinned that way. The invocation boundary is therefore the **session** boundary:
 
-| Session | Claude | Codex | Cursor | Why |
-| --- | --- | --- | --- | --- |
-| `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.5** (effort high) | Direction, boundaries, and ACs are irreversible, and the executor cannot self-correct a wrong one |
-| **every `dev-loop*` run** | **Sonnet** | **Luna / medium** | **Composer 2.5 Standard** | The controller reads a transition table and appends to a LOOP file. T1 agents still run on the T1 model via their role/frontmatter pins |
+| Session | Claude | Codex | Cursor | Grok Build | Why |
+| --- | --- | --- | --- | --- | --- |
+| `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.5** (effort high) | **Grok 4.5 / high** | Direction, boundaries, and ACs are irreversible |
+| **every `dev-loop*` run** | **Sonnet** | **Luna / medium** | **Composer 2.5 Standard** | **Grok 4.5 / medium** | Controller reads a transition table and appends to a LOOP file; T1 agents stay pinned |
 
 This applies to `dev-loop` too, four axes and all — every reviewer's model is pinned on the agent file, so the session model no longer decides any agent's tier.
 
@@ -193,6 +196,8 @@ This applies to `dev-loop` too, four axes and all — every reviewer's model is 
 **Codex's `[agents] default_subagent_model` / `default_subagent_reasoning_effort` are fallbacks only** — they apply when neither the spawn call nor the role file sets a value, so they do not destroy role pins. Safer than Claude's env override.
 
 **Cursor has no such switch — and that is worse, not better.** What takes its place is an *unintended* override: an admin model restriction, a plan limitation, or a model ID Cursor does not recognise all make it fall back to a "compatible model" without erroring. Nobody turns that on, so nobody remembers to turn it off. `hooks/cursor/hooks/model-pin-guard.sh` exists for exactly this: it reads the resolved model at `subagentStart`, refuses the spawn for T1 agents, and logs it for T2. The same guard is what catches a wrong model ID in `agents/cursor/*.md` and Cursor quietly reading `~/.claude/agents/` again.
+
+**Grok Build has no env-wide subagent model override like Claude's.** Agent frontmatter `model` + `effort` is the pin; `[subagents.models]` is optional and this harness does not use it as a second source of truth. `SubagentStart` is non-blocking, so there is no Cursor-style pin guard in the default hook set.
 
 ## Environment Variables
 
