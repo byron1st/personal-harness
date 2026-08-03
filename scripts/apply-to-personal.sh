@@ -7,7 +7,7 @@ SKILLS_SOURCE_DIR="${SCRIPT_DIR}/../skills/claude"
 AGENTS_SOURCE_DIR="${SCRIPT_DIR}/../agents/claude"
 HOOKS_SOURCE_DIR="${SCRIPT_DIR}/../hooks/claude"
 INSTRUCTIONS_SOURCE_DIR="${SCRIPT_DIR}/../instructions"
-SCRIPTS_SOURCE_DIR="${SCRIPT_DIR}/claude"
+SCRIPTS_SOURCE_DIR="${SCRIPT_DIR}/runtime"
 
 CLAUDE_HOME="${HOME}/.claude"
 SKILLS_DIR="${CLAUDE_HOME}/skills"
