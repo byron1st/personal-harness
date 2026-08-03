@@ -1,6 +1,7 @@
 ---
 name: implement-dev
 description: "Execute a plan-dev implementation plan with TDD, verification, TODO updates, and repository-local implementation reports under docs/agents. By default runs as the Dispatcher (main session): it launches one Worker subagent that owns the actual code/test/report edits and returns a fixed-heading status the Dispatcher collapses to a short chat summary. If dispatch fails, it requires an explicit decision before direct fallback. Use when the user asks to implement a saved plan."
+allowed-tools: Bash($HOME/.claude/scripts/detect-commands.sh *)
 ---
 
 # Implement Dev
@@ -67,7 +68,7 @@ The Dispatcher itself never makes direction decisions for the Worker; if the Wor
 ## Prepare
 
 1. **Plan file**: the user (Dispatcher) or the dispatch prompt (Worker) provides the plan path. If the prompt omits it, ask.
-2. **Verification commands**: extract lint, format, test, and build commands from `Makefile`, `AGENTS.md`, `CLAUDE.md`, or `README.md`. If none are found, ask the user (interactive) or surface in `## Open Questions` / `## Decision Needed` (Worker).
+2. **Verification commands**: run `$HOME/.claude/scripts/detect-commands.sh` for the declared ones — it reads `Makefile` targets and `package.json` scripts and returns JSON, deterministically and without inference. Fill in whatever it returns `null` for by reading `AGENTS.md`, `CLAUDE.md`, or `README.md` prose. If a command still cannot be found, ask the user (interactive) or surface in `## Open Questions` / `## Decision Needed` (Worker). **The Dispatcher does this once and passes the result in the dispatch prompt** — otherwise every Worker rediscovers the same commands cold, every round.
 3. **Project conventions**: read `AGENTS.md` / `CLAUDE.md`; their constraints apply to every implementation decision. Treat bundled conventions as defaults only where the repository's own instructions and existing code are silent.
 4. **Language conventions**: complete the [required language convention gate](#required-language-convention-gate). Do not advance from Prepare until every matching convention file has been read.
 

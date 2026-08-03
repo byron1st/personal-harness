@@ -1,6 +1,7 @@
 ---
 name: test-dev
 description: "Strengthen tests by filling unit/e2e gaps and reducing LIVED mutation survivors against a git-defined scope. By default runs as the Dispatcher (main session): it resolves the review scope, then launches one `tester` Worker subagent that owns the actual test edits and returns a fixed-heading status the Dispatcher collapses to a short chat summary. If dispatch fails, it requires an explicit decision before direct fallback. Use after implementation or when asked to improve coverage, harden tests, or kill mutants."
+allowed-tools: Bash($HOME/.claude/scripts/detect-commands.sh *) Bash($HOME/.claude/scripts/resolve-scope.sh *)
 ---
 
 # Test Dev
@@ -73,13 +74,13 @@ By default, the scope is the diff between the current branch and `main` (or `ori
 
 If the current branch *is* `main`, only staged and unstaged edits are in scope.
 
-Capture the scope once (mirroring `review-code`'s gather step): the diff, the touched files with absolute paths, and the language(s) involved. State the decided scope to the user in one sentence before dispatching (e.g. "Scope: 4 files changed vs `main`." / "Scope: entire codebase.").
+Capture the scope once (mirroring `review-code`'s gather step): the diff, the touched files with absolute paths, and the language(s) involved. `$HOME/.claude/scripts/resolve-scope.sh {branch|head|uncommitted|all}` computes the last three as JSON in one call — the diff range, the absolute paths, and the languages are shell facts, not inferences. Read the diff itself with `git diff` over the range it returns. State the decided scope to the user in one sentence before dispatching (e.g. "Scope: 4 files changed vs `main`." / "Scope: entire codebase.").
 
 If an `implement-dev` report exists for the change, the Dispatcher may pass its path to the Worker as an **optional intent hint** — never as the scope definition. Scope is always the git diff. Keeping the Worker's brief lean (diff + conventions, not the author's narrative) preserves the fresh-eyes advantage that makes gap analysis worth isolating.
 
 ## Prepare
 
-1. **Verification commands**: extract lint, unit, e2e, and mutation commands from `Makefile`, `AGENTS.md`, `CLAUDE.md`, or `README.md`. The Dispatcher resolves any missing required command before dispatch; a Worker that still finds one missing returns `blocked` with `## Decision Needed` (interactive execution asks the user).
+1. **Verification commands**: run `$HOME/.claude/scripts/detect-commands.sh` for the declared lint, unit, e2e, and mutation commands, then fill any `null` from `AGENTS.md`, `CLAUDE.md`, or `README.md` prose. The Dispatcher resolves any missing required command before dispatch; a Worker that still finds one missing returns `blocked` with `## Decision Needed` (interactive execution asks the user).
 2. **E2E layout**: locate where e2e tests live (see [references/e2e-gap-analysis.md](references/e2e-gap-analysis.md) for common conventions). If the project has no e2e suite at all, note this and skip Phase 2 with a single-line justification in the final summary.
 3. **Mutation tooling**: find the project's mutation target (typical: `make test-mutation`). If no tooling is configured, the Dispatcher decides before dispatch; a Worker returns `blocked` with the options (skip Phase 3 / nominate a command / install a standard tool), and interactive execution asks the user with `AskUserQuestion`.
 

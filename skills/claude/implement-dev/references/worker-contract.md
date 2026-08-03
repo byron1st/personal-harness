@@ -10,7 +10,7 @@ The Worker detects it is a Worker (not a Dispatcher) from the dispatch prompt it
 
 ## B. Dispatch prompt
 
-The dispatcher (the main `implement-dev` session) hands the Worker this prompt, replacing placeholders:
+The dispatcher (the main `implement-dev` session) hands the Worker this prompt, replacing placeholders. It fills the verification-command block from `Prepare` step 2 (`$HOME/.claude/scripts/detect-commands.sh` plus any prose-only commands) — passing them is the point: without this block the Worker rediscovers the same commands cold on every dispatch.
 
 ```text
 You are running as the implementation Worker subagent.
@@ -18,6 +18,12 @@ You are running as the implementation Worker subagent.
 Use the `implement-dev` skill to execute this existing plan-dev plan: {PLAN_PATH}
 
 You operate cold: this is a fresh subagent session with no memory of the planning run. Read the plan end-to-end first, then read each research file the plan links at the relevant TODO before touching code - the plan already did that exploration in the planning session; do not assume you "already know it". Mechanics-level detail (helpers, signatures, edge cases) is yours to decide TDD-first against the running code; the plan does not spell them out and you must not wait for them.
+
+Verification commands (already resolved - use these instead of rediscovering them; re-derive only the ones marked `none`):
+- lint: {LINT_CMD or none}
+- format: {FORMAT_CMD or none}
+- test: {TEST_CMD or none}
+- build: {BUILD_CMD or none}
 
 Whenever a `## TODOs` checkbox completes, flip `- [ ]` to `- [x]` in the plan file immediately - do not batch.
 

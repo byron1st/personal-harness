@@ -1,6 +1,7 @@
 ---
 name: review-code
 description: Review code changes for bugs, security, reliability, maintainability, and missing tests. Use for diff, PR, branch, or file reviews; dispatches four parallel reviewer agents in Claude Code and requires an explicit decision before direct fallback.
+allowed-tools: Bash($HOME/.claude/scripts/resolve-scope.sh *)
 ---
 
 # Review Code
@@ -38,7 +39,7 @@ Before dispatching, do these once. The result becomes part of every dispatch pro
    - Normal branch: `git diff main...HEAD` (or `git diff origin/main...HEAD`).
    - On `main`: `git diff HEAD` for staged+unstaged and `git status` for untracked files.
 2. Read `AGENTS.md` / `CLAUDE.md` at the repo root and any nested copies in directories the diff touches. Extract any rules relevant to the four axes.
-3. List the touched files with absolute paths and the language(s) involved.
+3. List the touched files with absolute paths and the language(s) involved. `$HOME/.claude/scripts/resolve-scope.sh {branch|head|uncommitted|all}` returns both — plus the diff range used in step 1 — as one JSON blob. These are shell facts; computing them once here is what stops each dispatched reviewer from re-deriving them.
 4. From the same instruction files, load the `## Accepted Review Exceptions` registry (see "Accepted Review Exceptions registry" below) and keep the entries whose `Applies to` scope plausibly overlaps the diff. When none exist or none overlap, pass nothing — do not mention the mechanism to the reviewers.
 
 If the diff is very large (roughly >2000 changed lines), review one file at a time and use one set of four reviewers per file (still four in parallel each round). If the user explicitly authorizes direct fallback after a delegation failure, run the missing main-session reviewer passes per file. Note the file-by-file mode at the end of the final output so the user knows the review was chunked.

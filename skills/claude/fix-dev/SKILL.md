@@ -1,6 +1,7 @@
 ---
 name: fix-dev
 description: Fix an error or bug discovered during a review phase without polluting the main session's context. The main session dispatches a fresh sub-agent via the Agent tool and requires an explicit decision before direct fallback. Use when the user asks to correct a defect without a new plan. Does NOT commit; leaves the working tree as-is so the user can commit later.
+allowed-tools: Bash($HOME/.claude/scripts/detect-commands.sh *)
 ---
 
 # Fix Dev
@@ -48,7 +49,7 @@ The user-facing input is only the defect, expected behavior, and any known point
 - **Workspace context** — capture `git status --short` before dispatch, then include the current branch and any pre-existing changes in known target files; gather this automatically.
 - **Plan context** — absolute paths to the plan file (and the `-STEP-N.md` sub-plan, if multi-steps), plus the related step; use `none` if no plan exists or it is not known.
 - **Implementation Report path** — absolute path to the existing report under `docs/agents/dev/` that this fix amends. For single-step, the single report; for a multi-steps step, the `{timestamp}_{Jira}_IMPL_{title}-STEP-N.md` per-step report; for fixes raised after the final summary already exists, still amend the relevant `-STEP-N` report (the per-step report is closer to the change set than the summary). Use `none` if no report exists or it cannot be identified; the executor will skip the report update.
-- **Verification candidates** — known reproduction/targeted lint/test commands and project-required fast gates from `Makefile`, `AGENTS.md`, `CLAUDE.md`, or `README.md`; use `none` if unavailable. The executor chooses a proportional set under step 6 of the Fix work contract.
+- **Verification candidates** — known reproduction/targeted lint/test commands and project-required fast gates. Get the declared ones from `$HOME/.claude/scripts/detect-commands.sh` (JSON from `Makefile` targets and `package.json` scripts) and add anything only `AGENTS.md`, `CLAUDE.md`, or `README.md` prose names; use `none` if unavailable. The executor chooses a proportional set under step 6 of the Fix work contract.
 - **Project conventions** — a directive that the executor must read `AGENTS.md` / `CLAUDE.md` before editing so it inherits project-specific rules.
 
 Do not interrupt to ask for missing branch, plan, report, or verification metadata; pass `none` where it is unavailable. Use `AskUserQuestion` only when the reported defect itself or its expected behavior cannot be reasonably inferred.
