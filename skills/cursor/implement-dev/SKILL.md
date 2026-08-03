@@ -1,0 +1,107 @@
+---
+name: implement-dev
+description: "Execute a plan-dev implementation plan with TDD, verification, TODO updates, and repository-local implementation reports under docs/agents. By default runs as the Dispatcher (main session): it launches one Worker subagent that owns the actual code/test/report edits and returns a fixed-heading status the Dispatcher collapses to a short chat summary. If dispatch fails, it requires an explicit decision before direct fallback. Use when the user asks to implement a saved plan."
+---
+
+# Implement Dev
+
+Execute an implementation plan by writing code test-first, validating via automated checks, keeping the plan's TODOs current, and producing a completion report under `docs/agents/dev`.
+
+## Required language convention gate
+
+Complete this gate during Prepare **before writing a Red test, production code, or completing a TODO**. It is a hard prerequisite, not a suggested resource lookup.
+
+1. Determine every language/framework involved in the plan's TODOs and the files expected to change. If that is unclear, inspect the plan and repository before proceeding.
+2. Open and read the **entire contents** of every matching convention file in the table below. Seeing its link, title, or table row does not count as reading it.
+3. For a multi-language change, read **all** matching files; do not select only a primary language. Read the file again even if it was consulted during an earlier task or session.
+4. If a matching convention file is missing or inaccessible, continue without it. Apply the most widely adopted de facto standard known for that language/framework, and record the fallback in the completion report's `## Summary`.
+
+| Language / framework | Read when | Required convention file |
+| --- | --- | --- |
+| Go | The plan or changed files involve Go code. | [references/go-convention.md](references/go-convention.md) |
+| Swift / macOS | The plan or changed files involve Swift, SwiftUI, AppKit, or macOS app code. | [references/swift-convention.md](references/swift-convention.md) |
+| TypeScript / Next.js | The plan or changed files involve TypeScript, React, or Next.js code. | [references/ts-nextjs-convention.md](references/ts-nextjs-convention.md) |
+
+Repository `AGENTS.md` / `CLAUDE.md` instructions override bundled defaults, but they do not replace this required read. Record every convention file consulted and any de facto fallback used in the completion report's `## Summary`.
+
+## Execution modes
+
+`implement-dev` runs in one of two delegated modes, detected from the invoking prompt (the **worker signal**):
+
+- **Dispatcher (default, main session)** - The session that is *not* told it is the Worker. The Dispatcher does **not** edit production code, tests, or the report itself; it launches exactly **one** `implementer` subagent (the Worker, `subagent_type: implementer`) using the prompt, return schema, and chat-summary shape in [references/worker-contract.md](references/worker-contract.md), then parses the Worker's fixed-heading return and renders a short chat summary (what changed / verification / red flags / TODO status) plus a clickable link to the on-disk report. The Dispatcher does not re-dispatch another Worker once one is running.
+- **Worker (delegation, subagent)** - A session invoked with `You are running as the implementation Worker subagent.` in its prompt. It runs the implementation flow directly ([references/implement-flow.md](references/implement-flow.md)), does not re-dispatch, and returns the fixed-heading Markdown from [references/worker-contract.md](references/worker-contract.md).
+
+**Delegation failure gate:** if the `Task` tool or compatible Worker capability is unavailable, or dispatch fails, stop before substantive implementation. Report `Delegation status: unavailable` or `failed`, include the observed cause, and use `AskQuestion` to ask whether to continue with direct main-session execution or stop. Never enter the interactive flow silently. Direct execution is allowed only when the user explicitly chooses it; then the implementation flow ([references/implement-flow.md](references/implement-flow.md)) runs in-place with the Worker rules and the main-session routing for direction-level conflicts.
+
+## Rules
+
+### 1. Keep the plan's TODO list current - update immediately
+
+Each checkbox in the plan file - the `## TODOs` checklist and any `## Verification` checklist - must be flipped from `- [ ]` to `- [x]` **the moment that item is complete**. Do **not** batch updates to the end.
+
+This contract ensures that work can be paused and resumed at any time with no ambiguity about what has shipped.
+
+### 2. TDD - Red-Green-Refactor
+
+All new behavior is built test-first:
+
+1. **Red** - write a failing test that defines the desired behavior. The test must fail (or not compile) to prove it is valid and the behavior does not accidentally exist.
+2. **Green** - write the minimum production code to make the test pass. Do not optimize or handle edge cases yet.
+3. **Refactor** - improve names, remove duplication, simplify structure while keeping tests green. Not optional; skipping it accumulates mess.
+
+After the happy-path is green, add edge-case tests (boundary values, error paths, empty inputs, concurrency, etc.). Each edge case is its own Red -> Green -> Refactor mini-cycle.
+
+**Exception**: pure documentation, configuration, or trivially obvious one-line changes where a test would add no signal. When in doubt, write the test.
+
+### 3. Deviations: resolve details, escalate direction
+
+The plan is a coarse, human-approved **direction**. Detail-level obstacles it deliberately left open - a helper, an edge case, the *how* of a TODO - are yours to resolve, TDD-first, and record. A **direction-level** conflict - the plan's goal, chosen approach, key decisions, or non-goals turn out wrong or unworkable - **stops work and goes back before code is written for it**, because changing direction silently voids the review the plan received. Between the two sits a **consultable** band - two approaches both fit the plan but the wrong one is expensive to reverse - which a Worker resolves by dispatching `plan-consultant`, and only on a TODO tagged `(design-bearing)`. This is distinct from the stuck-after-3-attempts escalation in Error Recovery: that one fires when you are technically blocked, this one fires when the plan's direction is wrong even though the code would compile. The buckets and the escalation trigger are detailed in [references/implement-flow.md](references/implement-flow.md).
+
+**Escalation routing depends on mode:**
+
+- **Worker mode** - you are an isolated subagent and **cannot ask the user**. On a direction-level conflict, stop, do not write code for the conflicting TODO, set `## Stage Status` to `blocked`, and surface the conflict plus the choices in `## Decision Needed` (see [references/worker-contract.md](references/worker-contract.md)). Detail-level obstacles stay yours to resolve and record; never escalate them.
+- **Interactive (direct main-session) execution** - ask the user before writing code for the conflicting TODO, then resume after they decide.
+
+The Dispatcher itself never makes direction decisions for the Worker; if the Worker returns `blocked`, the Dispatcher surfaces `## Decision Needed` to the user and stops - it does not retry or self-decide.
+
+## Prepare
+
+1. **Plan file**: the user (Dispatcher) or the dispatch prompt (Worker) provides the plan path. If the prompt omits it, ask.
+2. **Verification commands**: run `$HOME/.cursor/scripts/detect-commands.sh` for the declared ones — it reads `Makefile` targets and `package.json` scripts and returns JSON, deterministically and without inference. Fill in whatever it returns `null` for by reading `AGENTS.md`, `CLAUDE.md`, or `README.md` prose. If a command still cannot be found, ask the user (interactive) or surface in `## Open Questions` / `## Decision Needed` (Worker). **The Dispatcher does this once and passes the result in the dispatch prompt** — otherwise every Worker rediscovers the same commands cold, every round.
+3. **Project conventions**: read `AGENTS.md` / `CLAUDE.md`; their constraints apply to every implementation decision. Treat bundled conventions as defaults only where the repository's own instructions and existing code are silent.
+4. **Language conventions**: complete the [required language convention gate](#required-language-convention-gate). Do not advance from Prepare until every matching convention file has been read.
+
+## Execute
+
+Follow [references/implement-flow.md](references/implement-flow.md): read the plan and the research it links, implement its `## TODOs` test-first, run final verification, refresh project docs, and write the completion report.
+
+## Report
+
+The implementation produces three artifacts, defined in [references/report-file.md](references/report-file.md) (①) and [references/worker-contract.md](references/worker-contract.md) (②, ③):
+
+- **① Report file** - the on-disk body under `docs/agents/dev/`, spine `## TODO Fulfillment`. File naming, content format, and the bidirectional plan/report Markdown link convention are in [references/report-file.md](references/report-file.md).
+- **② Worker return** - the fixed-heading Markdown the Worker hands back to the Dispatcher. Never paste ① sections into ② - link the report by absolute path under `## Implementation Report`.
+- **③ Chat summary** - the Dispatcher renders a short summary (2-4 bullets + clickable report link) for the user, never pasting ① or ② verbatim.
+
+In explicitly authorized direct execution, the same shape applies as the final chat output: short bullets + report link, with report sections kept in the file.
+
+## Error Recovery
+
+When verification fails:
+
+1. **Read the error carefully** - understand the root cause before changing anything. No guess-and-retry.
+2. **Fix production code first** - if a test fails, the bug is likely in the implementation, not the test. Only adjust the test if the expectation itself is wrong.
+3. **Never weaken tests to pass** - do not remove assertions, loosen checks, or skip tests.
+4. **Fix immediately** - if you notice a failure mid-work, fix it before moving on. Do not accumulate failures.
+5. **Stop after 3 failed attempts on the same error** - describe what you tried and what you observed. In interactive mode, ask the user for guidance; in Worker mode, set `## Stage Status` to `failed` and return.
+
+A Worker `failed` return does not end the stage on its own: the Dispatcher re-dispatches **once** at T1 before passing `failed` up, and reports that it did. See [references/worker-contract.md](references/worker-contract.md) §E'.
+
+## Completion
+
+- All plan TODO checkboxes are up to date.
+- Every AC in the plan's `## Acceptance Contract` has its work-specific evidence collected and recorded (report `AC:` lines + return `## Evidence`) - an unproven AC blocks `pass`. Plans without `## Acceptance Contract` (legacy) are not refused: skip AC evidence, run only the rediscovered generic gates, and record `Acceptance Contract: none (legacy plan)` in the report's `## Summary` and the return's `## Evidence`.
+- The completion report (①) is saved under `docs/agents/dev`, and the plan/report Markdown links are bidirectional.
+- If running as a Worker, the return message ② uses the fixed headings and links ① by absolute path.
+- The completion report's `## Summary` records every language-specific convention file consulted and any de facto fallback used, or states that no table mapping applied.
+- `AGENTS.md` / `CLAUDE.md` / `README.md` have been reviewed for staleness caused by the change; update content while preserving the existing section structure.
