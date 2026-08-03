@@ -12,7 +12,7 @@ The full transition table, termination predicate, and escalation conditions for 
 | IMPLEMENTING | implement-dev | `blocked` | BLOCKED_DIRECTION — surface `## Decision Needed`, suggest `plan-dev` re-entry |
 | IMPLEMENTING | implement-dev | `failed` | ESCALATED |
 | TESTING | test-dev | `pass` | REVIEWING |
-| TESTING | test-dev | `pass-with-suspected-defects` | HUMAN GATE — per finding: Fix → queue for FIXING; user closes it (judged not a defect) → closed. All closed/fixed-queued → FIXING or REVIEWING accordingly. Unanswered → stay stopped |
+| TESTING | test-dev | `pass-with-suspected-defects` | HUMAN GATE — per `TEST-NNN` finding: **Fix** → queue for FIXING; **Accept** → record an AR entry, finding closed. Any Fix → FIXING; all Accept → REVIEWING. Unanswered → stay stopped |
 | TESTING | test-dev | `blocked` | ESCALATED — surface `## Decision Needed` |
 | TESTING | test-dev | `failed` | ESCALATED |
 | REVIEWING | review-code | `pass` | termination check → READY_TO_COMMIT (final mutation round first when owed — see below) |
@@ -38,8 +38,8 @@ Any unresolved `## Decision Needed` in any return stops the loop regardless of r
 3. implement-dev returned `pass` and the IMPL report is saved.
 4. The rediscovered generic gates (lint/unit/e2e/build) are green.
 5. test-dev is `pass` with no open suspected defects; mutation meets the policy threshold, or its infeasibility is explicitly approved and recorded.
-6. Zero HIGH/CRITICAL findings that are unclassified or Fix-classified.
-7. Every Accept-classified finding is recorded as an AR entry.
+6. Zero HIGH/CRITICAL `REVIEW-NNN` findings that are unclassified or Fix-classified, and zero `TEST-NNN` findings that are unclassified or Fix-classified.
+7. Every Accept-classified finding is recorded as an AR entry — review and test findings alike.
 8. No unresolved `## Decision Needed` or `needs-confirmation` anywhere.
 9. The LOOP file carries the final state and evidence (`## Result` appended).
 

@@ -32,7 +32,8 @@ PLANNED → IMPLEMENTING → TESTING → REVIEWING → READY_TO_COMMIT
    │            │            │          ├─ needs-decision → triage(human) ─ Fix → FIXING
    │            │            │          │                        └─ Accept → AR 기록(human) → re-evaluate
    │            │            │          └─ changes-required → FIXING
-   │            │            └─ pass-with-suspected-defects → human gate → FIXING / finding closed
+   │            │            └─ pass-with-suspected-defects → human gate ─ Fix → FIXING
+   │            │                                              └─ Accept → AR 기록(human) → re-evaluate
    │            ├─ blocked (direction conflict) → BLOCKED_DIRECTION → human / plan-dev
    │            └─ failed → ESCALATED → human
    └─ FIXING → TESTING(reduced) → REVIEWING     (= one remediation round)
@@ -57,7 +58,7 @@ Production fixes void prior test and review evidence. A completed FIXING round t
 
 ## Human gates (exactly two; escalations are aborts, not gates)
 
-1. **Triage — always human.** review-code's Fix/Accept classification and test-dev's suspected-defect decisions. The loop never classifies, never auto-accepts, and leaves unanswered items unclassified (the loop stays stopped on them).
+1. **Triage — always human.** `review-code`'s Fix/Accept classification and `test-dev`'s suspected-defect decisions, which use the same **Fix / Accept** vocabulary. The loop never classifies, never auto-accepts, and leaves unanswered items unclassified (the loop stays stopped on them). An Accept is recorded as an AR entry per `review-code`'s [Accepted Review Exceptions registry](../review-code/SKILL.md#accepted-review-exceptions-registry) — `TEST-NNN` acceptances use `Original severity: TEST (suspected defect)`.
 2. **READY_TO_COMMIT.** When every termination predicate in [references/transitions.md](references/transitions.md) holds, stop and report: outcome summary, clickable links to the IMPL report and the LOOP file, open `[NORMAL]`/`[LOW]` findings, and applied ARs. `commit-code` / `request-merge` are the user's own actions, outside the loop.
 
 Aborts (BLOCKED_DIRECTION / ESCALATED / FAILED): report the state, the reason, and the LOOP file link, then stop.

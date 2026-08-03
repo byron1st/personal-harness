@@ -45,7 +45,7 @@ Fields (append only lines that have content, except the required ones which writ
 | --- | --- | --- |
 | stage lines | one per executed stage | `{skill}: {Stage Status}` + at most one short clause of context |
 | `AC evidence` | yes | per-AC `✓`/`✗` as of this round's latest evidence |
-| `Findings` | yes | open finding ids + classification (`Fix` / `Accept` / `unclassified` / `closed`), or `none` |
+| `Findings` | yes | open finding ids (`REVIEW-NNN` / `TEST-NNN`) + classification (`Fix` / `Accept` / `unclassified`), or `none`. Both gates use the same vocabulary; an `Accept` carries the AR id it produced |
 | `Applied AR` | yes | AR ids waived in this round's review, or `none` |
 | `Fixes` | yes | `finding id → fix-dev Stage Status`, or `none` |
 | `Next` | yes | the next state, or `DONE` |

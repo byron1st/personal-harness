@@ -86,6 +86,8 @@ When at least one non-waived `[CRITICAL]` / `[HIGH]` finding remains after aggre
 
 **Invariant — human-only acceptance**: an AR entry is written only on the user's explicit Accept answer in triage. The skill, its reviewers, and any loop controller never infer acceptance, never self-record an entry, and never accept on the user's behalf. Waiving instead of fixing is a human decision, in the same class as "never weaken tests to make them pass".
 
+**"Triage" here means both gates.** This registry is shared: `review-code`'s own triage of `REVIEW-NNN` findings, and the loops' TESTING gate where the user classifies `test-dev`'s suspected defects (`TEST-NNN`) as Fix or Accept. The mechanism is identical in both — only the id space and the severity value differ. All three loop variants use it.
+
 **Location (single copy)**: record the entry in the instruction file closest to the affected code — a nested `AGENTS.md` in the touched directory tree first, else the repo-root `AGENTS.md`, else `CLAUDE.md`. One entry lives in exactly one file; never duplicate it. When neither `AGENTS.md` nor `CLAUDE.md` exists in the repo, do not create a file silently — confirm the location with the user (default suggestion: create a root `AGENTS.md`).
 
 **Entry format** — appended under a `## Accepted Review Exceptions` section (create the section at the end of the file when absent). `AR-NNN` is one greater than the highest existing id in that repo:
@@ -93,13 +95,15 @@ When at least one non-waived `[CRITICAL]` / `[HIGH]` finding remains after aggre
 ```markdown
 ### AR-001
 - Applies to: {exact file/symbol/behavior scope}
-- Original severity: {CRITICAL | HIGH}
+- Original severity: {CRITICAL | HIGH | TEST (suspected defect)}
 - Accepted behavior: {what stays as-is}
 - Rationale: {why accepting is right here}
 - Compensating controls: {what limits the risk, or "none"}
 - Re-open when: {conditions that void this waiver}
 - Approved: {user} / {YYYY-MM-DD}
 ```
+
+`TEST (suspected defect)` is the severity for an accepted `TEST-NNN` finding: `test-dev` assigns no priority tag, so there is no `CRITICAL` / `HIGH` to carry over. Its `Applies to` names the failing test and the behavior it pins, and `Accepted behavior` records that the test stays red or skipped.
 
 Never record secrets, credentials, or attack payloads in an entry — describe the risk abstractly.
 
