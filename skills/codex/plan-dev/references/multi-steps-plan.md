@@ -23,7 +23,7 @@ Each step is a complete "develop -> test -> build" cycle. After finishing step N
 - Markdown link conventions (section 3)
 - Frontmatter fields for both main and sub-plans (sections 4 and 5)
 - Body language: Korean
-- Each sub-plan inherits single-step enforcement: strengthened research links with per-TODO tags, its own `## Acceptance Contract` and `## Authority Boundaries` sections (each sub-plan is evaluated and budgeted on its own), `## TODOs` with `(AC-N)` references and `(→ research: …)` hints when applicable, and `## Non-goals` / `## Key decisions` anchors **required when the sub-plan is non-trivial** (the same cold-handoff rationale as single-step - the Worker running this sub-plan has no memory of the planning session)
+- Each sub-plan inherits single-step enforcement: strengthened research links with per-TODO tags, its own `## Acceptance Contract` and `## Authority Boundaries` sections (each sub-plan is evaluated and budgeted on its own), `## TODOs` with `(AC-N)` references, `(mechanical)` / `(design-bearing)` difficulty tags, and `(→ research: …)` hints when applicable, and `## Non-goals` / `## Key decisions` anchors **required when the sub-plan is non-trivial** (the same cold-handoff rationale as single-step - the Worker running this sub-plan has no memory of the planning session)
 
 **Flexible**:
 
@@ -139,7 +139,7 @@ The main plan's `Related research` block is optional - the Worker reads research
 
 ## 5. Sub-plan (`-STEP-N.md`)
 
-A sub-plan **is a single-step plan**. Follow [single-step-plan.md](single-step-plan.md) in full: frontmatter, **strengthened research links** (one-line summary + `**TODO N·M**` tags) at the top when applicable, the free-form body, the **`## Non-goals` / `## Key decisions` anchors required when the sub-plan is non-trivial** (the cold-handoff anchors the Worker running this sub-plan needs; recommended only when the sub-plan is genuinely trivial), its own **`## Acceptance Contract` and `## Authority Boundaries`** sections (scoped to this step), the `## TODOs` checklist **with `(AC-N)` references and `(→ research: …)` hints** on items that consult research, and the outcome-level granularity rules. A sub-plan is itself the implementation unit the Worker executes, so the strengthened rules matter here, not at the main-plan level. `implement-dev` runs it exactly as it runs any single-step plan.
+A sub-plan **is a single-step plan**. Follow [single-step-plan.md](single-step-plan.md) in full: frontmatter, **strengthened research links** (one-line summary + `**TODO N·M**` tags) at the top when applicable, the free-form body, the **`## Non-goals` / `## Key decisions` anchors required when the sub-plan is non-trivial** (the cold-handoff anchors the Worker running this sub-plan needs; recommended only when the sub-plan is genuinely trivial), its own **`## Acceptance Contract` and `## Authority Boundaries`** sections (scoped to this step), the `## TODOs` checklist **with `(AC-N)` references, `(mechanical)` / `(design-bearing)` difficulty tags, and `(→ research: …)` hints** on items that consult research, and the outcome-level granularity rules. A sub-plan is itself the implementation unit the Worker executes, so the strengthened rules matter here, not at the main-plan level. `implement-dev` runs it exactly as it runs any single-step plan.
 
 A sub-plan differs from a lone single-step plan in only three ways, all of which serve the parent's organization:
 
@@ -203,8 +203,8 @@ Prior steps that must be completed first, or "None".
 - Loop budget: 3
 
 ## TODOs
-- [ ] Task 1 (AC-1)
-- [ ] Task 2 (AC-1, AC-2)  (→ research: relevant-file)
+- [ ] Task 1 (AC-1) (mechanical)
+- [ ] Task 2 (AC-1, AC-2) (design-bearing) (→ research: relevant-file)
 ```
 
 ## 6. Step decomposition guidance
@@ -226,4 +226,4 @@ Before finalizing (still inside plan mode, in the Review step):
 
 - "If I completed only steps 1 through N, does the project compile and do all tests pass?" If not, restructure.
 - "Does every FR-N (when SPEC.md is an input) appear in at least one step?" If not, add the missing coverage.
-- "Do the main plan's Markdown links match the sub-plan filenames I will write?" Verify each link before presenting the plan for Codex approval. After writing the files in the persistence step, double-check that every link resolves.
+- "Do the main plan's Markdown links match the sub-plan filenames I will write?" Verify each link before passing the plan to `ExitPlanMode`. After writing the files in the persistence step, double-check that every link resolves.

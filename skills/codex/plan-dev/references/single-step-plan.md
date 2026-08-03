@@ -13,7 +13,7 @@ A single-step plan is one markdown file describing the full implementation of a 
 - Research file links at the top of the body when research files were created or consulted, in the strengthened format with per-TODO tags (section 4)
 - A `## Acceptance Contract` table agreed with the user during planning (section 5)
 - A `## Authority Boundaries` section bounding executor discretion and the loop budget (section 6)
-- A `## TODOs` checkbox list at the end of the body for progress tracking (section 7); each item carries its `(AC-N)` reference(s), and when a TODO consults research, append the `(→ research: {file-stem})` hint
+- A `## TODOs` checkbox list at the end of the body for progress tracking (section 7); each item carries its `(AC-N)` reference(s) and a `(mechanical)` / `(design-bearing)` difficulty tag, and when a TODO consults research, append the `(→ research: {file-stem})` hint
 - `## Non-goals` and `## Key decisions` direction anchors, **required when the plan is non-trivial** (the cold-handoff anchors the Worker needs to not re-derive a different direction)
 
 **Flexible**:
@@ -95,6 +95,18 @@ Every plan carries a `## Authority Boundaries` section bounding the discretion o
 - **Must-ask** - changes forbidden without user confirmation: direction changes (goal / approach / `## Key decisions` / `## Non-goals`), scope expansion, destructive or externally visible operations.
 - **Stop conditions** - situations that halt work immediately and go back to a human.
 - **Loop budget** - the maximum remediation rounds a fix loop may run over this plan. Default `3`; override only in this section.
+- **Per-TODO boundaries** - one line per TODO that needs one, naming what may be decided locally and what must be escalated for that specific item. Only for TODOs where the plan-wide answer above is genuinely wrong; a TODO whose boundary is the plan's default gets no line. This is the cheapest thing a plan can give an efficient executor - what it lacks is not detail but a sense of where its own authority ends.
+
+```markdown
+## Authority Boundaries
+- Discretion: ...
+- Must-ask: ...
+- Stop conditions: ...
+- Loop budget: 3
+- TODO 2: 토큰 버킷의 자료구조·리필 주기는 로컬 판단. 저장소를 프로세스 메모리 밖으로 옮기는 선택은 escalate.
+```
+
+Do not restate the plan-wide bullets per TODO. A `## Authority Boundaries` section that lists every TODO has stopped being a boundary and become a second TODO list.
 
 ## 7. TODO checklist
 
@@ -109,12 +121,21 @@ The second bakes in mechanics the implementer should decide against the running 
 
 **Research hint**: when a TODO should consult a linked research file before being implemented, append `(→ research: {file-stem})` to the end of the item. This pairs with section 4's `**TODO N·M**` tagging - bidirectional, so the Worker reads research exactly once and exactly for the TODO that needs it, with no guesswork. Keep the hint terse; do not paraphrase the research in the TODO line.
 
+**Difficulty tag**: every item carries `(mechanical)` or `(design-bearing)`, in the same trailing position as the other tags.
+
+- `(mechanical)` - the *how* follows from the codebase. There is one obvious shape, or the alternatives are interchangeable and cheap to reverse.
+- `(design-bearing)` - two approaches are both consistent with the plan, and picking wrong is expensive to undo.
+
+**Be stingy with `design-bearing`.** It is the sole gate on `implement-dev`'s `plan-consultant` escalation hatch, which has no call cap - so how sparingly this tag is applied *is* the budget control. If most TODOs in a plan carry it, either the plan is under-decided (fix the plan) or the tag is being applied loosely (fix the tagging).
+
 ```markdown
 ## TODOs
-- [ ] Add rate-limiting to the public API layer (token-bucket per API key) (AC-1) (→ research: rate-limit-capacity)
-- [ ] Wire the limiter into the API entrypoints (AC-1, AC-2) (→ research: api-entrypoints)
-- [ ] Update the docs page for rate limits (AC-3)
+- [ ] Add rate-limiting to the public API layer (token-bucket per API key) (AC-1) (design-bearing) (→ research: rate-limit-capacity)
+- [ ] Wire the limiter into the API entrypoints (AC-1, AC-2) (mechanical) (→ research: api-entrypoints)
+- [ ] Update the docs page for rate limits (AC-3) (mechanical)
 ```
+
+**Backward compatibility**: plans written before this tag exist are not refused. An untagged TODO is read as `(mechanical)` — the conservative default, since it withholds the escalation hatch rather than granting it.
 
 If the agent-generated plan already contains its own task list, normalize it into this section's checkbox format and place it at the end. The rest of its content stays where it was.
 
@@ -149,8 +170,10 @@ Title: {title}
 - Must-ask: ...
 - Stop conditions: ...
 - Loop budget: 3
+<!-- Per-TODO lines only where the plan-wide answer above is wrong for that item: -->
+- TODO N: ...
 
 ## TODOs
-- [ ] Task 1 (AC-1)
-- [ ] Task 2 (AC-1, AC-2)  (→ research: relevant-file)
+- [ ] Task 1 (AC-1) (mechanical)
+- [ ] Task 2 (AC-1, AC-2) (design-bearing) (→ research: relevant-file)
 ```
