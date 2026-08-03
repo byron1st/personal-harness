@@ -6,18 +6,20 @@
 
 ```
 personal-harness/
-├── skills/           # 플랫폼별 Agent Skills (claude/ · codex/, 스킬마다 별도 폴더)
-├── agents/           # persona 서브에이전트 정의 (claude/*.md · codex/*.toml)
-├── hooks/            # 플랫폼별 훅 (claude: settings.json + *.sh · codex: hooks.json + *.sh)
+├── skills/           # 플랫폼별 Agent Skills (claude/ · codex/ · cursor/, 스킬마다 별도 폴더)
+├── agents/           # persona 서브에이전트 정의 (claude/*.md · codex/*.toml · cursor/*.md)
+├── hooks/            # 플랫폼별 훅 (claude: settings.json + *.sh · codex/cursor: hooks.json + *.sh)
 ├── instructions/     # 전역 지침 AGENTS.md 배포 소스
-├── scripts/          # 설치·동기화 스크립트 (apply-to-personal.sh · apply-to-work.sh · apply-to-all.sh · setup-ctx7.sh) + claude/: ~/.claude/scripts/로 설치되는 런타임 스크립트
+├── scripts/          # 설치·동기화 스크립트 (apply-to-personal.sh · apply-to-work.sh · apply-to-cursor.sh · apply-to-all.sh · setup-ctx7.sh) + runtime/: ~/.claude/scripts/·~/.cursor/scripts/로 설치되는 플랫폼 무관 런타임 스크립트
 ├── docs/             # 하네스 문서 (sync-harness/: SYNC_TO_* 변환 규칙 · loop-engineering/: 루프 엔지니어링 계획·조사 문서 · cost-effective/: 모델 티어링 비용 분석)
 └── .agents/skills/   # 하네스 자체용 메타 스킬 (sync-harness; .claude/skills/에 동일 사본)
 ```
 
 훅의 상세 동작은 [Harness > Hooks](#hooks) 참조. 훅이 `rg`/`fd` 사용을 강제하므로 [ripgrep](https://github.com/BurntSushi/ripgrep)과 [fd](https://github.com/sharkdp/fd) 설치가 필요하다(Prerequisites 참조).
 
-플랫폼 변형은 **Claude ↔ Codex** 토폴로지로 마이그레이션한다. Personal 환경에서는 Claude Code를 중심으로 Grok Build도 사용하지만, Grok Build는 Claude Code와 완벽히 호환되므로 별도 변형을 유지하지 않는다. Work 환경의 중심은 Codex이며, Claude Code와 Codex 두 변형은 양방향으로 공유할 수 있다. `review-code-claude`만 Claude Code를 외부 프로세스로 호출하는 Codex 전용 어댑터이므로 Claude counterpart를 두지 않는다. 각 방향의 변환 규칙은 [SYNC_TO_CODEX.md](docs/sync-harness/SYNC_TO_CODEX.md)(Claude Code → Codex), [SYNC_TO_CLAUDE.md](docs/sync-harness/SYNC_TO_CLAUDE.md)(Codex → Claude Code)에 정리되어 있다.
+플랫폼 변형은 **Claude ↔ Codex**(양방향) + **Claude → Cursor**(단방향) 토폴로지로 마이그레이션한다. Personal 환경에서는 Claude Code를 중심으로 Grok Build도 사용하지만, Grok Build는 Claude Code와 완벽히 호환되므로 별도 변형을 유지하지 않는다. Work 환경의 중심은 Codex이며, Claude Code와 Codex 두 변형은 양방향으로 공유할 수 있다. Cursor는 소스가 항상 Claude 변형이며, Cursor에서 시작한 변경도 Claude 변형에 먼저 반영한 뒤 내려보낸다. `review-code-claude`만 Claude Code를 외부 프로세스로 호출하는 Codex 전용 어댑터이므로 Claude counterpart를 두지 않는다. 각 방향의 변환 규칙은 [SYNC_TO_CODEX.md](docs/sync-harness/SYNC_TO_CODEX.md)(Claude Code → Codex), [SYNC_TO_CLAUDE.md](docs/sync-harness/SYNC_TO_CLAUDE.md)(Codex → Claude Code), [SYNC_TO_CURSOR.md](docs/sync-harness/SYNC_TO_CURSOR.md)(Claude Code → Cursor)에 정리되어 있다.
+
+> ⚠️ **Cursor를 쓴다면 1회성 필수 설정이 있다.** Cursor는 `~/.cursor/` 외에 `~/.claude/`·`~/.codex/`의 에이전트·스킬도 사용자 스코프로 읽으므로, **Cursor 설정에서 이 호환 경로를 꺼야 한다.** `~/.cursor/`가 우선하지만 이 설정은 UI 상태라 설치 스크립트가 보장할 수 없고, 새 머신·재설치·설정 초기화 때 되살아나며 **되살아나도 에러가 나지 않는다.** Claude 판이 채택되면 `tools:`·`effort:`가 조용히 무시되어 리뷰어 4종이 쓰기 권한을 얻는다. 되살아난 경우 `model-pin-guard.sh`가 첫 T1 dispatch에서 잡는다.
 
 ## Prerequisites
 
@@ -35,10 +37,12 @@ personal-harness/
 | `gh` | `request-merge`(personal), `setup-initial-repo`(personal 원격 생성) | GitHub PR 생성/업데이트, 개인 private repo 자동 생성 | `brew install gh` 후 `gh auth login` |
 | `glab` | `request-merge`(work) | GitLab MR 생성/업데이트 | `brew install glab` 후 `glab auth login` |
 | `gcx` | `loki-log-search` | Grafana Loki 로그 조회용 `gcx api` passthrough | `gcx` 배포본 설치 후 `gcx config current-context`로 컨텍스트 구성 |
+| Cursor 2.4+ | Cursor 변형 전체 | 서브에이전트 `model`·`readonly` 프론트매터, Agent Skills, `hooks.json`(`subagentStart` 포함) | Cursor 앱 업데이트 |
 
 참고:
 - `rg`/`fd`는 이미 폴더 구조 설명의 `hooks` 항목에서 언급한 대로 hook이 사용을 강제하므로 반드시 설치해야 한다.
 - `gh`·`glab`는 각각 personal/work 저장소에서만 호출되므로, 사용하지 않는 저장소 유형의 도구는 생략 가능하다.
+- **Cursor 변형은 1회성 수동 설정이 하나 필요하다**: Cursor 설정에서 `~/.claude`·`~/.codex` 호환 경로 읽기를 끈다. 설치 스크립트가 보장할 수 없고, 켜져 있으면 Claude 변형이 조용히 채택될 수 있다 (위 폴더 구조 절의 경고 참조).
 - 프로젝트 템플릿(`skills/*/setup-initial-repo/references/{go-makefile.md,swift-makefile.md,ts-nextjs-packagejson.md}`)이 `setup-initial-repo`로 참조될 때 함께 따라가는 `go`, `golangci-lint`, `mockery`, `gremlins`, `swag`, `swiftlint`, `swiftformat`, `eslint`, `vitest`, `playwright`, `stryker` 등은 생성되는 프로젝트의 빌드 도구이지 이 harness 자체의 prerequisite은 아니다.
 
 ### 환경변수
@@ -101,7 +105,7 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 
 ### Skills
 
-각 스킬은 `skills/<platform>/`(claude/codex) 아래 플랫폼 변형으로 관리되며, 스킬마다 별도 폴더를 갖는다. 상세 계약은 각 스킬의 `SKILL.md` 참조.
+각 스킬은 `skills/<platform>/`(claude/codex/cursor) 아래 플랫폼 변형으로 관리되며, 스킬마다 별도 폴더를 갖는다. 상세 계약은 각 스킬의 `SKILL.md` 참조.
 
 **Core Development Process:**
 
@@ -133,9 +137,9 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 
 ### Custom Agents
 
-`agents/<platform>/`의 persona 서브에이전트 정의. 포맷은 Claude Code가 Markdown(YAML frontmatter), Codex가 TOML이다. 사용자가 직접 호출하기보다 스킬이 위임(dispatch)하는 것이 기본이다.
+`agents/<platform>/`의 persona 서브에이전트 정의. 포맷은 Claude Code와 Cursor가 Markdown(YAML frontmatter), Codex가 TOML이다. 사용자가 직접 호출하기보다 스킬이 위임(dispatch)하는 것이 기본이다.
 
-에이전트마다 `model`·`effort`를 프론트매터에 직접 핀한다 — 배치와 근거는 [Model Tier](#model-tier) 참조. `inherit`은 이 하네스 어디에도 없다.
+에이전트마다 모델을 프론트매터에 직접 핀한다 — Claude는 `model`·`effort` 두 필드로, Cursor는 effort를 접어 넣은 `model` 문자열 하나로. 배치와 근거는 [Model Tier](#model-tier) 참조. `inherit`은 이 하네스 어디에도 없다.
 
 | 에이전트 | 페르소나 · 담당 | 호출 스킬 | 권한 |
 | --- | --- | --- | --- |
@@ -162,19 +166,20 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 | `enforce-rg.sh` | Bash 실행 전 | 코드 검색에 재귀 `grep` 대신 `rg` 강제 |
 | `enforce-fd.sh` | Bash 실행 전 | 파일/경로 검색에 `find` 대신 `fd` 강제 |
 | `auto-format.sh` | 파일 편집 후 | 프로젝트 Makefile의 `fmt`/`format` 타겟 실행 |
+| `model-pin-guard.sh` | 서브에이전트 스폰 직전 | **Cursor 전용.** 해석된 모델이 프론트매터 핀과 다르면 T1은 거부, T2는 로그 |
 
-플랫폼별 설정 형식: Claude Code는 `hooks/claude/settings.json`의 `hooks` 블록, Codex는 `hooks/codex/hooks.json`을 사용한다. 훅은 정책을 강제하는 가드레일이며 `dev-loop`의 단계 전환·재시도·완료 판정에는 관여하지 않는다.
+플랫폼별 설정 형식: Claude Code는 `hooks/claude/settings.json`의 `hooks` 블록, Codex와 Cursor는 각각 `hooks.json`을 사용한다(스키마가 다르다 — Cursor는 평평한 배열, [SYNC_TO_CURSOR.md](docs/sync-harness/SYNC_TO_CURSOR.md) 참조). 훅은 정책을 강제하는 가드레일이며 `dev-loop`의 단계 전환·재시도·완료 판정에는 관여하지 않는다. `model-pin-guard.sh`는 이 하네스에서 처음으로 차단하는 훅이지만 이 불변식 안에 있다 — 잘못된 모델로의 스폰을 거부할 뿐 단계 전이를 결정하지 않는다.
 
 ### Runtime Scripts
 
-`scripts/claude/*.sh`는 `apply-to-personal.sh`가 `~/.claude/scripts/`로 설치한다(레포 최상위 `scripts/`와 다르다 — 그쪽은 설치 스크립트 전용이며 홈으로 복사되지 않는다). 스킬이 매번 cold Worker에서 LLM으로 재도출하던 사실을 셸로 내린 것이다.
+`scripts/runtime/*.sh`는 `apply-to-personal.sh`가 `~/.claude/scripts/`로, `apply-to-cursor.sh`가 `~/.cursor/scripts/`로 설치한다(레포 최상위 `scripts/`와 다르다 — 그쪽은 설치 스크립트 전용이며 홈으로 복사되지 않는다). 소스는 플랫폼 의존성이 없어서 — `Makefile`·`package.json`·git만 읽는다 — 두 설치 스크립트가 사본을 따로 두지 않고 같은 파일을 복사한다. 스킬이 매번 cold Worker에서 LLM으로 재도출하던 사실을 셸로 내린 것이다.
 
 | 스크립트 | 소비 스킬 | 반환 |
 | --- | --- | --- |
 | `detect-commands.sh` | `implement-dev` · `test-dev` · `fix-dev` | `Makefile` 타겟과 `package.json` 스크립트에서 lint/format/test/build/mutation/e2e 커맨드를 JSON으로. 산문에만 있는 것은 `null` — 그건 호출자가 직접 읽는다 |
 | `resolve-scope.sh` | `test-dev` · `review-code` | diff 범위, 변경 파일 절대경로, 관여 언어를 JSON 한 덩어리로 |
 
-소비 스킬은 `$HOME/.claude/scripts/…`를 문자 그대로 호출하고 `allowed-tools`에 같은 리터럴을 프리어프루브한다. 스크립트가 스킬 폴더 밖에 있어 `${CLAUDE_SKILL_DIR}` 치환을 쓸 수 없기 때문이며, `$HOME`은 양쪽 모두 리터럴로 남고 셸이 실행 시점에 확장한다. 어긋나도 대가는 권한 프롬프트 한 번뿐이다.
+소비 스킬은 `$HOME/.claude/scripts/…`(Claude) 또는 `$HOME/.cursor/scripts/…`(Cursor)를 문자 그대로 호출한다. 스크립트가 스킬 폴더 밖에 있어 `${CLAUDE_SKILL_DIR}` 치환을 쓸 수 없기 때문이며, `$HOME`은 양쪽 모두 리터럴로 남고 셸이 실행 시점에 확장한다. Claude 스킬은 `allowed-tools`에 같은 리터럴을 프리어프루브하지만 Cursor에는 스킬 단위 프리어프루브가 없어 첫 호출에 프롬프트가 뜰 수 있다. 어긋나도 대가는 권한 프롬프트 한 번뿐이다.
 
 ## Model Tier
 
@@ -182,38 +187,46 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 
 역할의 티어는 모델 세대가 아니라 **일의 성질**이다. 그래서 각 에이전트 본문에 `Tier:` 근거 한 줄을 남긴다 — 모델명이 바뀌어도 판단 근거는 살아남는다.
 
-| 티어 | 정의 | Claude |
-| --- | --- | --- |
-| **T1 judgment** | 되돌릴 수 없고 기계 검증이 불가능한 결정 | `opus` |
-| **T2 execution** | 명세가 있고 결과가 기계로 검증 가능한 작업 | `sonnet` |
-| **T3 mechanical** | 판단이 사실상 없는 변환·집계 | *(미사용 — 아래 참조)* |
+| 티어 | 정의 | Claude | Cursor |
+| --- | --- | --- | --- |
+| **T1 judgment** | 되돌릴 수 없고 기계 검증이 불가능한 결정 | `opus` | `grok-4.5` |
+| **T2 execution** | 명세가 있고 결과가 기계로 검증 가능한 작업 | `sonnet` | `composer-2.5`, 단 agentic 역할은 예외 |
+| **T3 mechanical** | 판단이 사실상 없는 변환·집계 | *(미사용 — 아래 참조)* | *(미사용)* |
 
-**T3는 의도적으로 비어 있다.** Haiku는 컨텍스트 200K·캐시 최소 프리픽스 4096 tok·모델 레벨 effort 미지원인데, 이 하네스의 T2 작업은 대부분 repo-slice 추론이라 최저 티어가 가장 못하는 일이다. 진짜 기계적인 일은 더 작은 모델이 아니라 셸로 내린다(위 Runtime Scripts).
+**T3는 의도적으로 비어 있다.** Haiku는 컨텍스트 200K·캐시 최소 프리픽스 4096 tok·모델 레벨 effort 미지원인데, 이 하네스의 T2 작업은 대부분 repo-slice 추론이라 최저 티어가 가장 못하는 일이다. Composer 2.5도 컨텍스트 200K라 Cursor의 최저 티어가 같은 이유로 탈락한다. 진짜 기계적인 일은 더 작은 모델이 아니라 셸로 내린다(위 Runtime Scripts).
 
 ### 에이전트 배치
 
-| 에이전트 | `model` | `effort` | 근거 |
-| --- | --- | --- | --- |
-| `planner` | `opus` | `high` | 아키텍처 판단은 되돌릴 수 없고 기계 검증이 불가능 |
-| `plan-consultant` | `opus` | `high` | 실행자가 검증도 취소도 못 하는 판단을 위해 존재 |
-| `security-reviewer` | `opus` | `medium` | authz 우회 miss는 회복 불가 — 4축 중 miss 비용 최대 |
-| `reliability-reviewer` | `opus` | `medium` | 반사실 시뮬레이션은 약한 모델이 가장 먼저 무너지는 영역 |
-| `implementer` | `sonnet` | `high` | TDD가 ground truth지만 plan+research+컨벤션+코드를 함께 추론 — T2의 최상단이지 그 아래가 아니다 |
-| `tester` | `sonnet` | `medium` | mutation score ≥80%가 기계 목표, 프로덕션 코드 수정 금지 |
-| `fixer` | `sonnet` | `medium` | 리뷰 finding이 곧 명세이고 재테스트로 검증됨 |
-| `maintainability-reviewer` | `sonnet` | `medium` | 주변 코드·프로젝트 규칙 대조는 명세된 패턴 매칭 |
-| `senior-generalist-reviewer` | `sonnet` | `medium` | calibrated catch-all, miss 비용 최저 |
+Claude는 `model`·`effort` 두 필드를 쓴다. **Cursor에는 `effort`도 `tools`도 없다 — effort는 모델 문자열 안으로 접히고, read-only는 `readonly` 불리언 하나다.**
+
+| 에이전트 | Claude `model` / `effort` | Cursor `model` | `readonly` | 근거 |
+| --- | --- | --- | --- | --- |
+| `planner` | `opus` / `high` | `grok-4.5[effort=high]` | `true` | 아키텍처 판단은 되돌릴 수 없고 기계 검증이 불가능 |
+| `plan-consultant` | `opus` / `high` | `grok-4.5[effort=high]` | `true` | 실행자가 검증도 취소도 못 하는 판단을 위해 존재 |
+| `security-reviewer` | `opus` / `medium` | `grok-4.5[effort=high]` | `true` | authz 우회 miss는 회복 불가 — 4축 중 miss 비용 최대 |
+| `reliability-reviewer` | `opus` / `medium` | `grok-4.5[effort=high]` | `true` | 반사실 시뮬레이션은 약한 모델이 가장 먼저 무너지는 영역 |
+| `implementer` | `sonnet` / `high` | `grok-4.5[effort=medium]` | `false` | TDD가 ground truth지만 plan+research+컨벤션+코드를 함께 추론 — T2의 최상단이지 그 아래가 아니다 |
+| `tester` | `sonnet` / `medium` | `composer-2.5[fast=false]` | `false` | mutation score ≥80%가 기계 목표, 프로덕션 코드 수정 금지 |
+| `fixer` | `sonnet` / `medium` | `composer-2.5[fast=false]` | `false` | 리뷰 finding이 곧 명세이고 재테스트로 검증됨 |
+| `maintainability-reviewer` | `sonnet` / `medium` | `composer-2.5[fast=false]` | `true` | 주변 코드·프로젝트 규칙 대조는 명세된 패턴 매칭 |
+| `senior-generalist-reviewer` | `sonnet` / `medium` | `composer-2.5[fast=false]` | `true` | calibrated catch-all, miss 비용 최저 |
 
 **effort 규칙 둘.** 최상단은 사지 않는다 — 기본 effort에서 `max`까지 올려도 티어 전반에서 몇 점 차이라, `xhigh`는 되돌릴 수 없는 결정에만 쓴다. 그리고 모델을 내릴 때 effort까지 같이 내리지 않는다: `implementer`는 `sonnet`으로 내려가면서 `effort: high`를 유지했다.
+
+**Cursor의 effort 값은 Claude 값이 아니다.** Grok 4.5는 `low/medium/high` 3단뿐이고 기본이 `high`라, 위의 `xhigh`·`max`를 전제한 "최상단은 사지 않는다"가 적용되지 않는다 — 리뷰어는 `high`다. Composer는 effort를 아예 받지 않고 그 자리에 `[fast=false]`가 들어가는데, **이건 선택이 아니다**: Fast가 Cursor IDE 기본값이고 지능은 Standard와 같은데 약 6배 비싸며 T1인 Grok보다도 비싸서, 빠뜨리면 티어가 조용히 역전된다.
+
+`implementer`만 Cursor에서 T1 **모델**을 유지한다. 두 모델의 agentic 격차가 정확히 이 일에 떨어지고, plan+research+컨벤션+코드를 함께 싣는 역할에 200K 창은 맞지 않는다 — 그래서 모델 대신 effort를 내렸다.
+
+**이 표와 `hooks/cursor/hooks/model-pin-guard.sh`는 한 사실이 두 파일에 있는 것이다.** Cursor 행을 고치면 가드의 `case` 문도 같이 고친다. 갈라지면 가드가 정상 dispatch를 거부한다.
 
 ### 세션 운용 규칙
 
 스킬 프론트매터의 `model:`은 **해당 턴에만** 적용되고 다음 프롬프트에서 세션 모델로 복귀한다. `plan-dev`는 멀티턴 인터뷰이고 모든 루프는 사람 게이트에서 턴이 끊기므로, 둘 다 이 필드로 고정할 수 없다. 따라서 **호출 경계 = 세션 경계**로 운용한다:
 
-| 세션 | 모델 | 근거 |
-| --- | --- | --- |
-| `plan-dev` | **Opus** | 방향·경계·AC는 되돌릴 수 없고 실행자가 자가 수정 불가 |
-| **모든 `dev-loop*` 실행** | **Sonnet** | 컨트롤러가 하는 일은 전이표 조회 + LOOP append. T1 에이전트는 프론트매터 핀으로 Opus에서 돈다 |
+| 세션 | Claude | Cursor | 근거 |
+| --- | --- | --- | --- |
+| `plan-dev` | **Opus** | **Grok 4.5** (effort high) | 방향·경계·AC는 되돌릴 수 없고 실행자가 자가 수정 불가 |
+| **모든 `dev-loop*` 실행** | **Sonnet** | **Composer 2.5 Standard** | 컨트롤러가 하는 일은 전이표 조회 + LOOP append. T1 에이전트는 프론트매터 핀으로 T1 모델에서 돈다 |
 
 4축을 도는 `dev-loop`도 예외가 아니다 — 리뷰어 4종의 모델이 전부 파일에 명시돼 있으므로 세션 모델이 어떤 에이전트의 티어도 바꾸지 못한다.
 
@@ -223,15 +236,17 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 
 `CLAUDE_CODE_SUBAGENT_MODEL`은 프론트매터와 호출 인자를 **모두** 덮어쓰므로, 켜두면 위 표의 티어 핀이 통째로 무력화된다. `hooks/claude/settings.json`에 이 변수를 위한 `env` 블록을 두지 않은 것은 의도이며, 미설정이 정상 상태다. A/B 비교용 임시 레버로만 쓰고 반드시 되돌린다. (v2.1.196부터 값을 `inherit`으로 두면 미설정과 동일하게 취급되어 해석이 정상적으로 아래 단계로 내려간다.)
 
+**Cursor에는 이런 스위치가 없다 — 그게 더 나쁘다.** 그 자리를 대신하는 건 *의도치 않은* override다. 관리자 모델 제한, 플랜 제약, Cursor가 모르는 모델 ID 셋 중 하나면 "호환 모델"로 조용히 폴백한다. 아무도 켠 적이 없으니 아무도 끌 생각을 못 한다. `hooks/cursor/hooks/model-pin-guard.sh`가 정확히 이걸 위해 있다 — `subagentStart`에서 해석된 모델을 읽어 T1은 거부하고 T2는 기록한다. `agents/cursor/*.md`의 모델 ID 오타와 Cursor가 `~/.claude/agents/`를 다시 읽는 상황도 같은 가드가 잡는다.
+
 ## Scripts
 
-`scripts/`에는 설치·동기화 스크립트 4개가 있다. `apply-to-*.sh`는 이 레포의 소스 변형을 사용자 홈의 실제 에이전트 환경으로 배포하고, `setup-ctx7.sh`는 반대로 외부 생성물을 레포 소스에 반영한다. 설치 대상 디렉토리는 기존 내용을 비운 뒤 다시 채우는 방식이라, 홈 디렉토리에서 직접 수정한 스킬·에이전트·훅은 다음 실행 때 소스 기준으로 덮어써진다.
+`scripts/`에는 설치·동기화 스크립트 5개가 있다. `apply-to-*.sh`는 이 레포의 소스 변형을 사용자 홈의 실제 에이전트 환경으로 배포하고, `setup-ctx7.sh`는 반대로 외부 생성물을 레포 소스에 반영한다. 설치 대상 디렉토리는 기존 내용을 비운 뒤 다시 채우는 방식이라, 홈 디렉토리에서 직접 수정한 스킬·에이전트·훅은 다음 실행 때 소스 기준으로 덮어써진다.
 
 ### apply-to-personal.sh
 
 Personal 환경(Claude Code) 설치 스크립트다.
 
-- Claude Code: `instructions/AGENTS.md`를 `~/.claude/CLAUDE.md`로 복사하고, `~/.claude/skills`·`~/.claude/agents`·`~/.claude/hooks`·`~/.claude/scripts`를 비운 뒤 각각 `skills/claude/`·`agents/claude/`·`hooks/claude/hooks/`·`scripts/claude/`의 내용으로 다시 채운다. 훅과 런타임 스크립트는 `cp -rp`로 복사해 실행 권한을 보존한다.
+- Claude Code: `instructions/AGENTS.md`를 `~/.claude/CLAUDE.md`로 복사하고, `~/.claude/skills`·`~/.claude/agents`·`~/.claude/hooks`·`~/.claude/scripts`를 비운 뒤 각각 `skills/claude/`·`agents/claude/`·`hooks/claude/hooks/`·`scripts/runtime/`의 내용으로 다시 채운다. 훅과 런타임 스크립트는 `cp -rp`로 복사해 실행 권한을 보존한다.
 - Claude Code 설정: `hooks/claude/settings.json`의 `hooks` 블록을 `~/.claude/settings.json`에 `jq`로 머지한다. 사용자의 `permissions`/`model`/`env` 등 다른 설정은 보존되며, 대상 파일이 없으면 통째로 생성한다 (jq 필요).
 - 마지막에 항목별 설치 개수와 상태 요약을 출력한다.
 
@@ -245,11 +260,20 @@ Work 환경(Codex) 설치 스크립트다.
 - `~/.codex/hooks/`를 비운 뒤 `hooks/codex/hooks/*`를 복사하고, `hooks/codex/hooks.json`을 `~/.codex/hooks.json`으로 복사한다.
 - 마지막에 항목별 설치 개수와 상태 요약을 출력한다.
 
+### apply-to-cursor.sh
+
+Cursor 설치 스크립트다.
+
+- `instructions/AGENTS.md`를 `~/.cursor/AGENTS.md`로 복사한다. **Cursor는 이 파일을 읽지 않는다** — `session-context.sh`가 읽어서 `additional_context`로 주입한다. Cursor에 사용자 전역 지침 파일이 없고 User Rules는 설치 스크립트가 쓸 수 없는 UI 상태이기 때문이다.
+- `~/.cursor/skills`·`~/.cursor/agents`·`~/.cursor/hooks`·`~/.cursor/scripts`를 비운 뒤 각각 `skills/cursor/`·`agents/cursor/`·`hooks/cursor/hooks/`·`scripts/runtime/`의 내용으로 다시 채운다. 훅과 런타임 스크립트는 `cp -rp`로 복사해 실행 권한을 보존한다.
+- `hooks/cursor/hooks.json`을 `~/.cursor/hooks.json`으로 **머지가 아니라 교체**한다. Claude의 `settings.json`은 다른 설정과 파일을 공유하지만 Cursor의 `hooks.json`은 훅 전용이다.
+- 마지막에 설치 요약과 함께, 스크립트가 대신할 수 없는 1회성 수동 단계(`~/.claude` 호환 경로 끄기)를 안내한다.
+
 ### apply-to-all.sh
 
-`apply-to-personal.sh`와 `apply-to-work.sh`를 순서대로 실행하는 래퍼다. 내부 경로가 레포 루트 기준 상대 경로이므로 레포 루트에서 실행해야 한다.
+`apply-to-personal.sh`·`apply-to-work.sh`·`apply-to-cursor.sh`를 순서대로 실행하는 래퍼다. 내부 경로가 레포 루트 기준 상대 경로이므로 레포 루트에서 실행해야 한다.
 
-Codex에서 `review-code-claude`를 사용하려면 Claude `review-code`와 reviewer agent 4개도 필요하므로 `apply-to-all.sh`로 두 플랫폼을 함께 설치한다. 스킬은 명시적 `$review-code-claude` 호출에만 활성화된다.
+Codex에서 `review-code-claude`를 사용하려면 Claude `review-code`와 reviewer agent 4개도 필요하므로 `apply-to-all.sh`로 함께 설치한다. 스킬은 명시적 `$review-code-claude` 호출에만 활성화된다.
 
 ### setup-ctx7.sh
 
@@ -258,5 +282,5 @@ Context7이 배포하는 서드파티 `find-docs` 스킬과 context7 지침 블�
 - `ctx7 upgrade`로 CLI 업데이트 여부를 먼저 확인한다 (업데이트가 있으면 안내만 출력하고 자동 설치하지는 않는다).
 - 임시 디렉토리에서 `ctx7 setup --cli --claude|--codex -y -p`를 실행해 각 플랫폼 전용 `find-docs` 스킬을 생성한다. 생성물은 플랫폼마다 다르다 (예: Codex 변형에는 샌드박스 밖에서 네트워크 요청을 재시도하라는 지침이 포함된다).
 - 생성물의 `npx ctx7@latest` 호출을 전역 설치된 `ctx7` 명령으로 치환한다.
-- 두 변형이 모두 정상 생성된 것을 확인한 뒤 각 생성물을 대응하는 `skills/<platform>/find-docs`로 복사한다 (부분 갱신 방지를 위해 생성·검증 완료 후 일괄 복사).
-- `instructions/AGENTS.md`의 `<!-- context7 -->` 블록을 Claude 룰 내용으로 교체한다 (두 플랫폼이 공유하는 지침 파일이므로 플랫폼 중립적인 Claude 룰을 쓴다).
+- 두 변형이 모두 정상 생성된 것을 확인한 뒤 각 생성물을 대응하는 `skills/<platform>/find-docs`로 복사한다 (부분 갱신 방지를 위해 생성·검증 완료 후 일괄 복사). `ctx7`에 Cursor 타겟이 없고 Cursor가 Claude 형식 스킬을 읽으므로, `skills/cursor/find-docs`에는 Claude 생성물을 같이 복사한다.
+- `instructions/AGENTS.md`의 `<!-- context7 -->` 블록을 Claude 룰 내용으로 교체한다 (세 플랫폼이 공유하는 지침 파일이므로 플랫폼 중립적인 Claude 룰을 쓴다).

@@ -1,20 +1,21 @@
 # personal-harness
 
-A harness of Agent Skills, global instructions, and install scripts for personal use. It supports two platforms — Claude Code and Codex — and migrates platform variants using the topology below.
+A harness of Agent Skills, global instructions, and install scripts for personal use. It supports three platforms — Claude Code, Codex, and Cursor — and migrates platform variants using the topology below.
 
 - Claude ↔ Codex (bidirectional; Personal center is Claude Code, Work center is Codex)
+- Claude → Cursor (one-way; a change that starts in Cursor lands in the Claude variant first)
 
-Per-stage conversion rules are defined in `docs/sync-harness/` (`SYNC_TO_CODEX.md` and `SYNC_TO_CLAUDE.md`).
+Per-stage conversion rules are defined in `docs/sync-harness/` (`SYNC_TO_CODEX.md`, `SYNC_TO_CLAUDE.md`, and `SYNC_TO_CURSOR.md`).
 
 ## Folder Structure
 
 ```
 personal-harness/
-├── skills/           # Per-platform Agent Skills (claude/ · codex/; one folder per skill)
-├── agents/           # Persona sub-agent definitions (claude/*.md · codex/*.toml)
-├── hooks/            # Per-platform hooks (claude: settings.json + *.sh · codex: hooks.json + *.sh)
+├── skills/           # Per-platform Agent Skills (claude/ · codex/ · cursor/; one folder per skill)
+├── agents/           # Persona sub-agent definitions (claude/*.md · codex/*.toml · cursor/*.md)
+├── hooks/            # Per-platform hooks (claude: settings.json + *.sh · codex/cursor: hooks.json + *.sh)
 ├── instructions/     # Distribution source of the global AGENTS.md instructions
-├── scripts/          # Install/sync scripts (apply-to-personal.sh · apply-to-work.sh · apply-to-all.sh · setup-ctx7.sh) + claude/: runtime scripts installed to ~/.claude/scripts/
+├── scripts/          # Install/sync scripts (apply-to-personal.sh · apply-to-work.sh · apply-to-cursor.sh · apply-to-all.sh · setup-ctx7.sh) + runtime/: platform-neutral runtime scripts installed to ~/.claude/scripts/ and ~/.cursor/scripts/
 ├── docs/             # Harness docs (sync-harness/: SYNC_TO_* conversion rules · loop-engineering/: loop-engineering plan & research docs · cost-effective/: model-tiering cost analysis)
 └── .agents/skills/   # Meta-skills for the harness itself (sync-harness; mirrored in .claude/skills/)
 ```
@@ -117,19 +118,20 @@ Hook definitions and scripts under `hooks/<platform>/`. Common shell hooks (`hoo
 | `enforce-rg.sh` | Before Bash | Enforces `rg` over recursive `grep` |
 | `enforce-fd.sh` | Before Bash | Enforces `fd` over `find` |
 | `auto-format.sh` | After file edits | Runs the project Makefile's `fmt`/`format` target |
+| `model-pin-guard.sh` | Before a subagent spawns | **Cursor only.** Rejects a T1 agent whose resolved model is not the one its frontmatter pins; logs the same for T2 |
 
-Platform-specific config files: Claude Code uses the `hooks` block in `settings.json`, and Codex uses `hooks.json`. Hooks are guardrails; they take no part in `dev-loop` stage transitions or completion decisions. `jq`·`git`·`make`·`rg`·`fd` are required (see README.md Prerequisites for details).
+Platform-specific config files: Claude Code uses the `hooks` block in `settings.json`, and Codex and Cursor use `hooks.json` (different schemas — Cursor's is flat, see `SYNC_TO_CURSOR.md`). Hooks are guardrails; they take no part in `dev-loop` stage transitions or completion decisions. `model-pin-guard.sh` is the first hook here that can block, and it stays inside that invariant: it refuses a spawn on the wrong model, it does not decide a stage transition. `jq`·`git`·`make`·`rg`·`fd` are required (see README.md Prerequisites for details).
 
 ### Runtime Scripts
 
-`scripts/claude/*.sh` is installed to `~/.claude/scripts/` by `apply-to-personal.sh` (distinct from the repo's top-level `scripts/`, which is installer-only and never copied). Skills call these instead of re-deriving the same facts with an LLM on every cold Worker:
+`scripts/runtime/*.sh` is installed to `~/.claude/scripts/` by `apply-to-personal.sh` and to `~/.cursor/scripts/` by `apply-to-cursor.sh` (distinct from the repo's top-level `scripts/`, which is installer-only and never copied). The source is platform-neutral — it reads `Makefile`, `package.json`, and git, nothing else — so both installers copy the same file rather than maintaining two. Skills call these instead of re-deriving the same facts with an LLM on every cold Worker:
 
 | Script | Consumers | Returns |
 | --- | --- | --- |
 | `detect-commands.sh` | `implement-dev` · `test-dev` · `fix-dev` | lint/format/test/build/mutation/e2e commands from `Makefile` targets and `package.json` scripts, as JSON. `null` for anything only named in prose — the caller reads that itself |
 | `resolve-scope.sh` | `test-dev` · `review-code` | diff range, changed-file absolute paths, and languages involved, as JSON |
 
-Consumers call them by literal `$HOME/.claude/scripts/…` path and pre-approve the same literal in `allowed-tools`. `${CLAUDE_SKILL_DIR}` is unavailable here because the scripts live outside any skill folder; `$HOME` stays literal on both sides and the shell expands it at run time. A mismatch costs one permission prompt, nothing more.
+Consumers call them by literal `$HOME/.claude/scripts/…` (Claude) or `$HOME/.cursor/scripts/…` (Cursor) path. `${CLAUDE_SKILL_DIR}` is unavailable here because the scripts live outside any skill folder; `$HOME` stays literal on both sides and the shell expands it at run time. Claude skills pre-approve the same literal in `allowed-tools`; Cursor has no skill-level pre-approval, so the first call may prompt. A mismatch costs one permission prompt, nothing more.
 
 ## Model Tier
 
@@ -137,38 +139,46 @@ Every agent's model and effort is pinned in its own frontmatter. `inherit` is no
 
 The tier of a role is a property of the work, not of the model generation. Each agent body carries a one-line `Tier:` rationale so the reasoning survives when the model names change.
 
-| Tier | Definition | Claude |
-| --- | --- | --- |
-| **T1 judgment** | Irreversible decisions that cannot be machine-verified | `opus` |
-| **T2 execution** | Specified work whose result is machine-checkable | `sonnet` |
-| **T3 mechanical** | Transformation and aggregation with no real judgement | *(unused — see below)* |
+| Tier | Definition | Claude | Cursor |
+| --- | --- | --- | --- |
+| **T1 judgment** | Irreversible decisions that cannot be machine-verified | `opus` | `grok-4.5` |
+| **T2 execution** | Specified work whose result is machine-checkable | `sonnet` | `composer-2.5`, except the agentic role |
+| **T3 mechanical** | Transformation and aggregation with no real judgement | *(unused — see below)* | *(unused)* |
 
-**T3 is empty on purpose.** Haiku's 200K context, 4096-token minimum cache prefix, and lack of model-level effort make it a poor fit for this harness, whose T2 work is mostly repo-slice reasoning — the thing the smallest tier is worst at. Genuinely mechanical work goes to the shell (Runtime Scripts above), not to a smaller model.
+**T3 is empty on purpose.** Haiku's 200K context, 4096-token minimum cache prefix, and lack of model-level effort make it a poor fit for this harness, whose T2 work is mostly repo-slice reasoning — the thing the smallest tier is worst at. Composer 2.5's 200K context puts Cursor's lowest tier out for the same reason. Genuinely mechanical work goes to the shell (Runtime Scripts above), not to a smaller model.
 
 ### Agent placement
 
-| Agent | `model` | `effort` | Why this tier |
-| --- | --- | --- | --- |
-| `planner` | `opus` | `high` | Architecture calls are irreversible and unverifiable |
-| `plan-consultant` | `opus` | `high` | Exists precisely for calls the executor cannot verify or cheaply undo |
-| `security-reviewer` | `opus` | `medium` | A missed authz bypass is unrecoverable — highest miss cost of the four axes |
-| `reliability-reviewer` | `opus` | `medium` | Counterfactual simulation is the first thing weaker models lose |
-| `implementer` | `sonnet` | `high` | TDD is ground truth, but it reasons over plan + research + conventions + code at once — top of T2, never below |
-| `tester` | `sonnet` | `medium` | Mutation score ≥80% is a machine goal; barred from production code |
-| `fixer` | `sonnet` | `medium` | The review finding is the spec; a re-test verifies the result |
-| `maintainability-reviewer` | `sonnet` | `medium` | Style and rule matching against the surrounding code is specified pattern matching |
-| `senior-generalist-reviewer` | `sonnet` | `medium` | Calibrated catch-all, lowest miss cost |
+Claude keeps `model` and `effort` as two fields. **Cursor has neither `effort` nor `tools`: effort folds into the model string, and read-only is a single `readonly` boolean.**
+
+| Agent | Claude `model` / `effort` | Cursor `model` | `readonly` | Why this tier |
+| --- | --- | --- | --- | --- |
+| `planner` | `opus` / `high` | `grok-4.5[effort=high]` | `true` | Architecture calls are irreversible and unverifiable |
+| `plan-consultant` | `opus` / `high` | `grok-4.5[effort=high]` | `true` | Exists precisely for calls the executor cannot verify or cheaply undo |
+| `security-reviewer` | `opus` / `medium` | `grok-4.5[effort=high]` | `true` | A missed authz bypass is unrecoverable — highest miss cost of the four axes |
+| `reliability-reviewer` | `opus` / `medium` | `grok-4.5[effort=high]` | `true` | Counterfactual simulation is the first thing weaker models lose |
+| `implementer` | `sonnet` / `high` | `grok-4.5[effort=medium]` | `false` | TDD is ground truth, but it reasons over plan + research + conventions + code at once — top of T2, never below |
+| `tester` | `sonnet` / `medium` | `composer-2.5[fast=false]` | `false` | Mutation score ≥80% is a machine goal; barred from production code |
+| `fixer` | `sonnet` / `medium` | `composer-2.5[fast=false]` | `false` | The review finding is the spec; a re-test verifies the result |
+| `maintainability-reviewer` | `sonnet` / `medium` | `composer-2.5[fast=false]` | `true` | Style and rule matching against the surrounding code is specified pattern matching |
+| `senior-generalist-reviewer` | `sonnet` / `medium` | `composer-2.5[fast=false]` | `true` | Calibrated catch-all, lowest miss cost |
 
 **effort follows two rules.** Do not buy the top of the scale — the jump from a model's default effort to `max` is worth a couple of points across the board, so `xhigh` is reserved for decisions that cannot be revisited. And when a model comes down a tier, effort does not follow it down: `implementer` moved to `sonnet` and kept `effort: high`.
+
+**Cursor's effort values are not the Claude ones.** Grok 4.5 has only `low/medium/high` and defaults to `high`, so the "don't buy the top" rule — written for a scale with `xhigh` and `max` above it — does not apply, and the reviewers sit at `high`. Composer takes no effort at all; `[fast=false]` occupies that slot instead, and **it is not optional**: Fast is the Cursor IDE default, has the same intelligence as Standard at roughly 6× the price, and is dearer than Grok itself, so omitting it inverts the tiers silently.
+
+`implementer` is the one row where Cursor keeps the T1 *model*. The agentic gap between the two models lands exactly on that job, and a role that loads a plan, its research, the conventions, and the code together is the wrong place for a 200K window — so the effort comes down instead.
+
+**This table and `hooks/cursor/hooks/model-pin-guard.sh` are one fact in two files.** Change a Cursor row and change the guard's `case` statement with it, or the guard starts rejecting healthy dispatches.
 
 ### Session operating rules
 
 A skill's `model:` frontmatter applies **only to the current turn** and reverts to the session model at the next prompt. `plan-dev` is a multi-turn interview and every loop breaks turns at its human gates, so neither can be pinned that way. The invocation boundary is therefore the **session** boundary:
 
-| Session | Model | Why |
-| --- | --- | --- |
-| `plan-dev` | **Opus** | Direction, boundaries, and ACs are irreversible, and the executor cannot self-correct a wrong one |
-| **every `dev-loop*` run** | **Sonnet** | The controller reads a transition table and appends to a LOOP file. T1 agents still run on Opus via their frontmatter pins |
+| Session | Claude | Cursor | Why |
+| --- | --- | --- | --- |
+| `plan-dev` | **Opus** | **Grok 4.5** (effort high) | Direction, boundaries, and ACs are irreversible, and the executor cannot self-correct a wrong one |
+| **every `dev-loop*` run** | **Sonnet** | **Composer 2.5 Standard** | The controller reads a transition table and appends to a LOOP file. T1 agents still run on the T1 model via their frontmatter pins |
 
 This applies to `dev-loop` too, four axes and all — C1 and C8 pin every reviewer's model, so the session model no longer decides any agent's tier.
 
@@ -177,6 +187,8 @@ This applies to `dev-loop` too, four axes and all — C1 and C8 pin every review
 ### Operating switch — leave it unset
 
 `CLAUDE_CODE_SUBAGENT_MODEL` overrides **both** frontmatter and per-invocation arguments, so setting it neutralises every tier pin in this table at once. There is deliberately no `env` block for it in `hooks/claude/settings.json`; unset is the correct state. Use it only as a deliberate, temporary A/B lever, and unset it afterwards. (Since v2.1.196 the value `inherit` is treated as unset, so resolution falls through normally.)
+
+**Cursor has no such switch — and that is worse, not better.** What takes its place is an *unintended* override: an admin model restriction, a plan limitation, or a model ID Cursor does not recognise all make it fall back to a "compatible model" without erroring. Nobody turns that on, so nobody remembers to turn it off. `hooks/cursor/hooks/model-pin-guard.sh` exists for exactly this: it reads the resolved model at `subagentStart`, refuses the spawn for T1 agents, and logs it for T2. The same guard is what catches a wrong model ID in `agents/cursor/*.md` and Cursor quietly reading `~/.claude/agents/` again.
 
 ## Environment Variables
 
