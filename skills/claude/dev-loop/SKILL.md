@@ -1,11 +1,15 @@
 ---
 name: dev-loop
-description: "Drive an approved single-step plan-dev plan through the autonomous implement → test → review → (triage/fix) loop until READY_TO_COMMIT, checkpointing state to a LOOP file under docs/agents/dev. Use when the user asks to run a saved plan end to end as a loop ('루프 돌려', 'dev-loop 실행', 'run the plan through the loop'). Requires a plan with Acceptance Contract and Authority Boundaries; refuses legacy plans and routes them to plan-dev. Never commits, pushes, or opens PR/MRs."
+description: "The heavy loop — use only for genuinely serious or large feature work, or when the change touches security- or reliability-sensitive paths. Drives an approved single-step plan-dev plan through implement → test (including mutation) → full four-axis review → (triage/fix) until READY_TO_COMMIT, checkpointing state to a LOOP file under docs/agents/dev. For everyday work use `dev-loop-noreview` (the default); for changes that want review but not all four axes use `dev-loop-light`. Requires a plan with Acceptance Contract and Authority Boundaries; refuses legacy plans and routes them to plan-dev. Never commits, pushes, or opens PR/MRs."
 ---
 
 # Dev Loop
 
-A thin controller that drives one approved **single-step** plan through the existing stage skills — `implement-dev` → `test-dev` → `review-code`, with `fix-dev` remediation cycles — until every termination predicate holds, then stops at **READY_TO_COMMIT** for the human. The loop owns exactly two things: **stage-skill invocation** and **state transitions read from each stage's `## Stage Status`**. It implements nothing itself, never dispatches a stage's Worker directly (each skill's own Dispatcher flow does that), and never merges the stage skills into one.
+A thin controller that drives one approved **single-step** plan through the existing stage skills — `implement-dev` → `test-dev` → `review-code`, with `fix-dev` remediation cycles — until every termination predicate holds, then stops at **READY_TO_COMMIT** for the human.
+
+This is the **heaviest** of three variants: all four review axes plus mutation testing. Reach for it when the work is genuinely serious or large, or when it touches paths where a `security` or `reliability` miss is unrecoverable. [`dev-loop-noreview`](../dev-loop-noreview/SKILL.md) is the everyday default; [`dev-loop-light`](../dev-loop-light/SKILL.md) sits between them with two axes and no mutation. Pick before starting; the loop does not switch variants mid-run.
+
+The loop owns exactly two things: **stage-skill invocation** and **state transitions read from each stage's `## Stage Status`**. It implements nothing itself, never dispatches a stage's Worker directly (each skill's own Dispatcher flow does that), and never merges the stage skills into one.
 
 ## Inputs
 

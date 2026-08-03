@@ -83,6 +83,8 @@ If an `implement-dev` report exists for the change, the Dispatcher may pass its 
 2. **E2E layout**: locate where e2e tests live (see [references/e2e-gap-analysis.md](references/e2e-gap-analysis.md) for common conventions). If the project has no e2e suite at all, note this and skip Phase 2 with a single-line justification in the final summary.
 3. **Mutation tooling**: find the project's mutation target (typical: `make test-mutation`). If no tooling is configured, the Dispatcher decides before dispatch; a Worker returns `blocked` with the options (skip Phase 3 / nominate a command / install a standard tool), and interactive execution asks the user with `AskUserQuestion`.
 
+**Caller opt-out**: when the invocation explicitly places mutation out of scope for this run — `dev-loop-light` and `dev-loop-noreview` always do — skip step 3 and Phase 3 entirely, pass `mutation: out of scope` in the dispatch prompt, and **do not treat a missing mutation command as `blocked`**. Record the skip as `out of scope (caller)` in the `## Mutation` section of the return. This opt-out covers mutation only; a missing lint/unit/e2e command is still resolved before dispatch or returned as `blocked`.
+
 ## Phase 1 — Unit test gaps
 
 Detail: [references/unit-gap-analysis.md](references/unit-gap-analysis.md)
@@ -112,6 +114,8 @@ If the project has no e2e harness, skip this phase and note it in the summary.
 ## Phase 3 — Mutation test LIVED elimination
 
 Detail: [references/mutation-iteration.md](references/mutation-iteration.md)
+
+Skip this phase entirely when the caller placed mutation out of scope (see Prepare 3) — a missing mutation command is not a `blocked` condition in that case.
 
 **Goal**: drive **test efficacy** to **at least 80%**, then push **as high as possible** within a bounded budget. Reaching 0 LIVED mutants is generally infeasible — equivalent mutants and untestable side effects always remain — so the target is a score threshold, not zero.
 

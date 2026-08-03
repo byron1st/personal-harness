@@ -5,7 +5,7 @@ description: Review code changes for bugs, security, reliability, maintainabilit
 
 # Review Code
 
-You are the reviewer and Dispatcher. Gather context once, dispatch four parallel reviewer agents (`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`) via the `Agent` tool, and aggregate their findings into a single output. If any required dispatch fails, stop before reviewing that axis in the main session, report the delegation failure and affected axes, and use `AskUserQuestion` to ask whether to continue with a direct four-axis review or stop. Never silently substitute a main-session review.
+You are the reviewer and Dispatcher. Gather context once, dispatch the reviewer agents in parallel (`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer` — all four unless the caller names a subset) via the `Agent` tool, and aggregate their findings into a single output. If any required dispatch fails, stop before reviewing that axis in the main session, report the delegation failure and affected axes, and use `AskUserQuestion` to ask whether to continue with a direct four-axis review or stop. Never silently substitute a main-session review.
 
 ## Reviewer roles
 
@@ -17,6 +17,8 @@ Four review axes. Dispatch one Claude Code custom subagent per axis:
 - `senior-generalist-reviewer` — calibrated catch-all for the remaining ISO 25010 axes. Performance efficiency, compatibility, interaction capability, functional suitability, operational safety, flexibility.
 
 Use the same value for `subagent_type` as the reviewer name. Each persona explicitly defers what the others cover, so duplicates should be rare. When they do overlap on the same `Location`, you deduplicate during aggregation.
+
+**Axis subset**: the caller may name a subset of these axes, and the default is **all four**. `dev-loop-light` names `maintainability-reviewer` + `senior-generalist-reviewer`; a user may ask for any subset directly. Dispatch exactly the named axes in parallel and run the rest of this skill unchanged — aggregation, triage, the AR registry, and Stage Status do not care how many axes reported. State which axes ran at the top of the final output: a clean verdict from a subset is a statement about what was looked at, not about the change, and the axes that did not run are exactly the ones nobody checked.
 
 ## Scope of the Review
 
@@ -43,7 +45,7 @@ If the diff is very large (roughly >2000 changed lines), review one file at a ti
 
 ## Dispatch the four reviewers
 
-Send all four `Agent` tool calls in a single message so they run concurrently. `subagent_type` is the persona's own name (`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`). If a custom persona is unavailable, a `general-purpose` sub-agent given that persona's full review contract is an acceptable Worker fallback. If no fallback can dispatch or any required dispatch fails, stop the review run, preserve any successful returns, report the failed axes, and do not begin a main-session pass until the user explicitly authorizes direct fallback.
+Send all the `Agent` tool calls in a single message so they run concurrently — all four by default, or exactly the axes the caller named (see "Axis subset" above). `subagent_type` is the persona's own name (`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`). If a custom persona is unavailable, a `general-purpose` sub-agent given that persona's full review contract is an acceptable Worker fallback. If no fallback can dispatch or any required dispatch fails, stop the review run, preserve any successful returns, report the failed axes, and do not begin a main-session pass until the user explicitly authorizes direct fallback.
 
 Each dispatch prompt contains:
 
@@ -60,7 +62,7 @@ The agents do not see each other's output. They each return a list of per-findin
 
 ## Aggregate (in the main session)
 
-Once all four delegated returns arrive:
+Once every dispatched return arrives:
 
 1. **Deduplicate by `Location`.** If two reviewers flagged the same file and overlapping line range with the same root issue, keep the framing that is most specific (usually the specialist whose axis the issue most closely sits in). If both framings add value, keep the better-worded one and append a one-line note that another persona corroborated. Do not stack two entries for the same defect.
 2. **Collect Applied Exceptions.** Pull findings tagged `[WAIVED:AR-NNN]` out of the finding list and collapse each to one line under `## Applied Exceptions` (AR id + what was waived). Waived findings are excluded from the Stage Status / verdict computation but always displayed — a waiver downgrades, it never hides.
@@ -185,9 +187,9 @@ The human-readable verdict sentence stays, as the closing line: `Correct` when S
 
 Prose inside the comment body and the verdict sentence is in **Korean**. Titles, labels, priority tags, field names (`Location`, `Related Requirements`, `Stage Status`, `Overall Correctness`), and code fragments stay in English.
 
-### When all four reviewers return clean
+### When every dispatched reviewer returns clean
 
-Output the Stage Status and the Overall Correctness verdict, plus `## Applied Exceptions` when any waiver was applied — a clean result that leaned on waivers must still show them. Do not fabricate findings to fill space.
+Output the Stage Status and the Overall Correctness verdict, plus `## Applied Exceptions` when any waiver was applied — a clean result that leaned on waivers must still show them. Do not fabricate findings to fill space. When the run used an axis subset, name the axes that ran alongside the verdict so a clean result is not read as broader than it is.
 
 ### Example output
 
