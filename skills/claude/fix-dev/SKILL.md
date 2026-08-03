@@ -55,7 +55,7 @@ Do not interrupt to ask for missing branch, plan, report, or verification metada
 
 ### 2. Dispatch one sub-agent by default
 
-Use the `Agent` tool with `subagent_type: general-purpose`. The sub-agent has no access to the main session's conversation, so the prompt must be **self-contained** — embed the brief from §1, the work contract (§4), and the return contract (§5) directly. Do not assume the sub-agent will read this `SKILL.md`; either inline the relevant sections in the prompt or pass the absolute path to this file and tell it to read the sub-agent contract sections first.
+Use the `Agent` tool with `subagent_type: fixer`. If the `fixer` persona is unavailable, a `general-purpose` sub-agent given the full work contract below is an acceptable fallback. The sub-agent has no access to the main session's conversation, so the prompt must be **self-contained** — embed the brief from §1, the work contract (§4), and the return contract (§5) directly. Do not assume the sub-agent will read this `SKILL.md`; either inline the relevant sections in the prompt or pass the absolute path to this file and tell it to read the sub-agent contract sections first.
 
 If the `Agent` tool or compatible sub-agent capability is unavailable, or dispatch fails, stop before editing. Report `Delegation status: unavailable` or `failed`, include the observed cause, and use `AskUserQuestion` to ask whether to continue with a direct main-session fix or stop. Direct execution is allowed only after the user explicitly chooses that fallback.
 

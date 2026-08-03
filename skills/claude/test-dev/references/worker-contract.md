@@ -1,6 +1,6 @@
 # Test-hardening Worker delegation contract
 
-`test-dev`'s **Dispatch mode** (the main session, default) delegates the actual test hardening to a single general-purpose subagent (the **Worker**). This file is the **single source of truth** for that delegation: the prompt the dispatcher hands the Worker, the fixed-heading return the Worker must emit (②), and the chat summary the dispatcher owes the user (③).
+`test-dev`'s **Dispatch mode** (the main session, default) delegates the actual test hardening to a single `tester` subagent (the **Worker**, dispatched via the `Agent` tool with `subagent_type: tester`; a `general-purpose` subagent given this contract in full is the fallback when that persona is unavailable). This file is the **single source of truth** for that delegation: the prompt the dispatcher hands the Worker, the fixed-heading return the Worker must emit (②), and the chat summary the dispatcher owes the user (③).
 
 `test-dev` references this contract instead of restating it. Do not duplicate these templates elsewhere; update them here. Direct main-session execution is allowed only after the user explicitly chooses it following delegation failure or directly requests direct mode.
 
