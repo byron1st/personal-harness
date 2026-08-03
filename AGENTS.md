@@ -15,7 +15,7 @@ personal-harness/
 ├── agents/           # Persona sub-agent definitions (claude/*.md · codex/*.toml · cursor/*.md)
 ├── hooks/            # Per-platform hooks (claude: settings.json + *.sh · codex/cursor: hooks.json + *.sh)
 ├── instructions/     # Distribution source of the global AGENTS.md instructions
-├── scripts/          # Install/sync scripts (apply-to-personal.sh · apply-to-work.sh · apply-to-cursor.sh · apply-to-all.sh · setup-ctx7.sh) + runtime/: platform-neutral runtime scripts installed to ~/.claude/scripts/ and ~/.cursor/scripts/
+├── scripts/          # Install/sync scripts (apply-to-personal.sh · apply-to-work.sh · apply-to-cursor.sh · apply-to-all.sh · setup-ctx7.sh) + runtime/: platform-neutral runtime scripts installed to ~/.claude/scripts/, ~/.cursor/scripts/, and ~/.codex/scripts/
 ├── docs/             # Harness docs (sync-harness/: SYNC_TO_* conversion rules · loop-engineering/: loop-engineering plan & research docs · cost-effective/: model-tiering cost analysis)
 └── .agents/skills/   # Meta-skills for the harness itself (sync-harness; mirrored in .claude/skills/)
 ```

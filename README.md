@@ -10,7 +10,7 @@ personal-harness/
 ├── agents/           # persona 서브에이전트 정의 (claude/*.md · codex/*.toml · cursor/*.md)
 ├── hooks/            # 플랫폼별 훅 (claude: settings.json + *.sh · codex/cursor: hooks.json + *.sh)
 ├── instructions/     # 전역 지침 AGENTS.md 배포 소스
-├── scripts/          # 설치·동기화 스크립트 (apply-to-personal.sh · apply-to-work.sh · apply-to-cursor.sh · apply-to-all.sh · setup-ctx7.sh) + runtime/: ~/.claude/scripts/·~/.cursor/scripts/로 설치되는 플랫폼 무관 런타임 스크립트
+├── scripts/          # 설치·동기화 스크립트 (apply-to-personal.sh · apply-to-work.sh · apply-to-cursor.sh · apply-to-all.sh · setup-ctx7.sh) + runtime/: ~/.claude/scripts/·~/.cursor/scripts/·~/.codex/scripts/로 설치되는 플랫폼 무관 런타임 스크립트
 ├── docs/             # 하네스 문서 (sync-harness/: SYNC_TO_* 변환 규칙 · loop-engineering/: 루프 엔지니어링 계획·조사 문서 · cost-effective/: 모델 티어링 비용 분석)
 └── .agents/skills/   # 하네스 자체용 메타 스킬 (sync-harness; .claude/skills/에 동일 사본)
 ```
@@ -71,16 +71,16 @@ plan-dev → dev-loop*( implement-dev → test-dev → [review-code] → (fix-de
 
 | 스킬 | 리뷰 | mutation | 용도 |
 | --- | --- | --- | --- |
-| `dev-loop-noreview` | 없음 | 안 함 | **기본값.** 대부분의 일상 작업 |
-| `dev-loop-light` | `maintainability` + `senior-generalist` 2축 | 안 함 | 리뷰는 필요하지만 4축까지는 과한 작업 |
+| `dev-loop-noreview` | 없음 | 안 함 | **Claude / Cursor 기본값.** 대부분의 일상 작업 |
+| `dev-loop-light` | `maintainability` + `senior-generalist` 2축 | 안 함 | **Codex 기본값.** 리뷰는 필요하지만 4축까지는 과한 작업 |
 | `dev-loop` | 4축 전부 | 함 | 진짜 심각하거나 거대한 기능 개발, 또는 보안·신뢰성 민감 경로를 건드리는 변경 |
 
 `dev-loop-light`이 버리는 두 축(`security`·`reliability`)은 miss 비용이 회복 불가능한 쪽이다. authn/authz·비밀·동시성·부분 실패 경로를 건드리면 `light`이 아니라 `dev-loop`다.
 
 **어느 변형도 게이트가 없지는 않다.** 셋 다 사람 게이트 2개(TESTING의 suspected-defect **Fix/Accept** 분류, READY_TO_COMMIT)를 그대로 갖는다. 리뷰를 끄면 사라지는 것은 리뷰어 4종이지 사람의 판단이 아니다.
 
-1. **계획 수립**: `plan-dev` 스킬을 호출해 인터뷰로 계획을 수립한다. 완료 조건 라운드에서 TODO별 완료 조건·증거(`Acceptance Contract`)와 권한 경계·루프 예산(`Authority Boundaries`)을 함께 확정하고, 계획을 승인하면 PLAN/RESEARCH 파일이 `docs/agents/` 아래에 저장된다. **`plan-dev`는 Opus 세션에서 돌린다**([Model Tier](#model-tier)).
-2. **루프 실행**: 위 표에서 변형을 고른 뒤 승인된 플랜 경로를 지정해 명시적으로 호출한다. 이후 종료 술어(TODO 완료 ∧ AC 증거 충족 ∧ 검증 green ∧ 차단 finding 0)를 만족할 때까지 자율 반복된다. 멀티스텝 플랜은 sub-plan(`-STEP-N`) 단위로 호출한다. **루프 실행 세션은 변형과 무관하게 Sonnet이다** — T1 에이전트는 프론트매터 핀으로 Opus에서 돈다.
+1. **계획 수립**: `plan-dev` 스킬을 호출해 인터뷰로 계획을 수립한다. 완료 조건 라운드에서 TODO별 완료 조건·증거(`Acceptance Contract`)와 권한 경계·루프 예산(`Authority Boundaries`)을 함께 확정하고, 계획을 승인하면 PLAN/RESEARCH 파일이 `docs/agents/` 아래에 저장된다. **`plan-dev` 세션 모델은 플랫폼별로 다르다** — Claude Opus · Codex Sol/xhigh · Cursor Grok 4.5 high([Model Tier](#model-tier)).
+2. **루프 실행**: 위 표에서 변형을 고른 뒤 승인된 플랜 경로를 지정해 명시적으로 호출한다. 이후 종료 술어(TODO 완료 ∧ AC 증거 충족 ∧ 검증 green ∧ 차단 finding 0)를 만족할 때까지 자율 반복된다. 멀티스텝 플랜은 sub-plan(`-STEP-N`) 단위로 호출한다. **루프 실행 세션도 플랫폼별** — Claude Sonnet · Codex Luna/medium · Cursor Composer 2.5 Standard. T1 에이전트는 역할 핀으로 T1 모델에서 돈다.
 3. **중간 개입은 두 경우뿐**: (a) 리뷰(있는 변형만) 또는 TESTING 게이트에서 finding이 나오면 항목별 Fix/Accept 분류 질문에 답한다 — Accept 항목은 `AGENTS.md`의 `Accepted Review Exceptions`에 기록되어 다음 리뷰부터 Waived(`Applied Exceptions`)로 강등 표시되고 차단 finding으로 계산되지 않는다. (b) blocked·예산 소진·no-progress로 에스컬레이션되면 지시를 내린다 — 방향 문제면 `plan-dev`로 재진입한다.
 4. **완료 확인과 커밋**: 루프는 READY_TO_COMMIT에서 멈춘다. Implementation Report와 LOOP 상태 파일을 확인한 뒤 `commit-code`, 필요 시 `request-merge`를 직접 호출한다 — 커밋·푸시·PR/MR 생성은 루프 권한 밖이다. **`dev-loop-noreview`에서는 리뷰어가 아무도 변경을 읽지 않았으므로**, IMPL 리포트의 `## TODO Fulfillment`와 AC 증거를 직접 본다 — 4축 리뷰가 잡아주던 instruction drift가 여기서는 사람 몫이다.
 5. **중단·재개**: 루프가 중간에 끊겨도 상태는 `docs/agents/dev/*_LOOP_*.md`에 남으므로(LOOP 포맷은 세 변형 공통), 같은 플랜으로 같은 변형을 다시 호출하면 마지막 라운드에서 이어서 진행한다.
@@ -118,8 +118,8 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 | `review-code` | 리뷰 페르소나 병렬 dispatch(기본 4축, 호출자가 부분집합 지정 가능) 후 finding 종합. 리뷰어는 `Confidence`를 달아 전부 보고하고 **필터링은 이 스킬의 집계 단계**가 한다. HIGH/CRITICAL은 사용자 Fix/Accept 트리아지, Accept는 AR로 기록해 이후 리뷰에서 Waived 강등 | Dispatcher → reviewers | finding 리포트, `Accepted Review Exceptions` |
 | `review-code-claude` | 명시적 `$review-code-claude` 호출에만 Claude Code의 `review-code`를 별도 읽기 전용 프로세스로 실행하고 Codex에서 트리아지 | Codex → Claude CLI → 4 Claude reviewers | finding 리포트, `Accepted Review Exceptions` |
 | `dev-loop` | 승인된 플랜(AC·AB 필수)으로 구현→테스트→리뷰(4축)→fix 사이클을 종료 술어 충족까지 자율 반복, READY_TO_COMMIT에서 정지. 트리아지·AR 승인·커밋은 사람 몫. **무겁다 — 심각하거나 거대한 작업 전용** | 메인 세션 (각 단계 스킬의 Dispatcher 흐름 호출) | LOOP 파일 (append-only) |
-| `dev-loop-light` | 같은 컨트롤러, 리뷰 2축(`maintainability`·`senior-generalist`) + mutation 제외 | 메인 세션 | LOOP 파일 (append-only) |
-| `dev-loop-noreview` | **기본값.** 같은 컨트롤러, 리뷰 없음 + mutation 제외. TESTING의 Fix/Accept 게이트는 그대로 남는다 | 메인 세션 | LOOP 파일 (append-only) |
+| `dev-loop-light` | 같은 컨트롤러, 리뷰 2축(`maintainability`·`senior-generalist`) + mutation 제외. **Codex 기본값** | 메인 세션 | LOOP 파일 (append-only) |
+| `dev-loop-noreview` | **Claude / Cursor 기본값.** 같은 컨트롤러, 리뷰 없음 + mutation 제외. TESTING의 Fix/Accept 게이트는 그대로 남는다 | 메인 세션 | LOOP 파일 (append-only) |
 | `commit-code` | 수정된 파일 기반 커밋 생성 + 커밋 후 문서 드리프트 검사(읽기 전용 보고) | 메인 세션 | 커밋 |
 | `request-merge` | `gh`(personal) / `glab`(work)로 PR/MR 생성·업데이트 | 메인 세션 | PR/MR |
 
@@ -139,7 +139,7 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 
 `agents/<platform>/`의 persona 서브에이전트 정의. 포맷은 Claude Code와 Cursor가 Markdown(YAML frontmatter), Codex가 TOML이다. 사용자가 직접 호출하기보다 스킬이 위임(dispatch)하는 것이 기본이다.
 
-에이전트마다 모델을 프론트매터에 직접 핀한다 — Claude는 `model`·`effort` 두 필드로, Cursor는 effort를 접어 넣은 `model` 문자열 하나로. 배치와 근거는 [Model Tier](#model-tier) 참조. `inherit`은 이 하네스 어디에도 없다.
+에이전트마다 모델을 프론트매터(또는 Codex TOML)에 직접 핀한다 — Claude는 `model`·`effort`, Codex는 `model`·`model_reasoning_effort`(+ 읽기 전용 `sandbox_mode`), Cursor는 effort를 접어 넣은 `model` 문자열 하나. 배치와 근거는 [Model Tier](#model-tier) 참조. `inherit`은 이 하네스 어디에도 없다.
 
 | 에이전트 | 페르소나 · 담당 | 호출 스킬 | 권한 |
 | --- | --- | --- | --- |
@@ -172,61 +172,63 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 
 ### Runtime Scripts
 
-`scripts/runtime/*.sh`는 `apply-to-personal.sh`가 `~/.claude/scripts/`로, `apply-to-cursor.sh`가 `~/.cursor/scripts/`로 설치한다(레포 최상위 `scripts/`와 다르다 — 그쪽은 설치 스크립트 전용이며 홈으로 복사되지 않는다). 소스는 플랫폼 의존성이 없어서 — `Makefile`·`package.json`·git만 읽는다 — 두 설치 스크립트가 사본을 따로 두지 않고 같은 파일을 복사한다. 스킬이 매번 cold Worker에서 LLM으로 재도출하던 사실을 셸로 내린 것이다.
+`scripts/runtime/*.sh`는 `apply-to-personal.sh`가 `~/.claude/scripts/`로, `apply-to-cursor.sh`가 `~/.cursor/scripts/`로, `apply-to-work.sh`가 `~/.codex/scripts/`로 설치한다(레포 최상위 `scripts/`와 다르다 — 그쪽은 설치 스크립트 전용이며 홈으로 복사되지 않는다). 소스는 플랫폼 의존성이 없어서 — `Makefile`·`package.json`·git만 읽는다 — 세 설치 스크립트가 사본을 따로 두지 않고 같은 파일을 복사한다. 스킬이 매번 cold Worker에서 LLM으로 재도출하던 사실을 셸로 내린 것이다.
 
 | 스크립트 | 소비 스킬 | 반환 |
 | --- | --- | --- |
 | `detect-commands.sh` | `implement-dev` · `test-dev` · `fix-dev` | `Makefile` 타겟과 `package.json` 스크립트에서 lint/format/test/build/mutation/e2e 커맨드를 JSON으로. 산문에만 있는 것은 `null` — 그건 호출자가 직접 읽는다 |
 | `resolve-scope.sh` | `test-dev` · `review-code` | diff 범위, 변경 파일 절대경로, 관여 언어를 JSON 한 덩어리로 |
 
-소비 스킬은 `$HOME/.claude/scripts/…`(Claude) 또는 `$HOME/.cursor/scripts/…`(Cursor)를 문자 그대로 호출한다. 스크립트가 스킬 폴더 밖에 있어 `${CLAUDE_SKILL_DIR}` 치환을 쓸 수 없기 때문이며, `$HOME`은 양쪽 모두 리터럴로 남고 셸이 실행 시점에 확장한다. Claude 스킬은 `allowed-tools`에 같은 리터럴을 프리어프루브하지만 Cursor에는 스킬 단위 프리어프루브가 없어 첫 호출에 프롬프트가 뜰 수 있다. 어긋나도 대가는 권한 프롬프트 한 번뿐이다.
+소비 스킬은 `$HOME/.claude/scripts/…`(Claude), `$HOME/.cursor/scripts/…`(Cursor), 또는 `$HOME/.codex/scripts/…`(Codex)를 문자 그대로 호출한다. 스크립트가 스킬 폴더 밖에 있어 `${CLAUDE_SKILL_DIR}` 치환을 쓸 수 없기 때문이며, `$HOME`은 리터럴로 남고 셸이 실행 시점에 확장한다. Claude 스킬은 `allowed-tools`에 같은 리터럴을 프리어프루브하지만 Cursor·Codex에는 스킬 단위 프리어프루브가 없어 첫 호출에 프롬프트가 뜰 수 있다. 어긋나도 대가는 권한 프롬프트 한 번뿐이다.
 
 ## Model Tier
 
-에이전트마다 model·effort를 자기 프론트매터에 핀한다. `inherit`은 쓰지 않는다 — 그건 티어가 아니라 세션이 어쩌다 갖게 된 값이고, 루프를 Sonnet 세션에서 돌리는 순간 `security-reviewer`·`reliability-reviewer`가 파일 한 줄 안 바뀐 채 T2로 내려간다.
+에이전트마다 model·effort를 자기 프론트매터(또는 Codex TOML)에 핀한다. `inherit`은 쓰지 않는다 — 그건 티어가 아니라 세션이 어쩌다 갖게 된 값이고, 루프를 Sonnet 세션에서 돌리는 순간 `security-reviewer`·`reliability-reviewer`가 파일 한 줄 안 바뀐 채 T2로 내려간다.
 
 역할의 티어는 모델 세대가 아니라 **일의 성질**이다. 그래서 각 에이전트 본문에 `Tier:` 근거 한 줄을 남긴다 — 모델명이 바뀌어도 판단 근거는 살아남는다.
 
-| 티어 | 정의 | Claude | Cursor |
-| --- | --- | --- | --- |
-| **T1 judgment** | 되돌릴 수 없고 기계 검증이 불가능한 결정 | `opus` | `grok-4.5` |
-| **T2 execution** | 명세가 있고 결과가 기계로 검증 가능한 작업 | `sonnet` | `composer-2.5`, 단 agentic 역할은 예외 |
-| **T3 mechanical** | 판단이 사실상 없는 변환·집계 | *(미사용 — 아래 참조)* | *(미사용)* |
+| 티어 | 정의 | Claude | Codex | Cursor |
+| --- | --- | --- | --- | --- |
+| **T1 judgment** | 되돌릴 수 없고 기계 검증이 불가능한 결정 | `opus` | `gpt-5.6-sol` | `grok-4.5` |
+| **T2 execution** | 명세가 있고 결과가 기계로 검증 가능한 작업 | `sonnet` | **Terra**(긴 컨텍스트) 또는 **Luna**(짧은 컨텍스트) | `composer-2.5`, 단 agentic 역할은 예외 |
+| **T3 mechanical** | 판단이 사실상 없는 변환·집계 | *(미사용 — 아래 참조)* | *(미사용)* | *(미사용)* |
 
-**T3는 의도적으로 비어 있다.** Haiku는 컨텍스트 200K·캐시 최소 프리픽스 4096 tok·모델 레벨 effort 미지원인데, 이 하네스의 T2 작업은 대부분 repo-slice 추론이라 최저 티어가 가장 못하는 일이다. Composer 2.5도 컨텍스트 200K라 Cursor의 최저 티어가 같은 이유로 탈락한다. 진짜 기계적인 일은 더 작은 모델이 아니라 셸로 내린다(위 Runtime Scripts).
+**T3는 의도적으로 비어 있다.** Haiku는 컨텍스트 200K·캐시 최소 프리픽스 4096 tok·모델 레벨 effort 미지원인데, 이 하네스의 T2 작업은 대부분 repo-slice 추론이라 최저 티어가 가장 못하는 일이다. Composer 2.5의 200K와 Luna의 긴 컨텍스트 절벽(MRCR 41.3%) 때문에 다른 플랫폼의 최저 티어도 같은 이유로 탈락한다. 진짜 기계적인 일은 더 작은 모델이 아니라 셸로 내린다(위 Runtime Scripts).
 
 ### 에이전트 배치
 
-Claude는 `model`·`effort` 두 필드를 쓴다. **Cursor에는 `effort`도 `tools`도 없다 — effort는 모델 문자열 안으로 접히고, read-only는 `readonly` 불리언 하나다.**
+Claude는 `model`·`effort` 두 필드를 쓴다. **Codex**는 TOML `model` + `model_reasoning_effort`(+ 읽기 전용 `sandbox_mode`). **Cursor에는 `effort`도 `tools`도 없다** — effort는 모델 문자열 안으로 접히고, read-only는 `readonly` 불리언 하나다.
 
-| 에이전트 | Claude `model` / `effort` | Cursor `model` | `readonly` | 근거 |
-| --- | --- | --- | --- | --- |
-| `planner` | `opus` / `high` | `grok-4.5[effort=high]` | `true` | 아키텍처 판단은 되돌릴 수 없고 기계 검증이 불가능 |
-| `plan-consultant` | `opus` / `high` | `grok-4.5[effort=high]` | `true` | 실행자가 검증도 취소도 못 하는 판단을 위해 존재 |
-| `security-reviewer` | `opus` / `medium` | `grok-4.5[effort=high]` | `true` | authz 우회 miss는 회복 불가 — 4축 중 miss 비용 최대 |
-| `reliability-reviewer` | `opus` / `medium` | `grok-4.5[effort=high]` | `true` | 반사실 시뮬레이션은 약한 모델이 가장 먼저 무너지는 영역 |
-| `implementer` | `sonnet` / `high` | `grok-4.5[effort=medium]` | `false` | TDD가 ground truth지만 plan+research+컨벤션+코드를 함께 추론 — T2의 최상단이지 그 아래가 아니다 |
-| `tester` | `sonnet` / `medium` | `composer-2.5[fast=false]` | `false` | mutation score ≥80%가 기계 목표, 프로덕션 코드 수정 금지 |
-| `fixer` | `sonnet` / `medium` | `composer-2.5[fast=false]` | `false` | 리뷰 finding이 곧 명세이고 재테스트로 검증됨 |
-| `maintainability-reviewer` | `sonnet` / `medium` | `composer-2.5[fast=false]` | `true` | 주변 코드·프로젝트 규칙 대조는 명세된 패턴 매칭 |
-| `senior-generalist-reviewer` | `sonnet` / `medium` | `composer-2.5[fast=false]` | `true` | calibrated catch-all, miss 비용 최저 |
+| 에이전트 | Claude `model` / `effort` | Codex `model` / `effort` | Cursor `model` | Codex `sandbox` / Cursor `readonly` | 근거 |
+| --- | --- | --- | --- | --- | --- |
+| `planner` | `opus` / `high` | `gpt-5.6-sol` / `high` | `grok-4.5[effort=high]` | read-only / `true` | 아키텍처 판단은 되돌릴 수 없고 기계 검증이 불가능 |
+| `plan-consultant` | `opus` / `high` | `gpt-5.6-sol` / `high` | `grok-4.5[effort=high]` | read-only / `true` | 실행자가 검증도 취소도 못 하는 판단을 위해 존재 |
+| `security-reviewer` | `opus` / `medium` | `gpt-5.6-sol` / `medium` | `grok-4.5[effort=high]` | read-only / `true` | authz 우회 miss는 회복 불가 — 4축 중 miss 비용 최대 |
+| `reliability-reviewer` | `opus` / `medium` | `gpt-5.6-sol` / `medium` | `grok-4.5[effort=high]` | read-only / `true` | 반사실 시뮬레이션은 약한 모델이 가장 먼저 무너지는 영역 |
+| `implementer` | `sonnet` / `high` | **`gpt-5.6-terra` / `high`** | `grok-4.5[effort=medium]` | workspace-write / `false` | 긴 컨텍스트 역할 — Luna는 MRCR에서 무너짐; Terra ≈ Sol 품질을 ~2–2.5× 낮은 비용으로 |
+| `tester` | `sonnet` / `medium` | `gpt-5.6-luna` / `high` | `composer-2.5[fast=false]` | workspace-write / `false` | mutation score ≥80%가 기계 목표, 프로덕션 코드 수정 금지 |
+| `fixer` | `sonnet` / `medium` | `gpt-5.6-luna` / `high` | `composer-2.5[fast=false]` | workspace-write / `false` | 리뷰 finding이 곧 명세이고 재테스트로 검증됨 |
+| `maintainability-reviewer` | `sonnet` / `medium` | `gpt-5.6-luna` / `high` | `composer-2.5[fast=false]` | read-only / `true` | 주변 코드·프로젝트 규칙 대조는 명세된 패턴 매칭 |
+| `senior-generalist-reviewer` | `sonnet` / `medium` | `gpt-5.6-luna` / `high` | `composer-2.5[fast=false]` | read-only / `true` | calibrated catch-all, miss 비용 최저 |
 
-**effort 규칙 둘.** 최상단은 사지 않는다 — 기본 effort에서 `max`까지 올려도 티어 전반에서 몇 점 차이라, `xhigh`는 되돌릴 수 없는 결정에만 쓴다. 그리고 모델을 내릴 때 effort까지 같이 내리지 않는다: `implementer`는 `sonnet`으로 내려가면서 `effort: high`를 유지했다.
+**effort 규칙 둘.** 최상단은 사지 않는다 — 기본 effort에서 `max`까지 올려도 티어 전반에서 몇 점 차이라, `xhigh`는 되돌릴 수 없는 결정에만 쓴다. 그리고 모델을 내릴 때 effort까지 같이 내리지 않는다: Claude `implementer`는 `sonnet`으로 내려가면서 `effort: high`를 유지했고, Codex T2 행도 Luna/Terra에 `high`를 쓴다(싼 모델, 높은 effort).
+
+**Codex 전용.** `model_reasoning_effort = "ultra"`는 쓰지 않는다 — 자동 태스크 위임이 이 하네스의 dispatch와 충돌한다. `implementer`에 Luna를 두지 않는다(긴 컨텍스트 절벽). Codex 기본 루프는 **`dev-loop-light`**(not `dev-loop-noreview`)다 — Luna 덕분에 마지막 2축 리뷰 비용이 거의 없어서, light가 이미 noreview 절감분의 ~95%를 담는다.
 
 **Cursor의 effort 값은 Claude 값이 아니다.** Grok 4.5는 `low/medium/high` 3단뿐이고 기본이 `high`라, 위의 `xhigh`·`max`를 전제한 "최상단은 사지 않는다"가 적용되지 않는다 — 리뷰어는 `high`다. Composer는 effort를 아예 받지 않고 그 자리에 `[fast=false]`가 들어가는데, **이건 선택이 아니다**: Fast가 Cursor IDE 기본값이고 지능은 Standard와 같은데 약 6배 비싸며 T1인 Grok보다도 비싸서, 빠뜨리면 티어가 조용히 역전된다.
 
 `implementer`만 Cursor에서 T1 **모델**을 유지한다. 두 모델의 agentic 격차가 정확히 이 일에 떨어지고, plan+research+컨벤션+코드를 함께 싣는 역할에 200K 창은 맞지 않는다 — 그래서 모델 대신 effort를 내렸다.
 
-**이 표와 `hooks/cursor/hooks/model-pin-guard.sh`는 한 사실이 두 파일에 있는 것이다.** Cursor 행을 고치면 가드의 `case` 문도 같이 고친다. 갈라지면 가드가 정상 dispatch를 거부한다.
+**Cursor 표 행과 `hooks/cursor/hooks/model-pin-guard.sh`는 한 사실이 두 파일에 있는 것이다.** Cursor 행을 고치면 가드의 `case` 문도 같이 고친다. 갈라지면 가드가 정상 dispatch를 거부한다. Codex에는 해당 가드가 없다 — 역할 파일이 핀의 권위 소스다.
 
 ### 세션 운용 규칙
 
 스킬 프론트매터의 `model:`은 **해당 턴에만** 적용되고 다음 프롬프트에서 세션 모델로 복귀한다. `plan-dev`는 멀티턴 인터뷰이고 모든 루프는 사람 게이트에서 턴이 끊기므로, 둘 다 이 필드로 고정할 수 없다. 따라서 **호출 경계 = 세션 경계**로 운용한다:
 
-| 세션 | Claude | Cursor | 근거 |
-| --- | --- | --- | --- |
-| `plan-dev` | **Opus** | **Grok 4.5** (effort high) | 방향·경계·AC는 되돌릴 수 없고 실행자가 자가 수정 불가 |
-| **모든 `dev-loop*` 실행** | **Sonnet** | **Composer 2.5 Standard** | 컨트롤러가 하는 일은 전이표 조회 + LOOP append. T1 에이전트는 프론트매터 핀으로 T1 모델에서 돈다 |
+| 세션 | Claude | Codex | Cursor | 근거 |
+| --- | --- | --- | --- | --- |
+| `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.5** (effort high) | 방향·경계·AC는 되돌릴 수 없고 실행자가 자가 수정 불가 |
+| **모든 `dev-loop*` 실행** | **Sonnet** | **Luna / medium** | **Composer 2.5 Standard** | 컨트롤러가 하는 일은 전이표 조회 + LOOP append. T1 에이전트는 역할/프론트매터 핀으로 T1 모델에서 돈다 |
 
 4축을 도는 `dev-loop`도 예외가 아니다 — 리뷰어 4종의 모델이 전부 파일에 명시돼 있으므로 세션 모델이 어떤 에이전트의 티어도 바꾸지 못한다.
 
@@ -235,6 +237,8 @@ Claude는 `model`·`effort` 두 필드를 쓴다. **Cursor에는 `effort`도 `to
 ### 운용 스위치 — 켜지 않는다
 
 `CLAUDE_CODE_SUBAGENT_MODEL`은 프론트매터와 호출 인자를 **모두** 덮어쓰므로, 켜두면 위 표의 티어 핀이 통째로 무력화된다. `hooks/claude/settings.json`에 이 변수를 위한 `env` 블록을 두지 않은 것은 의도이며, 미설정이 정상 상태다. A/B 비교용 임시 레버로만 쓰고 반드시 되돌린다. (v2.1.196부터 값을 `inherit`으로 두면 미설정과 동일하게 취급되어 해석이 정상적으로 아래 단계로 내려간다.)
+
+**Codex의 `[agents] default_subagent_model` / `default_subagent_reasoning_effort`는 폴백일 뿐이다** — spawn 호출과 역할 파일 어느 쪽도 값을 안 줄 때만 적용되므로 역할 핀을 깨지 않는다. Claude env override보다 안전하다.
 
 **Cursor에는 이런 스위치가 없다 — 그게 더 나쁘다.** 그 자리를 대신하는 건 *의도치 않은* override다. 관리자 모델 제한, 플랜 제약, Cursor가 모르는 모델 ID 셋 중 하나면 "호환 모델"로 조용히 폴백한다. 아무도 켠 적이 없으니 아무도 끌 생각을 못 한다. `hooks/cursor/hooks/model-pin-guard.sh`가 정확히 이걸 위해 있다 — `subagentStart`에서 해석된 모델을 읽어 T1은 거부하고 T2는 기록한다. `agents/cursor/*.md`의 모델 ID 오타와 Cursor가 `~/.claude/agents/`를 다시 읽는 상황도 같은 가드가 잡는다.
 
@@ -255,9 +259,10 @@ Personal 환경(Claude Code) 설치 스크립트다.
 Work 환경(Codex) 설치 스크립트다.
 
 - `instructions/AGENTS.md`를 `~/.codex/AGENTS.md`로 복사한다.
-- `~/.agents/skills`를 비운 뒤 `skills/codex/`의 스킬로 다시 채운다.
+- `~/.codex/skills/`를 비운 뒤 `skills/codex/`의 스킬로 다시 채운다.
 - `~/.codex/agents/`를 비운 뒤 `agents/codex/*.toml`을 복사한다.
 - `~/.codex/hooks/`를 비운 뒤 `hooks/codex/hooks/*`를 복사하고, `hooks/codex/hooks.json`을 `~/.codex/hooks.json`으로 복사한다.
+- `~/.codex/scripts/`를 비운 뒤 `scripts/runtime/`의 내용을 `cp -rp`로 채운다(실행 권한 보존). Claude·Cursor와 같은 플랫폼 무관 소스다.
 - 마지막에 항목별 설치 개수와 상태 요약을 출력한다.
 
 ### apply-to-cursor.sh
