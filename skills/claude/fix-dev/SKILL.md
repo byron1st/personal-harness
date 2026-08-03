@@ -61,9 +61,19 @@ If the `Agent` tool or compatible sub-agent capability is unavailable, or dispat
 
 The main session never reads the touched files back into its own context after the sub-agent returns. That defeats the purpose of delegation.
 
+### 2b. Cascade — one T1 retry on a `failed` return
+
+**Distinct from the delegation failure above.** That one is *dispatch* never producing a sub-agent, and it asks the user. This one is a sub-agent that ran, hit the 3-attempts wall in step 6 of the work contract, and returned `## Stage Status: failed`.
+
+On `failed`, re-dispatch **exactly once** with the `Agent` tool's call-time `model: opus` argument, which outranks the persona's frontmatter. Hand the retry the same brief plus one line naming what the first attempt tried and observed. If the second return is also `failed`, present `failed` as-is — no third attempt, no direct main-session fallback, no further escalation.
+
+`needs-confirmation` and `blocked` are **not** retried. Neither is a capability problem: the first is the scope guard doing its job, the second is missing information that a stronger model cannot invent.
+
+Report the retry in step 3's summary — one line saying it fired and whether it recovered. That line is the only visible signal that the T2 fixer is under-powered for this class of defect.
+
 ### 3. Present the result
 
-When the sub-agent returns, present the summary to the user roughly verbatim — root cause, files changed, verification outcomes, and any notes. Translate to Korean if the sub-agent returned in English; keep file paths, command names, and code identifiers in their original form. Do not embellish with details the sub-agent did not provide. When the main session performed an explicitly authorized fallback, present the same fields directly.
+When the sub-agent returns, present the summary to the user roughly verbatim — root cause, files changed, verification outcomes, and any notes. Include the cascade line from §2b when a retry fired. Translate to Korean if the sub-agent returned in English; keep file paths, command names, and code identifiers in their original form. Do not embellish with details the sub-agent did not provide. When the main session performed an explicitly authorized fallback, present the same fields directly.
 
 ### 4. Scope-guard handling
 
@@ -83,7 +93,7 @@ The sub-agent's prompt must specify the following sequence. If the user explicit
 
 5. **Fix** — apply the **smallest correct change** that resolves the root cause. Do not refactor neighbouring code, do not rename "while I'm here", do not touch unrelated files. If a test reveals the production code is wrong, fix the production code — never weaken a test to make it pass. Match the existing code style.
 
-6. **Verify proportionally** — select verification in this order: (a) the reproduction command or affected test, (b) lint/test that directly covers the changed area, (c) project-required fast gates, then (d) a full build or E2E only when the change risk or project convention requires it. Run a formatter only as a non-mutating check or when project rules require it. Every selected command must pass. If one fails, first classify it as change-caused, a pre-existing baseline failure, or an environment failure. Fix only a change-caused root cause (never weaken a test); stop after **3 failed attempts on the same error** and return `failed` with what was tried and observed. Do not expand scope to repair a baseline or environment failure.
+6. **Verify proportionally** — select verification in this order: (a) the reproduction command or affected test, (b) lint/test that directly covers the changed area, (c) project-required fast gates, then (d) a full build or E2E only when the change risk or project convention requires it. Run a formatter only as a non-mutating check or when project rules require it. Every selected command must pass. If one fails, first classify it as change-caused, a pre-existing baseline failure, or an environment failure. Fix only a change-caused root cause (never weaken a test); stop after **3 failed attempts on the same error** and return `failed` with what was tried and observed. Do not expand scope to repair a baseline or environment failure. (A `failed` return does not end the fix: the main session re-dispatches once at T1 — see "Cascade" below.)
 
 7. **Branch** — stay on the branch given in the brief. Do not create branches, switch branches, or merge.
 

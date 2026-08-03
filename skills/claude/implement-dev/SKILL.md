@@ -95,6 +95,8 @@ When verification fails:
 4. **Fix immediately** - if you notice a failure mid-work, fix it before moving on. Do not accumulate failures.
 5. **Stop after 3 failed attempts on the same error** - describe what you tried and what you observed. In interactive mode, ask the user for guidance; in Worker mode, set `## Stage Status` to `failed` and return.
 
+A Worker `failed` return does not end the stage on its own: the Dispatcher re-dispatches **once** at T1 before passing `failed` up, and reports that it did. See [references/worker-contract.md](references/worker-contract.md) §E'.
+
 ## Completion
 
 - All plan TODO checkboxes are up to date.

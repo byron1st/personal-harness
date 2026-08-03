@@ -77,9 +77,22 @@ After the dispatcher receives ②, it renders a short summary for the user in ch
 
 - 2-4 bullets: what changed / verification status / red-flag and open-question gist / TODO completion at a glance (e.g. "7개 중 6개 완료, TODO4 blocked").
 - A clickable Markdown link to the ① report file by absolute path.
+- One line when a cascade retry fired (§E'): that the first Worker returned `failed` and whether the T1 retry recovered. Never omit this line to keep the summary tidy — it is the metric.
 - If `## Stage Status` is `blocked`, surface `## Decision Needed` first and prominently so the user sees what to decide, then stop - do not proceed to additional stages.
 
 When `implement-dev` runs in explicitly authorized direct mode, the same shape applies as the final chat output: short bullets + report link, with report sections kept in the file.
+
+## E'. Cascade — one T1 retry on a `failed` return
+
+**This is a different event from §E.** §E is *dispatch itself* never producing a Worker. Cascade is a Worker that ran, hit its own 3-attempts-per-error wall, and returned `## Stage Status: failed`. Do not merge the two: §E asks the user, cascade does not.
+
+When the Worker returns `failed`, the Dispatcher re-dispatches **exactly once** with the `Agent` tool's call-time `model: opus` argument, which outranks the persona's frontmatter. The retry gets the same prompt plus one line naming what the first attempt tried and observed, so it does not rediscover the same wall. If the second return is also `failed`, pass `failed` up unchanged — do not retry a third time, do not fall back to the main session, and do not escalate the model further.
+
+**The retry is capped at one.** Unbounded promotion turns a stuck Worker into an expensive stuck Worker.
+
+**Always report that it happened.** The Dispatcher's chat summary (③) carries one line: that a T1 retry fired, and whether it succeeded. This line is the only signal that the T2 implementer is under-powered for this class of work — without it there is no way to tell a working tier assignment from a wrong one that keeps getting bailed out.
+
+A loop controller never sees the first `failed`: the retry completes inside the Dispatcher, so `dev-loop*` observes only the final status. The loop's own rule — it never retries a `failed` stage — stays true, and no loop file changes.
 
 ## E. Delegation failure
 
