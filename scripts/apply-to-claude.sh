@@ -78,7 +78,7 @@ if [[ -f "${HOOKS_SOURCE_DIR}/settings.json" ]]; then
   fi
 fi
 
-echo "Personal harness applied:"
+echo "Claude harness applied:"
 echo "  Claude Code skills:       ${skills_count} directories installed to ${SKILLS_DIR}"
 echo "  Claude Code instructions: ${claude_md}"
 echo "  Claude Code sub-agents:   ${agents_count} files installed to ${AGENTS_DIR} (${agents_status})"

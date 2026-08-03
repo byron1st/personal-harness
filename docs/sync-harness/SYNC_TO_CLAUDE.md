@@ -112,7 +112,7 @@ Codex는 sandbox mode와 approval policy를 중심으로 권한을 설명한다.
 Codex custom agent는 standalone TOML이고, Claude Code custom subagent는 Markdown 파일의 YAML frontmatter와 본문으로 정의한다.
 
 - Codex agent 소스는 `agents/codex/<name>.toml`, Claude Code 대상은 `agents/claude/<name>.md`다.
-- 설치 대상은 개인 전역 agent면 `~/.claude/agents/`, 프로젝트 범위 agent면 `.claude/agents/`다. personal harness에서는 `scripts/apply-to-personal.sh`가 `agents/claude/*`를 `~/.claude/agents/`로 동기화한다.
+- 설치 대상은 개인 전역 agent면 `~/.claude/agents/`, 프로젝트 범위 agent면 `.claude/agents/`다. personal harness에서는 `scripts/apply-to-claude.sh`가 `agents/claude/*`를 `~/.claude/agents/`로 동기화한다.
 - filename과 frontmatter `name`은 같은 hyphenated name으로 유지한다. Claude Code가 반드시 파일명과 `name`을 같게 요구하는 것은 아니더라도, skill 본문 dispatch 참조와 맞추기 위해 이 repo에서는 일치시킨다.
 - TOML `developer_instructions`는 Markdown body로 옮긴다. 본문이 host-neutral하면 의미를 바꾸지 말고, Codex 전용 권한·sandbox·agent 이름만 제거한다.
 
@@ -159,7 +159,7 @@ Codex hook 설정은 `hooks.json` 또는 `config.toml` inline `[hooks]` 테이�
 - Codex 소스는 `hooks/codex/hooks.json`과 `hooks/codex/hooks/*.sh`, Claude Code 대상은 `hooks/claude/settings.json`과 `hooks/claude/hooks/*.sh`다.
 - command path의 `$HOME/.codex/hooks/...`를 `$HOME/.claude/hooks/...`로 바꾼다.
 - Codex의 `hooks.json` 전체를 Claude Code `settings.json`으로 그대로 복사하지 말고, `hooks` 블록을 `settings.json` 최상위 안에 둔다. 기존 Claude settings의 다른 키(`permissions`, `env`, `model` 등)는 설치 스크립트가 merge할 수 있어야 한다.
-- personal harness에서는 `scripts/apply-to-personal.sh`가 `hooks/claude/hooks/*`를 `~/.claude/hooks/`로 동기화하고, `hooks/claude/settings.json`을 `~/.claude/settings.json`에 merge한다.
+- personal harness에서는 `scripts/apply-to-claude.sh`가 `hooks/claude/hooks/*`를 `~/.claude/hooks/`로 동기화하고, `hooks/claude/settings.json`을 `~/.claude/settings.json`에 merge한다.
 
 ### Event and matcher mapping
 
@@ -194,5 +194,5 @@ Codex에서 MCP tool matcher를 쓰고 있었다면 Claude Code에서 같은 too
 ## Out of scope
 
 - 이 문서는 Claude Code가 Personal 중심이고 Codex가 Work 중심이라는 ownership을 바꾸지 않는다. 양쪽 변형은 상호 공유 가능하지만, 어느 쪽을 소스로 삼을지는 사용자가 선택한 현재 작업 방향이 정한다.
-- 이 문서는 설치/배포를 수행하지 않는다. Claude Code 설치는 `scripts/apply-to-personal.sh`가 담당한다.
+- 이 문서는 설치/배포를 수행하지 않는다. Claude Code 설치는 `scripts/apply-to-claude.sh`가 담당한다.
 - Codex 변형의 현재 동작이 Claude Code에 맞지 않으면 그대로 복사하지 말고, 사용자-facing 의미만 보존한 채 Claude Code 실행모델로 재작성한다.

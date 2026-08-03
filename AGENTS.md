@@ -16,7 +16,7 @@ personal-harness/
 ├── agents/           # Persona sub-agent definitions (claude/*.md · codex/*.toml · cursor/*.md · grok/*.md)
 ├── hooks/            # Per-platform hooks (claude: settings.json + *.sh · codex/cursor/grok: hooks.json + *.sh)
 ├── instructions/     # Distribution source of the global AGENTS.md instructions
-├── scripts/          # Install/sync scripts (apply-to-personal.sh · apply-to-work.sh · apply-to-cursor.sh · apply-to-grok.sh · apply-to-all.sh · setup-ctx7.sh) + runtime/: platform-neutral runtime scripts installed to ~/.claude/scripts/, ~/.cursor/scripts/, ~/.codex/scripts/, and ~/.grok/scripts/
+├── scripts/          # Install/sync scripts (apply-to.sh · apply-to-{claude,codex,cursor,grok}.sh · apply-to-all.sh · setup-ctx7.sh) + runtime/: platform-neutral runtime scripts installed to ~/.claude/scripts/, ~/.cursor/scripts/, ~/.codex/scripts/, and ~/.grok/scripts/
 ├── docs/             # Harness docs (sync-harness/: SYNC_TO_* conversion rules · loop-engineering/: loop-engineering plan & research docs · cost-effective/: model-tiering cost analysis)
 └── .agents/skills/   # Meta-skills for the harness itself (sync-harness; mirrored in .claude/skills/)
 ```
@@ -125,7 +125,7 @@ Platform-specific config files: Claude Code uses the `hooks` block in `settings.
 
 ### Runtime Scripts
 
-`scripts/runtime/*.sh` is installed to `~/.claude/scripts/` by `apply-to-personal.sh`, to `~/.cursor/scripts/` by `apply-to-cursor.sh`, to `~/.codex/scripts/` by `apply-to-work.sh`, and to `~/.grok/scripts/` by `apply-to-grok.sh` (distinct from the repo's top-level `scripts/`, which is installer-only and never copied). The source is platform-neutral — it reads `Makefile`, `package.json`, and git, nothing else — so all four installers copy the same files rather than maintaining platform forks. Skills call these instead of re-deriving the same facts with an LLM on every cold Worker:
+`scripts/runtime/*.sh` is installed to `~/.claude/scripts/` by `apply-to-claude.sh`, to `~/.cursor/scripts/` by `apply-to-cursor.sh`, to `~/.codex/scripts/` by `apply-to-codex.sh`, and to `~/.grok/scripts/` by `apply-to-grok.sh` (distinct from the repo's top-level `scripts/`, which is installer-only and never copied). The source is platform-neutral — it reads `Makefile`, `package.json`, and git, nothing else — so all four installers copy the same files rather than maintaining platform forks. Skills call these instead of re-deriving the same facts with an LLM on every cold Worker:
 
 | Script | Consumers | Returns |
 | --- | --- | --- |

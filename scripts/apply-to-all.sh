@@ -1,4 +1,6 @@
-scripts/apply-to-personal.sh
-scripts/apply-to-work.sh
-scripts/apply-to-cursor.sh
-scripts/apply-to-grok.sh
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Sequential install for every supported agent.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec bash "${SCRIPT_DIR}/apply-to.sh" claude codex cursor grok

@@ -162,7 +162,7 @@ Claude frontmatter의 `model` / `effort`는 Codex role TOML의 `model` / `model_
 
 ### Runtime scripts path
 
-- 소스는 공용 `scripts/runtime/*.sh`다. `apply-to-work.sh`가 `~/.codex/scripts/`로 복사한다.
+- 소스는 공용 `scripts/runtime/*.sh`다. `apply-to-codex.sh`가 `~/.codex/scripts/`로 복사한다.
 - 소비 스킬 본문의 호출 경로는 `$HOME/.codex/scripts/detect-commands.sh` · `$HOME/.codex/scripts/resolve-scope.sh` 리터럴이다 (Claude의 `$HOME/.claude/scripts/…` 대응).
 
 ## Hook migration

@@ -10,7 +10,7 @@ personal-harness/
 ├── agents/           # persona 서브에이전트 정의 (claude/*.md · codex/*.toml · cursor/*.md · grok/*.md)
 ├── hooks/            # 플랫폼별 훅 (claude: settings.json + *.sh · codex/cursor/grok: hooks.json + *.sh)
 ├── instructions/     # 전역 지침 AGENTS.md 배포 소스
-├── scripts/          # 설치·동기화 스크립트 (apply-to-personal.sh · apply-to-work.sh · apply-to-cursor.sh · apply-to-grok.sh · apply-to-all.sh · setup-ctx7.sh) + runtime/: ~/.claude/scripts/·~/.cursor/scripts/·~/.codex/scripts/·~/.grok/scripts/로 설치되는 플랫폼 무관 런타임 스크립트
+├── scripts/          # 설치·동기화 스크립트 (apply-to.sh · apply-to-{claude,codex,cursor,grok}.sh · apply-to-all.sh · setup-ctx7.sh) + runtime/: ~/.claude/scripts/·~/.cursor/scripts/·~/.codex/scripts/·~/.grok/scripts/로 설치되는 플랫폼 무관 런타임 스크립트
 ├── docs/             # 하네스 문서 (sync-harness/: SYNC_TO_* 변환 규칙 · loop-engineering/: 루프 엔지니어링 계획·조사 문서 · cost-effective/: 모델 티어링 비용 분석)
 └── .agents/skills/   # 하네스 자체용 메타 스킬 (sync-harness; .claude/skills/에 동일 사본)
 ```
@@ -27,7 +27,7 @@ personal-harness/
 
 | 도구 | 적용 범위 | 용도 | 설치 |
 | --- | --- | --- | --- |
-| `jq` | 전체(Claude/Codex shell hook + `apply-to-personal.sh`) | hook 입력 파싱, `settings.json` 머지, `loki-log-search`의 LogQL URL 인코딩 | `brew install jq` |
+| `jq` | 전체(Claude/Codex shell hook + `apply-to-claude.sh`) | hook 입력 파싱, `settings.json` 머지, `loki-log-search`의 LogQL URL 인코딩 | `brew install jq` |
 | `git` | 전체 shell hook 및 `commit-code` | 세션 컨텍스트 분류, git identity 검증, 커밋 후 문서 드리프트 검사 | `brew install git` |
 | `make` | 전체 `auto-format` hook | 프로젝트 Makefile의 `fmt`/`format` 타겟 실행 | macOS: Xcode Command Line Tools, Linux: `build-essential` |
 | `rg` (ripgrep) | 전체 `enforce-rg` hook + AGENTS.md | 재귀 `grep` 대신 코드 검색 강제 | `brew install ripgrep` |
@@ -173,7 +173,7 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 
 ### Runtime Scripts
 
-`scripts/runtime/*.sh`는 `apply-to-personal.sh`가 `~/.claude/scripts/`로, `apply-to-cursor.sh`가 `~/.cursor/scripts/`로, `apply-to-work.sh`가 `~/.codex/scripts/`로, `apply-to-grok.sh`가 `~/.grok/scripts/`로 설치한다(레포 최상위 `scripts/`와 다르다 — 그쪽은 설치 스크립트 전용이며 홈으로 복사되지 않는다). 소스는 플랫폼 의존성이 없어서 — `Makefile`·`package.json`·git만 읽는다 — 네 설치 스크립트가 사본을 따로 두지 않고 같은 파일을 복사한다. 스킬이 매번 cold Worker에서 LLM으로 재도출하던 사실을 셸로 내린 것이다.
+`scripts/runtime/*.sh`는 `apply-to-claude.sh`가 `~/.claude/scripts/`로, `apply-to-cursor.sh`가 `~/.cursor/scripts/`로, `apply-to-codex.sh`가 `~/.codex/scripts/`로, `apply-to-grok.sh`가 `~/.grok/scripts/`로 설치한다(레포 최상위 `scripts/`와 다르다 — 그쪽은 설치 스크립트 전용이며 홈으로 복사되지 않는다). 소스는 플랫폼 의존성이 없어서 — `Makefile`·`package.json`·git만 읽는다 — 네 설치 스크립트가 사본을 따로 두지 않고 같은 파일을 복사한다. 스킬이 매번 cold Worker에서 LLM으로 재도출하던 사실을 셸로 내린 것이다.
 
 | 스크립트 | 소비 스킬 | 반환 |
 | --- | --- | --- |
@@ -247,19 +247,31 @@ Claude는 `model`·`effort` 두 필드를 쓴다. **Codex**는 TOML `model` + `m
 
 ## Scripts
 
-`scripts/`에는 설치·동기화 스크립트 6개가 있다. `apply-to-*.sh`는 이 레포의 소스 변형을 사용자 홈의 실제 에이전트 환경으로 배포하고, `setup-ctx7.sh`는 반대로 외부 생성물을 레포 소스에 반영한다. 설치 대상 디렉토리는 기존 내용을 비운 뒤 다시 채우는 방식이라, 홈 디렉토리에서 직접 수정한 스킬·에이전트·훅은 다음 실행 때 소스 기준으로 덮어써진다.
+`scripts/`에는 설치·동기화 스크립트가 있다. `apply-to-*.sh`는 이 레포의 소스 변형을 사용자 홈의 실제 에이전트 환경으로 배포하고, `setup-ctx7.sh`는 반대로 외부 생성물을 레포 소스에 반영한다. 설치 대상 디렉토리는 기존 내용을 비운 뒤 다시 채우는 방식이라, 홈 디렉토리에서 직접 수정한 스킬·에이전트·훅은 다음 실행 때 소스 기준으로 덮어써진다.
 
-### apply-to-personal.sh
+### apply-to.sh
 
-Personal 환경(Claude Code) 설치 스크립트다.
+에이전트 이름을 인자로 받아 해당 설치 스크립트만 순차 실행하는 공통 진입점이다.
+
+```bash
+scripts/apply-to.sh claude
+scripts/apply-to.sh claude cursor
+scripts/apply-to.sh claude codex cursor grok
+```
+
+허용 인자: `claude` · `codex` · `cursor` · `grok` (대소문자 무시, 중복 제거). 구 이름 `personal`/`work`는 거부하고 `claude`/`codex`로 안내한다.
+
+### apply-to-claude.sh
+
+Claude Code 설치 스크립트다.
 
 - Claude Code: `instructions/AGENTS.md`를 `~/.claude/CLAUDE.md`로 복사하고, `~/.claude/skills`·`~/.claude/agents`·`~/.claude/hooks`·`~/.claude/scripts`를 비운 뒤 각각 `skills/claude/`·`agents/claude/`·`hooks/claude/hooks/`·`scripts/runtime/`의 내용으로 다시 채운다. 훅과 런타임 스크립트는 `cp -rp`로 복사해 실행 권한을 보존한다.
 - Claude Code 설정: `hooks/claude/settings.json`의 `hooks` 블록을 `~/.claude/settings.json`에 `jq`로 머지한다. 사용자의 `permissions`/`model`/`env` 등 다른 설정은 보존되며, 대상 파일이 없으면 통째로 생성한다 (jq 필요).
 - 마지막에 항목별 설치 개수와 상태 요약을 출력한다.
 
-### apply-to-work.sh
+### apply-to-codex.sh
 
-Work 환경(Codex) 설치 스크립트다.
+Codex 설치 스크립트다.
 
 - `instructions/AGENTS.md`를 `~/.codex/AGENTS.md`로 복사한다.
 - `~/.codex/skills/`를 비운 뒤 `skills/codex/`의 스킬로 다시 채운다.
@@ -290,7 +302,7 @@ Grok Build 전용 변형 설치 스크립트다(Claude/Cursor compat 경로를 �
 
 ### apply-to-all.sh
 
-`apply-to-personal.sh`·`apply-to-work.sh`·`apply-to-cursor.sh`·`apply-to-grok.sh`를 순서대로 실행하는 래퍼다. 내부 경로가 레포 루트 기준 상대 경로이므로 레포 루트에서 실행해야 한다.
+`apply-to.sh claude codex cursor grok`를 호출해 네 에이전트 설치를 순서대로 실행하는 래퍼다. 어디서 실행해도 된다(스크립트가 자체 경로 기준으로 해석한다).
 
 Codex에서 `review-code-claude`를 사용하려면 Claude `review-code`와 reviewer agent 4개도 필요하므로 `apply-to-all.sh`로 함께 설치한다. 스킬은 명시적 `$review-code-claude` 호출에만 활성화된다.
 
