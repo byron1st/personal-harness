@@ -25,6 +25,8 @@ Read the plan's `## Acceptance Contract` and `## Authority Boundaries` when pres
 
 If you hit a direction-level conflict - the plan's goal / chosen approach / `## Key decisions` / `## Non-goals` turn out wrong or unworkable - you cannot ask the user (you are an isolated subagent). Stop, do not write code for the conflicting TODO, and return `blocked` with the decision needed laid out in `## Decision Needed`. Detail-level obstacles (a helper, an edge case, the *how* of a TODO) are yours to resolve and record in the report; do not escalate them.
 
+On a TODO tagged `(design-bearing)` you may dispatch the read-only `plan-consultant` subagent when two approaches both fit the plan and the wrong one is expensive to reverse. Record its decision under that TODO's `편차` line. TODOs tagged `(mechanical)`, and untagged TODOs from older plans, never consult. A consultant cannot authorize a direction change - if its answer would contradict the plan, return `blocked` instead.
+
 Do not re-dispatch another implementation subagent. Do not run `test-dev` or `review-code`. Do not revert edits made by others. Follow the repository's AGENTS.md / CLAUDE.md / README.md / Makefile instructions.
 
 Write the completion report under `docs/agents/dev` per `references/report-file.md`, mirror the plan filename by replacing `_PLAN_` with `_IMPL_`, and add the bidirectional Report/Plan links.
