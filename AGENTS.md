@@ -14,7 +14,7 @@ personal-harness/
 ├── agents/           # Persona sub-agent definitions (claude/*.md · codex/*.toml)
 ├── hooks/            # Per-platform hooks (claude: settings.json + *.sh · codex: hooks.json + *.sh)
 ├── instructions/     # Distribution source of the global AGENTS.md instructions
-├── scripts/          # Install/sync scripts (apply-to-personal.sh · apply-to-work.sh · apply-to-all.sh · setup-ctx7.sh)
+├── scripts/          # Install/sync scripts (apply-to-personal.sh · apply-to-work.sh · apply-to-all.sh · setup-ctx7.sh) + claude/: runtime scripts installed to ~/.claude/scripts/
 ├── docs/             # Harness docs (sync-harness/: SYNC_TO_* conversion rules · loop-engineering/: loop-engineering plan & research docs · cost-effective/: model-tiering cost analysis)
 └── .agents/skills/   # Meta-skills for the harness itself (sync-harness; mirrored in .claude/skills/)
 ```
@@ -26,10 +26,24 @@ The default flow can run in two modes. Both share the same skill set and artifac
 ### Loop Engineering
 
 ```
-plan-dev → dev-loop( implement-dev → test-dev → review-code → (fix-dev → test-dev → review-code)* ) → commit-code → request-merge
+plan-dev → dev-loop*( implement-dev → test-dev → [review-code] → (fix-dev → test-dev → [review-code])* ) → commit-code → request-merge
 ```
 
-`dev-loop` drives one approved single-step plan (its `Acceptance Contract` / `Authority Boundaries` are required at preflight) through the cycle until every termination predicate holds, then stops at READY_TO_COMMIT. State is checkpointed append-only to a LOOP file under `docs/agents/dev`; triage (Fix/Accept), AR approval, and commits stay human-owned.
+A loop drives one approved single-step plan (its `Acceptance Contract` / `Authority Boundaries` are required at preflight) through the cycle until every termination predicate holds, then stops at READY_TO_COMMIT. State is checkpointed append-only to a LOOP file under `docs/agents/dev` (one shared format across all three variants); triage (Fix/Accept), AR approval, and commits stay human-owned.
+
+**Three variants coexist — pick before starting, the loop does not switch mid-run:**
+
+| Skill | Review | Mutation | Use for |
+| --- | --- | --- | --- |
+| `dev-loop-noreview` | none | no | **The default.** Ordinary everyday work |
+| `dev-loop-light` | `maintainability` + `senior-generalist` | no | Wants a review, but not all four axes |
+| `dev-loop` | all four axes | yes | Genuinely serious or large work, or anything touching security-/reliability-sensitive paths |
+
+`dev-loop-light` deliberately omits the two axes whose misses are unrecoverable. A change touching authn/authz, secrets, concurrency, or partial-failure paths belongs in `dev-loop`.
+
+**No variant is gate-free.** All three keep the same two human gates: the TESTING suspected-defect gate (**Fix / Accept**, with an Accept recorded as an AR entry) and READY_TO_COMMIT. Dropping review drops the reviewers, not the human's judgement.
+
+**`dev-loop-noreview` has no reviewer reading the change**, so the IMPL report is the only record of what the implementer did. Read its `## TODO Fulfillment` and AC evidence yourself at READY_TO_COMMIT — instruction drift is exactly what the four-axis review used to catch.
 
 ### Manual Development
 
@@ -50,11 +64,13 @@ Each skill under `skills/<platform>/` is managed in its own folder. See each ski
 | Skill | Description | Execution | Artifacts |
 | --- | --- | --- | --- |
 | `plan-dev` | Drafts an implementation plan via Plan-mode interview; locks `Acceptance Contract` / `Authority Boundaries`; splits into multi-step when needed | Main session (conditionally delegates to `planner`) | PLAN·RESEARCH under `docs/agents/` |
-| `implement-dev` | Executes the approved plan with TDD and collects per-AC evidence; returns `blocked` on direction conflicts | Dispatcher → `implementer` Worker | Code + IMPL report |
-| `fix-dev` | Fixes one reviewed defect at a time (root cause → fix → verify); never commits | Dispatcher → Worker | `## Fix` entries appended to the IMPL report |
-| `test-dev` | Fills unit/e2e gaps and removes LIVED mutants over a git scope (default: diff vs `main`); never modifies production code | Dispatcher → Worker | Test code (no file artifact) |
-| `review-code` | Dispatches 4 reviewer personas in parallel and aggregates findings; HIGH/CRITICAL go through user Fix/Accept triage, accepted items recorded as AR and waived in later reviews | Dispatcher → 4 reviewers | Findings, `Accepted Review Exceptions` |
-| `dev-loop` | Thin controller repeating implement→test→review with fix cycles until termination predicates hold; stops at READY_TO_COMMIT | Main session (invokes each stage skill's Dispatcher flow) | LOOP file (append-only) |
+| `implement-dev` | Executes the approved plan with TDD and collects per-AC evidence; returns `blocked` on direction conflicts; consults `plan-consultant` on `(design-bearing)` TODOs | Dispatcher → `implementer` Worker | Code + IMPL report |
+| `fix-dev` | Fixes one reviewed defect at a time (root cause → fix → verify); never commits | Dispatcher → `fixer` Worker | `## Fix` entries appended to the IMPL report |
+| `test-dev` | Fills unit/e2e gaps and removes LIVED mutants over a git scope (default: diff vs `main`); never modifies production code; the caller may put mutation out of scope | Dispatcher → `tester` Worker | Test code (no file artifact) |
+| `review-code` | Dispatches reviewer personas in parallel (4 by default, or a caller-named subset) and aggregates findings; reviewers report everything with a `Confidence` tag and **this skill filters**; HIGH/CRITICAL go through user Fix/Accept triage, accepted items recorded as AR and waived in later reviews | Dispatcher → reviewers | Findings, `Accepted Review Exceptions` |
+| `dev-loop` | Thin controller repeating implement→test→review(4축)→fix until termination predicates hold; stops at READY_TO_COMMIT. **Heavy — serious or large work only** | Main session (invokes each stage skill's Dispatcher flow) | LOOP file (append-only) |
+| `dev-loop-light` | Same controller with review narrowed to 2 axes and no mutation | Main session | LOOP file (append-only) |
+| `dev-loop-noreview` | **The default.** Same controller with no review and no mutation; the TESTING Fix/Accept gate remains | Main session | LOOP file (append-only) |
 | `commit-code` | Creates a commit; runs a read-only documentation-drift check afterward | Main session | Commit |
 | `request-merge` | Creates/updates a PR (`gh`, personal) or MR (`glab`, work) | Main session | PR/MR |
 
@@ -74,14 +90,21 @@ Each skill under `skills/<platform>/` is managed in its own folder. See each ski
 
 Persona sub-agent definitions under `agents/<platform>/`. Formats differ by platform (Claude: `.md`, Codex: `.toml`). Skills dispatch them; direct user invocation is not the norm.
 
+Every agent pins its own `model` and `effort` — see [Model Tier](#model-tier). `inherit` appears nowhere in this harness by design.
+
 | Agent | Persona · Scope | Dispatched by | Access |
 | --- | --- | --- | --- |
 | `planner` | Software architect — direction, boundaries, interfaces, risks; returns user-facing question lists; reviews plan drafts | `plan-dev` (conditional) | Read-only |
+| `plan-consultant` | Escalation hatch — decides a fork where two approaches both fit the plan but the wrong one is expensive to reverse; returns a short decision, never code | `implementer`, on `(design-bearing)` TODOs only | Read-only |
 | `implementer` | Minimal-code implementation Worker; does not relitigate scope | `implement-dev` | Write |
+| `tester` | Test-hardening Worker — unit/e2e gaps, LIVED mutants; test code only, records suspected defects as `TEST-NNN` findings | `test-dev` | Write |
+| `fixer` | Single-defect executor — smallest correct fix + regression coverage; `needs-confirmation` when the fix needs its own plan | `fix-dev` | Write |
 | `security-reviewer` | Security axis — authn/authz, secrets, injection, crypto misuse, TOCTOU | `review-code` (parallel) | Read-only |
 | `reliability-reviewer` | Reliability axis — error handling, lifecycle, concurrency, timeouts, partial failure | `review-code` (parallel) | Read-only |
 | `maintainability-reviewer` | Maintainability axis — style consistency, abstractions, naming, module boundaries, dead code | `review-code` (parallel) | Read-only |
 | `senior-generalist-reviewer` | Remaining ISO 25010 axes — performance, compatibility, UX, operational safety | `review-code` (parallel) | Read-only |
+
+The four reviewers share an identical `## Reporting contract` section in their bodies (bug bar, priority + confidence scales, per-finding block, specificity rules). It lives there rather than in `review-code`'s dispatch prompt so it is cached once per reviewer instead of re-sent four times per round — do not move it back.
 
 ### Hooks
 
@@ -96,6 +119,64 @@ Hook definitions and scripts under `hooks/<platform>/`. Common shell hooks (`hoo
 | `auto-format.sh` | After file edits | Runs the project Makefile's `fmt`/`format` target |
 
 Platform-specific config files: Claude Code uses the `hooks` block in `settings.json`, and Codex uses `hooks.json`. Hooks are guardrails; they take no part in `dev-loop` stage transitions or completion decisions. `jq`·`git`·`make`·`rg`·`fd` are required (see README.md Prerequisites for details).
+
+### Runtime Scripts
+
+`scripts/claude/*.sh` is installed to `~/.claude/scripts/` by `apply-to-personal.sh` (distinct from the repo's top-level `scripts/`, which is installer-only and never copied). Skills call these instead of re-deriving the same facts with an LLM on every cold Worker:
+
+| Script | Consumers | Returns |
+| --- | --- | --- |
+| `detect-commands.sh` | `implement-dev` · `test-dev` · `fix-dev` | lint/format/test/build/mutation/e2e commands from `Makefile` targets and `package.json` scripts, as JSON. `null` for anything only named in prose — the caller reads that itself |
+| `resolve-scope.sh` | `test-dev` · `review-code` | diff range, changed-file absolute paths, and languages involved, as JSON |
+
+Consumers call them by literal `$HOME/.claude/scripts/…` path and pre-approve the same literal in `allowed-tools`. `${CLAUDE_SKILL_DIR}` is unavailable here because the scripts live outside any skill folder; `$HOME` stays literal on both sides and the shell expands it at run time. A mismatch costs one permission prompt, nothing more.
+
+## Model Tier
+
+Every agent's model and effort is pinned in its own frontmatter. `inherit` is not used anywhere: it is not a tier, it is whatever the session happened to hold, and it would silently demote `security-reviewer` and `reliability-reviewer` to T2 the moment a loop runs in a Sonnet session.
+
+The tier of a role is a property of the work, not of the model generation. Each agent body carries a one-line `Tier:` rationale so the reasoning survives when the model names change.
+
+| Tier | Definition | Claude |
+| --- | --- | --- |
+| **T1 judgment** | Irreversible decisions that cannot be machine-verified | `opus` |
+| **T2 execution** | Specified work whose result is machine-checkable | `sonnet` |
+| **T3 mechanical** | Transformation and aggregation with no real judgement | *(unused — see below)* |
+
+**T3 is empty on purpose.** Haiku's 200K context, 4096-token minimum cache prefix, and lack of model-level effort make it a poor fit for this harness, whose T2 work is mostly repo-slice reasoning — the thing the smallest tier is worst at. Genuinely mechanical work goes to the shell (Runtime Scripts above), not to a smaller model.
+
+### Agent placement
+
+| Agent | `model` | `effort` | Why this tier |
+| --- | --- | --- | --- |
+| `planner` | `opus` | `high` | Architecture calls are irreversible and unverifiable |
+| `plan-consultant` | `opus` | `high` | Exists precisely for calls the executor cannot verify or cheaply undo |
+| `security-reviewer` | `opus` | `medium` | A missed authz bypass is unrecoverable — highest miss cost of the four axes |
+| `reliability-reviewer` | `opus` | `medium` | Counterfactual simulation is the first thing weaker models lose |
+| `implementer` | `sonnet` | `high` | TDD is ground truth, but it reasons over plan + research + conventions + code at once — top of T2, never below |
+| `tester` | `sonnet` | `medium` | Mutation score ≥80% is a machine goal; barred from production code |
+| `fixer` | `sonnet` | `medium` | The review finding is the spec; a re-test verifies the result |
+| `maintainability-reviewer` | `sonnet` | `medium` | Style and rule matching against the surrounding code is specified pattern matching |
+| `senior-generalist-reviewer` | `sonnet` | `medium` | Calibrated catch-all, lowest miss cost |
+
+**effort follows two rules.** Do not buy the top of the scale — the jump from a model's default effort to `max` is worth a couple of points across the board, so `xhigh` is reserved for decisions that cannot be revisited. And when a model comes down a tier, effort does not follow it down: `implementer` moved to `sonnet` and kept `effort: high`.
+
+### Session operating rules
+
+A skill's `model:` frontmatter applies **only to the current turn** and reverts to the session model at the next prompt. `plan-dev` is a multi-turn interview and every loop breaks turns at its human gates, so neither can be pinned that way. The invocation boundary is therefore the **session** boundary:
+
+| Session | Model | Why |
+| --- | --- | --- |
+| `plan-dev` | **Opus** | Direction, boundaries, and ACs are irreversible, and the executor cannot self-correct a wrong one |
+| **every `dev-loop*` run** | **Sonnet** | The controller reads a transition table and appends to a LOOP file. T1 agents still run on Opus via their frontmatter pins |
+
+This applies to `dev-loop` too, four axes and all — C1 and C8 pin every reviewer's model, so the session model no longer decides any agent's tier.
+
+**This part is a habit, not a file.** It takes effect when you start the session, and nothing in the repo enforces it.
+
+### Operating switch — leave it unset
+
+`CLAUDE_CODE_SUBAGENT_MODEL` overrides **both** frontmatter and per-invocation arguments, so setting it neutralises every tier pin in this table at once. There is deliberately no `env` block for it in `hooks/claude/settings.json`; unset is the correct state. Use it only as a deliberate, temporary A/B lever, and unset it afterwards. (Since v2.1.196 the value `inherit` is treated as unset, so resolution falls through normally.)
 
 ## Environment Variables
 
