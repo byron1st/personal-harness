@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      { "command": "$HOME/.cursor/hooks/session-context.sh" }
+    ],
+    "preToolUse": [
+      { "command": "$HOME/.cursor/hooks/git-identity-guard.sh" },
+      { "command": "$HOME/.cursor/hooks/enforce-rg.sh" },
+      { "command": "$HOME/.cursor/hooks/enforce-fd.sh" }
+    ],
+    "afterFileEdit": [
+      { "command": "$HOME/.cursor/hooks/auto-format.sh" }
+    ],
+    "subagentStart": [
+      { "command": "$HOME/.cursor/hooks/model-pin-guard.sh" }
+    ]
+  }
+}
