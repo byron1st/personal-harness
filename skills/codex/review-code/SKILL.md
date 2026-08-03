@@ -5,7 +5,7 @@ description: Review code changes for bugs, security, reliability, maintainabilit
 
 # Review Code
 
-You are the reviewer and Dispatcher. Gather context once, dispatch four parallel Codex reviewer agents (`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`), and aggregate their findings into a single output. If no reviewer Worker can be spawned or any required spawn fails, stop before reviewing in the main session, report the delegation failure and affected axes, and ask the user whether to continue with a direct four-axis review or stop. Never silently substitute a main-session review.
+You are the reviewer and Dispatcher. Gather context once, dispatch the reviewer agents in parallel (`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer` — all four unless the caller names a subset) as Codex custom agents with `fork_turns="none"`, and aggregate their findings into a single output. If any required spawn fails, stop before reviewing that axis in the main session, report the delegation failure and affected axes, and ask the user whether to continue with a direct review of the missing axes or stop. Never silently substitute a main-session review.
 
 ## Reviewer roles
 
@@ -16,9 +16,9 @@ Four review axes. Dispatch one Codex custom agent per axis:
 - `maintainability-reviewer` — fit critic. Codebase-style consistency, abstractions that don't pay rent, naming, module boundaries, project-rule violations, dead code introduced by the change.
 - `senior-generalist-reviewer` — calibrated catch-all for the remaining ISO 25010 axes. Performance efficiency, compatibility, interaction capability, functional suitability, operational safety, flexibility.
 
-Codex agent names are `security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, and `senior-generalist-reviewer`. If a custom agent is unavailable in the current Codex session, fall back to a Codex `explorer` with the corresponding persona instructions embedded in the prompt and mention the fallback in the final summary.
+Codex agent names match the axis names. If a custom agent is unavailable, fall back to a Codex `explorer` with that persona's contract embedded in the prompt and mention the fallback in the final summary. Each persona explicitly defers what the others cover, so duplicates should be rare. When they do overlap on the same `Location`, you deduplicate during aggregation.
 
-Each persona explicitly defers what the others cover, so duplicates should be rare. When they do overlap on the same `Location`, you deduplicate during aggregation.
+**Axis subset**: the caller may name a subset of these axes, and the default is **all four**. `dev-loop-light` names `maintainability-reviewer` + `senior-generalist-reviewer`; a user may ask for any subset directly. Dispatch exactly the named axes in parallel and run the rest of this skill unchanged — aggregation, triage, the AR registry, and Stage Status do not care how many axes reported. State which axes ran at the top of the final output: a clean verdict from a subset is a statement about what was looked at, not about the change, and the axes that did not run are exactly the ones nobody checked.
 
 ## Scope of the Review
 
@@ -38,38 +38,39 @@ Before dispatching, do these once. The result becomes part of every dispatch pro
    - Normal branch: `git diff main...HEAD` (or `git diff origin/main...HEAD`).
    - On `main`: `git diff HEAD` for staged+unstaged and `git status` for untracked files.
 2. Read `AGENTS.md` / `CLAUDE.md` at the repo root and any nested copies in directories the diff touches. Extract any rules relevant to the four axes.
-3. List the touched files with absolute paths and the language(s) involved.
+3. List the touched files with absolute paths and the language(s) involved. `$HOME/.codex/scripts/resolve-scope.sh {branch|head|uncommitted|all}` returns both — plus the diff range used in step 1 — as one JSON blob. These are shell facts; computing them once here is what stops each dispatched reviewer from re-deriving them.
 4. From the same instruction files, load the `## Accepted Review Exceptions` registry (see "Accepted Review Exceptions registry" below) and keep the entries whose `Applies to` scope plausibly overlaps the diff. When none exist or none overlap, pass nothing — do not mention the mechanism to the reviewers.
 
-If the diff is very large (roughly >2000 changed lines), review one file at a time and use one set of four reviewers per file (still four in parallel each round). If the user explicitly authorizes direct fallback after a delegation failure, run the four main-session reviewer passes per file. Note the file-by-file mode at the end of the final output so the user knows the review was chunked.
+If the diff is very large (roughly >2000 changed lines), review one file at a time and use one set of reviewers per file (still all dispatched axes in parallel each round). If the user explicitly authorizes direct fallback after a delegation failure, run the missing main-session reviewer passes per file. Note the file-by-file mode at the end of the final output so the user knows the review was chunked.
 
-## Run the four reviewers
+## Dispatch the reviewers
 
-Spawn all four Codex custom reviewer agents in parallel with `fork_turns="none"` on every spawn so they run concurrently. A successful `explorer` fallback for an unavailable custom persona still counts as a Worker dispatch. If no fallback can spawn or any required spawn fails, stop the review run, preserve any successful returns, report the failed axes, and do not begin a main-session pass until the user explicitly authorizes direct fallback.
+Spawn all required Codex custom reviewer agents in parallel with `fork_turns="none"` on every spawn — all four by default, or exactly the axes the caller named (see "Axis subset" above). If a custom persona is unavailable, fall back to `explorer` with that persona's full review contract embedded in the prompt. If no fallback can spawn or any required spawn fails, stop the review run, preserve any successful returns, report the failed axes, and do not begin a main-session pass until the user explicitly authorizes direct fallback.
 
-Each delegated prompt, or each main-session reviewer pass, contains:
+**Order the prompt stable-first.** Prefix caching matches on a prefix, so anything that varies invalidates everything after it. Compose each dispatch prompt in this order — never the reverse:
 
-- The diff captured above (verbatim, scoped per "Scope of the Review").
-- The relevant `AGENTS.md` / `CLAUDE.md` content. The reviewer may read/search further files if it needs to verify a finding against code outside the diff.
-- The list of touched files with absolute paths.
-- The bug bar (see "What counts as a bug" below).
-- The priority tag definitions (see "Priority levels" below).
-- The output format (see "Per-finding block" below).
-- The relevant `## Accepted Review Exceptions` entries (only when step 4 of gather found any), with this suppression rule verbatim: *"A finding is waived only when ALL four conditions hold: (1) its file·symbol·behavior scope exactly matches the entry's `Applies to`; (2) the entry's premises and compensating controls are still valid in this diff; (3) the impact has not expanded beyond the accepted behavior; (4) no `Re-open when` condition is met. A waived finding is downgraded, never deleted: keep its block but replace the priority tag with `[WAIVED:AR-NNN]`. Any doubt about any condition = not waived; return the finding normally."*
-- An explicit reminder that the agent stays in its own lane and silently defers findings the other reviewers would cover.
+1. **Invariant** — nothing. The bug bar, priority definitions, confidence scale, per-finding block, specificity rules, and lane reminder are **no longer passed at all**: they live in each reviewer's own body (`agents/codex/*-reviewer.toml`, the `## Reporting contract` section), where they are part of a cached system prompt instead of being re-sent four times every round. Reference that section; do not restate it here or inline it into the prompt.
+2. **Semi-stable** — the relevant `AGENTS.md` / `CLAUDE.md` content, and the list of touched files with absolute paths. The reviewer may read/search further files if it needs to verify a finding against code outside the diff.
+3. **Conditional** — the relevant `## Accepted Review Exceptions` entries, only when step 4 of gather found any, with this suppression rule verbatim: *"A finding is waived only when ALL four conditions hold: (1) its file·symbol·behavior scope exactly matches the entry's `Applies to`; (2) the entry's premises and compensating controls are still valid in this diff; (3) the impact has not expanded beyond the accepted behavior; (4) no `Re-open when` condition is met. A waived finding is downgraded, never deleted: keep its block but replace the priority tag with `[WAIVED:AR-NNN]`. Any doubt about any condition = not waived; return the finding normally."* This one stays in the prompt because it is only sent when entries exist.
+4. **Volatile** — the diff (verbatim, scoped per "Scope of the Review"). Last, always.
 
-When using delegated reviewers, the agents do not see each other's output. They each return a list of per-finding blocks plus a one-sentence axis verdict (e.g., *"보안 축은 깨끗합니다"* / *"신뢰성 측면에서 차단성 이슈 1건과 비차단성 2건이 있습니다"*).
+The agents do not see each other's output. They each return a list of per-finding blocks plus a one-sentence axis verdict (e.g., *"보안 축은 깨끗합니다"* / *"신뢰성 측면에서 차단성 이슈 1건과 비차단성 2건이 있습니다"*).
 
 ## Aggregate (in the main session)
 
-Once all four delegated returns arrive, or once the main-session reviewer passes are complete:
+Once every dispatched return arrives:
 
-1. **Deduplicate by `Location`.** If two reviewers flagged the same file and overlapping line range with the same root issue, keep the framing that is most specific (usually the specialist whose axis the issue most closely sits in). If both framings add value, keep the better-worded one and append a one-line note that another persona corroborated. Do not stack two entries for the same defect.
-2. **Collect Applied Exceptions.** Pull findings tagged `[WAIVED:AR-NNN]` out of the finding list and collapse each to one line under `## Applied Exceptions` (AR id + what was waived). Waived findings are excluded from the Stage Status / verdict computation but always displayed — a waiver downgrades, it never hides.
-3. **Sort by priority** (`[CRITICAL]` → `[HIGH]` → `[NORMAL]` → `[LOW]`). Within the same priority, group by file path.
-4. **Assign finding ids.** Give each blocking finding (`[CRITICAL]` / `[HIGH]`) a sequential `REVIEW-NNN` id (REVIEW-001, REVIEW-002, …) and prefix it to the block title: `### [HIGH] REVIEW-001 — {title}`. The main session assigns ids, never the reviewers — four parallel reviewers would collide.
-5. **Triage** when any blocking finding exists — see "Triage blocking findings" below.
-6. **Compose the Stage Status and overall verdict** — see "Stage Status and overall verdict" under Output format.
+1. **Deduplicate by `Location`.** If two reviewers flagged the same file and overlapping line range with the same root issue, keep the framing that is most specific (usually the specialist whose axis the issue most closely sits in). If both framings add value, keep the better-worded one and append a one-line note that another persona corroborated. Do not stack two entries for the same defect. When two framings differ in `Confidence`, keep the higher one — corroboration is evidence.
+2. **Filter.** This is where suppression happens now that the reviewers no longer self-censor. Judge each finding on `Confidence` × priority:
+   - `Confidence: high` — keep, at its stated priority.
+   - `Confidence: medium` — keep. Verify it yourself when it is `[CRITICAL]` / `[HIGH]`: read the cited code, and either confirm the priority or demote it with a one-line note saying why.
+   - `Confidence: low` — keep `[CRITICAL]` / `[HIGH]` ones and mark them clearly as unverified; demote `[NORMAL]` / `[LOW]` ones into a single `## Low-confidence notes` list of one-liners, not full blocks.
+   - Drop only what is genuinely out of scope (a pre-existing issue the diff did not touch, a duplicate of an `## Applied Exceptions` waiver, an explicit taste preference). **Uncertainty is never a reason to drop** — that is what the demotion path is for.
+3. **Collect Applied Exceptions.** Pull findings tagged `[WAIVED:AR-NNN]` out of the finding list and collapse each to one line under `## Applied Exceptions` (AR id + what was waived). Waived findings are excluded from the Stage Status / verdict computation but always displayed — a waiver downgrades, it never hides.
+4. **Sort by priority** (`[CRITICAL]` → `[HIGH]` → `[NORMAL]` → `[LOW]`). Within the same priority, group by file path.
+5. **Assign finding ids.** Give each blocking finding (`[CRITICAL]` / `[HIGH]`) that survived the filter a sequential `REVIEW-NNN` id (REVIEW-001, REVIEW-002, …) and prefix it to the block title: `### [HIGH] REVIEW-001 — {title}`. The main session assigns ids, never the reviewers — four parallel reviewers would collide.
+6. **Triage** when any blocking finding exists — see "Triage blocking findings" below.
+7. **Compose the Stage Status and overall verdict** — see "Stage Status and overall verdict" under Output format.
 
 ## Triage blocking findings (main session)
 
@@ -86,6 +87,8 @@ When at least one non-waived `[CRITICAL]` / `[HIGH]` finding remains after aggre
 
 **Invariant — human-only acceptance**: an AR entry is written only on the user's explicit Accept answer in triage. The skill, its reviewers, and any loop controller never infer acceptance, never self-record an entry, and never accept on the user's behalf. Waiving instead of fixing is a human decision, in the same class as "never weaken tests to make them pass".
 
+**"Triage" here means both gates.** This registry is shared: `review-code`'s own triage of `REVIEW-NNN` findings, and the loops' TESTING gate where the user classifies `test-dev`'s suspected defects (`TEST-NNN`) as Fix or Accept. The mechanism is identical in both — only the id space and the severity value differ. All three loop variants use it.
+
 **Location (single copy)**: record the entry in the instruction file closest to the affected code — a nested `AGENTS.md` in the touched directory tree first, else the repo-root `AGENTS.md`, else `CLAUDE.md`. One entry lives in exactly one file; never duplicate it. When neither `AGENTS.md` nor `CLAUDE.md` exists in the repo, do not create a file silently — confirm the location with the user (default suggestion: create a root `AGENTS.md`).
 
 **Entry format** — appended under a `## Accepted Review Exceptions` section (create the section at the end of the file when absent). `AR-NNN` is one greater than the highest existing id in that repo:
@@ -93,7 +96,7 @@ When at least one non-waived `[CRITICAL]` / `[HIGH]` finding remains after aggre
 ```markdown
 ### AR-001
 - Applies to: {exact file/symbol/behavior scope}
-- Original severity: {CRITICAL | HIGH}
+- Original severity: {CRITICAL | HIGH | TEST (suspected defect)}
 - Accepted behavior: {what stays as-is}
 - Rationale: {why accepting is right here}
 - Compensating controls: {what limits the risk, or "none"}
@@ -101,61 +104,51 @@ When at least one non-waived `[CRITICAL]` / `[HIGH]` finding remains after aggre
 - Approved: {user} / {YYYY-MM-DD}
 ```
 
+`TEST (suspected defect)` is the severity for an accepted `TEST-NNN` finding: `test-dev` assigns no priority tag, so there is no `CRITICAL` / `HIGH` to carry over. Its `Applies to` names the failing test and the behavior it pins, and `Accepted behavior` records that the test stays red or skipped.
+
 Never record secrets, credentials, or attack payloads in an entry — describe the risk abstractly.
 
-**Matching on later reviews**: the suppression rule lives in the dispatch prompt (see "Dispatch the four reviewers") — all four conditions (exact scope match ∧ premises/controls valid ∧ impact not expanded ∧ no `Re-open when` met) or the finding is returned normally. Waiving downgrades to `## Applied Exceptions`; it never deletes.
+**Matching on later reviews**: the suppression rule lives in the dispatch prompt (see "Dispatch the reviewers") — all four conditions (exact scope match ∧ premises/controls valid ∧ impact not expanded ∧ no `Re-open when` met) or the finding is returned normally. Waiving downgrades to `## Applied Exceptions`; it never deletes.
 
 ## Using the Requirements Catalog
 
 `references/catalog.md` indexes nine ISO 25010 quality characteristics, each in its own file under `references/`. These exist for vocabulary — when an agent fills the `Related Requirements` field of a finding, the sub-characteristic names should come from those files. Agents pull them in as needed; you do not need to read them in the main session.
 
-## What counts as a bug
+## The bug bar lives in the reviewers
 
-(Pass this verbatim in each dispatch prompt.)
+The bug bar, the priority definitions, the confidence scale, the per-finding block, and the specificity rules are **not defined here and not passed in the dispatch prompt**. They are in each reviewer's `## Reporting contract` section (`agents/codex/*-reviewer.toml`), identical across all four.
 
-A finding is raised only if every one of these holds:
+Two reasons. **Cost**: it is static text that used to be re-sent four times every round, and a system prompt is cached where a dispatch prompt's tail is not. **Recall**: the old bar was seven AND-ed conditions plus *"ignore style, formatting, typos, and nits"* — the shape current models follow literally, dropping findings they actually detected. The reviewers now report everything they can name concretely, tagged with `Confidence`, and **this skill filters during aggregation**. Filtering downstream is recoverable; a reviewer's silence is not.
 
-1. It meaningfully affects the reviewer's own axis or an explicit project rule.
-2. It is discrete and actionable — a single concrete problem, not a vague "the design is bad".
-3. The fix matches the rigor level of the surrounding codebase (a one-off script does not need enterprise-grade validation).
-4. It was introduced by the proposed change, or uncovered by it.
-5. It does not depend on unstated assumptions about the author's intent.
-6. Impact on other parts of the codebase is provable via a specific call site or reference, not speculative.
-7. It is not clearly an intentional choice by the author (deliberate refactor, feature flag kept off, etc.). The `## Accepted Review Exceptions` registry is the official channel for that intent — a registry entry waives its finding per the suppression rule; intent merely guessed at does not.
-
-Ignore style, formatting, typos, and nits unless they obscure meaning or violate a project rule.
-
-## Priority levels
-
-(Pass this verbatim in each dispatch prompt.)
-
-- `[CRITICAL]` — Drop everything. Blocks release, causes data loss, or opens a security hole. Use only for bugs that reproduce without assumptions about inputs.
-- `[HIGH]` — Must be fixed before merge or in the very next cycle.
-- `[NORMAL]` — Should be fixed eventually.
-- `[LOW]` — Nice to have.
+Keep it that way. Re-adding a suppression instruction to the dispatch prompt undoes both benefits at once.
 
 ## Output format
 
 ### Per-finding block
 
-(Each agent returns these; the main session preserves the format during aggregation.)
+The block shape and the specificity rules are defined in the reviewers' `## Reporting contract` and are **not** passed in the dispatch prompt. The main session preserves the format during aggregation, adding only the `REVIEW-NNN` id to the title:
 
 ```
-### [PRIORITY] {Short bug title}
+### [HIGH] REVIEW-001 — {Short bug title}
 - Location: `path/to/file.go:L42-L47`
+- Confidence: high | medium | low
 - Related Requirements: {ISO 25010 sub-characteristic and/or AGENTS.md rule name}
 
 {One-paragraph comment, in Korean.}
 ```
 
-Specificity rules for findings (pass these in each dispatch prompt):
+Keep `Confidence` in the displayed block. It is what tells the user whether a `[HIGH]` was traced or inferred, and it is the basis for the aggregation filter above.
 
-- Smallest line range that pinpoints the problem — avoid ranges longer than ~5–10 lines.
-- Explain the "why" (what breaks, under what conditions, how severe) — the reader should act without re-reading the code.
-- Conditional severity where appropriate (e.g., *"If `userInput` is ever untrusted, …"*).
-- At most one paragraph of prose; no line breaks unless a code fragment requires it.
-- Code fragments under three lines, in `` `inline` `` or fenced code blocks.
-- Matter-of-fact tone — no flattery, no apology.
+### Low-confidence notes
+
+When step 2 demoted any `Confidence: low` non-blocking findings, list them after the findings as one-liners:
+
+```
+## Low-confidence notes
+- `path/to/file.ts:L20` — {one line, what was suspected and what could not be verified}
+```
+
+These never block, never get ids, and never enter triage. They exist so a reviewer's uncertain observation reaches the user instead of being discarded — the whole point of moving the filter downstream.
 
 ### Applied Exceptions
 
@@ -185,11 +178,11 @@ The human-readable verdict sentence stays, as the closing line: `Correct` when S
 
 ### Language rule
 
-Prose inside the comment body and the verdict sentence is in **Korean**. Titles, labels, priority tags, field names (`Location`, `Related Requirements`, `Stage Status`, `Overall Correctness`), and code fragments stay in English.
+Prose inside the comment body and the verdict sentence is in **Korean**. Titles, labels, priority tags, field names (`Location`, `Confidence`, `Related Requirements`, `Stage Status`, `Overall Correctness`), and code fragments stay in English.
 
-### When all four reviewers return clean
+### When every dispatched reviewer returns clean
 
-Output the Stage Status and the Overall Correctness verdict, plus `## Applied Exceptions` when any waiver was applied — a clean result that leaned on waivers must still show them. Do not fabricate findings to fill space.
+Output the Stage Status and the Overall Correctness verdict, plus `## Applied Exceptions` when any waiver was applied — a clean result that leaned on waivers must still show them. Do not fabricate findings to fill space. When the run used an axis subset, name the axes that ran alongside the verdict so a clean result is not read as broader than it is.
 
 ### Example output
 
@@ -201,6 +194,7 @@ changes-required
 ```
 ### [HIGH] REVIEW-001 — Context not propagated to downstream call
 - Location: `internal/billing/service.go:L88-L92`
+- Confidence: high
 - Related Requirements: Reliability > Fault tolerance; AGENTS.md §3 "Always pass ctx"
 
 새 `chargeCustomer` 호출이 상위에서 받은 `ctx` 대신 `context.Background()`를 넘기고 있습니다. 상위 요청이 취소되어도 결제 호출이 계속 진행되어 이중 청구 위험과 고루틴 누수가 발생할 수 있습니다. 파라미터로 받은 `ctx`를 그대로 전달하세요.
