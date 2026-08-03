@@ -1,16 +1,12 @@
 # Migrating Codex to Claude Code
 
-이 문서는 **Codex → Claude Code** 마이그레이션 점검표다. 특정 스킬에 묶이지 않도록 작성하며, Work 중심인 Codex 변형의 변경을 Personal 중심인 Claude Code 변형으로 공유할 때 같은 기준으로 검사한다.
+이 문서는 **Codex → Claude Code** 마이그레이션 점검표다. 특정 스킬에 묶이지 않도록 작성하며, Claude Code와 Codex 변형을 양방향으로 공유할 때 같은 기준으로 검사한다.
 
-마이그레이션 토폴로지는 **Claude ↔ Codex**다. Personal 환경의 중심은 Claude Code이고 Work 환경의 중심은 Codex이므로, Claude Code와 Codex 변형은 양방향으로 공유할 수 있다. 이 문서는 Codex 변형을 소스로 삼아 Claude Code 변형을 갱신하는 공식 경로다.
+마이그레이션 토폴로지는 **Claude ↔ Codex**(양방향)다. 이 문서는 Codex 변형을 소스로 삼아 Claude Code 변형을 갱신하는 공식 경로다. Claude와 Codex의 공유 스킬 집합은 동일해야 하며 플랫폼 전용 스킬 예외는 없다.
 
 이 문서의 소스는 Codex 변형(`skills/codex/`, `agents/codex/`, `hooks/codex/`)이고, 대상은 Claude Code 변형(`skills/claude/`, `agents/claude/`, `hooks/claude/`)이다. repo-scoped Codex skill인 `.agents/skills/<skill>`을 소스로 지정받은 경우에도 아래 Skill migration 규칙을 적용하되, 대상은 사용자가 지정한 Claude Code skill 위치(일반적으로 `.claude/skills/<skill>` 또는 `skills/claude/<skill>`)로 둔다.
 
 옮기는 대상은 크게 세 가지 — 스킬(`SKILL.md`), 서브에이전트(custom agent 정의 파일), 훅(hook 설정·스크립트) — 이고, 아래도 그 순서로 나눈다.
-
-## Platform-specific exception
-
-`skills/codex/review-code-claude`는 Claude Code를 호출하기 위한 Codex 전용 어댑터이므로 Claude 대상에 이식하지 않는다. `SKILL.md`, `scripts/`, `agents/openai.yaml` 중 어느 것도 `skills/claude/review-code-claude`로 복사하지 않으며, verifier의 유일한 필수 Codex-only 예외로 유지한다.
 
 ## Skill migration
 

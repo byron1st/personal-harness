@@ -1,6 +1,0 @@
-interface:
-  display_name: "Review Code with Claude"
-  short_description: "Run Claude Code four-axis review"
-  default_prompt: "Use $review-code-claude to review the current branch with Claude Code."
-policy:
-  allow_implicit_invocation: false

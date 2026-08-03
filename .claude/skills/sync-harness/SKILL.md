@@ -5,9 +5,7 @@ description: Sync this personal-harness repo's platform variants between Claude 
 
 # Sync Harness
 
-This repo keeps two platform variants of every shared skill, sub-agent, and hook: `claude/` and `codex/`. The supported migration topology is `Claude <-> Codex`: Claude Code is the center of Personal and Codex is the center of Work.
-
-`review-code-claude` is the only platform-specific exception. It is a Codex-only adapter that launches Claude Code, so never create, migrate, or expect a `skills/claude/review-code-claude` counterpart.
+This repo keeps two platform variants of every shared skill, sub-agent, and hook: `claude/` and `codex/`. The supported migration topology is `Claude <-> Codex` (bidirectional). Cursor and Grok Build are one-way derivatives of Claude (`Claude → Cursor`, `Claude → Grok`).
 
 Your job is to regenerate target variant(s) so they match the chosen source variant.
 
@@ -22,8 +20,8 @@ Read the sections relevant to what you are migrating and apply them faithfully. 
 
 The direction is an explicit user decision. If the user's request already names it, use that direction. Otherwise ask the user before touching files. Supported directions:
 
-- `Claude -> Codex` - Personal to Work.
-- `Codex -> Claude` - Work to Personal.
+- `Claude -> Codex`
+- `Codex -> Claude`
 
 ## Scope
 
@@ -36,6 +34,8 @@ Sync all shared artifacts by default: every shared skill, all shared persona sub
 | hooks | `hooks/claude/` | `hooks/codex/` |
 
 For `Claude -> Codex`, `claude/` is the source and `codex/` is the target. For `Codex -> Claude`, `codex/` is the source and `claude/` is the target.
+
+Skill sets must match across Claude and Codex — there is no Codex-only skill exception.
 
 ## Step 2 - Migrate per artifact
 
@@ -75,7 +75,7 @@ After migrating, run the bundled checker from the repo root:
 python3 .agents/skills/sync-harness/scripts/verify-sync.py
 ```
 
-It checks tree parity, the required `review-code-claude` Codex-only exception, frontmatter parsing, skill and agent names, residual platform-specific terms, hook JSON shape, and `bash -n` for hook scripts. It exits non-zero when failures remain.
+It checks tree parity, frontmatter parsing, skill and agent names, residual platform-specific terms, hook JSON shape, and `bash -n` for hook scripts. It exits non-zero when failures remain.
 
 The script catches mechanical regressions for the Claude/Codex variants. You still need to read the regenerated files and confirm the meaning survived the transform, especially for `Codex -> Claude` because platform-specific tool, permission, hook, and plan-mode restoration requires judgment. If the checker flags something, fix the file and rerun until it is clean.
 
@@ -83,7 +83,6 @@ The script catches mechanical regressions for the Claude/Codex variants. You sti
 
 - Never write to the source variant of the chosen direction.
 - Claude and Codex can be sources for each other.
-- Never propagate the Codex-only `review-code-claude` adapter to Claude.
-- Do not deploy; `scripts/apply-to-personal.sh` handles Claude Code installation, and `scripts/apply-to-work.sh` handles Codex installation.
+- Do not deploy; `scripts/apply-to-claude.sh` handles Claude Code installation, and `scripts/apply-to-codex.sh` handles Codex installation (or `scripts/apply-to.sh claude|codex`).
 - Do not commit unless the user asks.
 - If a migration document and this skill disagree, the migration document wins; mention the drift so the user can reconcile it.

@@ -52,13 +52,15 @@ for platform in "${PLATFORMS[@]}"; do
   cp -r "${skill_src}" "${dest}"
   echo "  find-docs (${platform}) -> skills/${platform}/find-docs"
 
-  # ctx7 has no Cursor target, and Cursor reads Claude-shaped skills, so the
-  # Cursor variant is the Claude one. Copied here rather than left to drift.
+  # ctx7 has no Cursor/Grok targets. Both platforms read Claude-shaped skills,
+  # so copy the Claude variant rather than leaving them to drift.
   if [[ "${platform}" == "claude" ]]; then
-    cursor_dest="${REPO_ROOT}/skills/cursor/find-docs"
-    rm -rf "${cursor_dest}"
-    cp -r "${skill_src}" "${cursor_dest}"
-    echo "  find-docs (cursor)  -> skills/cursor/find-docs"
+    for mirror in cursor grok; do
+      mirror_dest="${REPO_ROOT}/skills/${mirror}/find-docs"
+      rm -rf "${mirror_dest}"
+      cp -r "${skill_src}" "${mirror_dest}"
+      echo "  find-docs (${mirror})  -> skills/${mirror}/find-docs"
+    done
   fi
 done
 

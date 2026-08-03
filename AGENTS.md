@@ -2,7 +2,7 @@
 
 A harness of Agent Skills, global instructions, and install scripts for personal use. It supports four platforms — Claude Code, Codex, Cursor, and Grok Build — and migrates platform variants using the topology below.
 
-- Claude ↔ Codex (bidirectional; Personal center is Claude Code, Work center is Codex)
+- Claude ↔ Codex (bidirectional)
 - Claude → Cursor (one-way; a change that starts in Cursor lands in the Claude variant first)
 - Claude → Grok Build (one-way; pure Grok paths only — do not rely on Grok's Claude/Cursor compat scanners)
 
@@ -97,14 +97,14 @@ Every agent pins its own `model` and `effort` — see [Model Tier](#model-tier).
 | Agent | Persona · Scope | Dispatched by | Access |
 | --- | --- | --- | --- |
 | `planner` | Software architect — direction, boundaries, interfaces, risks; returns user-facing question lists; reviews plan drafts | `plan-dev` (conditional) | Read-only |
-| `plan-consultant` | Escalation hatch — decides a fork where two approaches both fit the plan but the wrong one is expensive to reverse; returns a short decision, never code | `implementer`, on `(design-bearing)` TODOs only | Read-only |
+| `plan-consultant` | Escalation hatch — decides a fork where two approaches both fit the plan but the wrong one is expensive to reverse; returns a short decision, never code | Claude/Codex/Cursor: `implementer` on `(design-bearing)` TODOs; **Grok: Dispatcher** (depth 1, `needs-design-decision`) | Read-only |
 | `implementer` | Minimal-code implementation Worker; does not relitigate scope | `implement-dev` | Write |
 | `tester` | Test-hardening Worker — unit/e2e gaps, LIVED mutants; test code only, records suspected defects as `TEST-NNN` findings | `test-dev` | Write |
 | `fixer` | Single-defect executor — smallest correct fix + regression coverage; `needs-confirmation` when the fix needs its own plan | `fix-dev` | Write |
 | `security-reviewer` | Security axis — authn/authz, secrets, injection, crypto misuse, TOCTOU | `review-code` (parallel) | Read-only |
 | `reliability-reviewer` | Reliability axis — error handling, lifecycle, concurrency, timeouts, partial failure | `review-code` (parallel) | Read-only |
 | `maintainability-reviewer` | Maintainability axis — style consistency, abstractions, naming, module boundaries, dead code | `review-code` (parallel) | Read-only |
-| `senior-generalist-reviewer` | Remaining ISO 25010 axes — performance, compatibility, UX, operational safety | `review-code` (parallel) | Read-only |
+| `senior-generalist-reviewer` | Remaining ISO 25010 axes — performance, compatibility, interaction capability / UX, functional suitability, operational safety, flexibility | `review-code` (parallel) | Read-only |
 
 The four reviewers share an identical `## Reporting contract` section in their bodies (bug bar, priority + confidence scales, per-finding block, specificity rules). It lives there rather than in `review-code`'s dispatch prompt so it is cached once per reviewer instead of re-sent four times per round — do not move it back.
 
@@ -121,7 +121,7 @@ Hook definitions and scripts under `hooks/<platform>/`. Common shell hooks (`hoo
 | `auto-format.sh` | After file edits | Runs the project Makefile's `fmt`/`format` target |
 | `model-pin-guard.sh` | Before a subagent spawns | **Cursor only.** Rejects a T1 agent whose resolved model is not the one its frontmatter pins; logs the same for T2 |
 
-Platform-specific config files: Claude Code uses the `hooks` block in `settings.json`, and Codex and Cursor use `hooks.json` (different schemas — Cursor's is flat, see `SYNC_TO_CURSOR.md`). Hooks are guardrails; they take no part in `dev-loop` stage transitions or completion decisions. `model-pin-guard.sh` is the first hook here that can block, and it stays inside that invariant: it refuses a spawn on the wrong model, it does not decide a stage transition. `jq`·`git`·`make`·`rg`·`fd` are required (see README.md Prerequisites for details).
+Platform-specific config files: Claude Code uses the `hooks` block in `settings.json`; Codex, Cursor, and Grok use `hooks.json` (schemas differ — Cursor's is flat, see `SYNC_TO_CURSOR.md`; Grok installs as `~/.grok/hooks/harness.json` and merges all `~/.grok/hooks/*.json`). Hooks are guardrails; they take no part in `dev-loop` stage transitions or completion decisions. `model-pin-guard.sh` is the first hook here that can block, and it stays inside that invariant: it refuses a spawn on the wrong model, it does not decide a stage transition. `jq`·`git`·`make`·`rg`·`fd` are required (see README.md Prerequisites for details).
 
 ### Runtime Scripts
 
