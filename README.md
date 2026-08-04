@@ -2,6 +2,39 @@
 
 개인 사용 목적으로 만든 Agent Skills 와 Global instruction, 그리고 설치 스크립트.
 
+## 사용법
+
+일상 흐름은 **계획 → 사람 검토·승인 → 루프 실행** 이다.
+
+```
+plan-dev → (플랜 검토·승인) → dev-loop | dev-loop-light | dev-loop-noreview → commit-code → request-merge
+```
+
+1. **`plan-dev`**: 인터뷰로 플랜을 세우고 `Acceptance Contract`·`Authority Boundaries`를 잠근다. 산출물은 `docs/agents/` 아래 PLAN·RESEARCH.
+2. **검토**: 저장된 플랜을 사람이 읽고 승인한다. 방향이 틀리면 루프에 넣지 말고 `plan-dev`로 다시 잡는다.
+3. **루프 선택·실행**: 승인된 플랜 경로를 넘겨 변형을 고른다. 시작 전에 고르고 도중에 바꾸지 않는다.
+
+| 루프 | 리뷰 | mutation | 기본으로 쓰는 플랫폼 |
+| --- | --- | --- | --- |
+| `dev-loop-noreview` | 없음 | 안 함 | **Claude / Cursor / Grok Build** (일상) |
+| `dev-loop-light` | maintainability + senior-generalist | 안 함 | **Codex** (리뷰는 필요, 4축은 과한 때) |
+| `dev-loop` | 4축 전부 | 함 | 심각·대형 작업, 또는 보안·신뢰성 민감 경로 |
+
+상세 사이클·게이트·중단 재개는 [Development](#development)를 본다.
+
+### 세션 모델 / effort (호출 시 직접 고르는 것)
+
+스킬 프론트매터의 `model:`은 **그 턴에만** 먹고, `plan-dev`·루프는 사람 게이트에서 턴이 끊긴다. 그래서 **세션을 시작할 때** 아래 모델·effort로 둔다. 서브에이전트(implementer, 리뷰어 등) 모델은 역할 파일에 핀되어 있어 세션 모델이 덮어쓰지 않는다 — 표는 [Model Tier](#model-tier).
+
+| 호출 | Claude | Codex | Cursor | Grok Build |
+| --- | --- | --- | --- | --- |
+| `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.5** (effort high) | **Grok 4.5 / high** |
+| `dev-loop` · `dev-loop-light` · `dev-loop-noreview` | **Sonnet** | **Luna / medium** | **Composer 2.5 Standard** (`fast=false`) | **Grok 4.5 / medium** |
+
+- 루프 세션을 싸게 두어도 T1 역할(planner·plan-consultant·security/reliability 리뷰어)은 파일 핀으로 T1에서 돈다.
+- `dev-loop-noreview`는 리뷰어가 변경을 읽지 않으므로, READY_TO_COMMIT에서 IMPL 리포트의 `## TODO Fulfillment`와 AC 증거를 직접 확인한다.
+- 이 세션 규칙은 파일로 강제되지 않는다 — 세션을 여는 습관이다.
+
 ## 폴더 구조
 
 ```
@@ -17,9 +50,7 @@ personal-harness/
 
 훅의 상세 동작은 [Harness > Hooks](#hooks) 참조. 훅이 `rg`/`fd` 사용을 강제하므로 [ripgrep](https://github.com/BurntSushi/ripgrep)과 [fd](https://github.com/sharkdp/fd) 설치가 필요하다(Prerequisites 참조).
 
-플랫폼 변형은 **Claude ↔ Codex**(양방향) + **Claude → Cursor**(단방향) + **Claude → Grok Build**(단방향, pure 경로) 토폴로지로 마이그레이션한다. Personal 환경의 중심은 Claude Code이며, Work 환경의 중심은 Codex다. Grok Build는 Claude 호환 경로를 쓰지 않고 `skills/grok` · `agents/grok` · `hooks/grok` 전용 변형을 설치한다(`~/.grok/config.toml`의 `[compat.claude]`·`[compat.cursor]`를 끈다). Cursor는 소스가 항상 Claude 변형이며, Cursor·Grok에서 시작한 변경도 Claude 변형에 먼저 반영한 뒤 내려보낸다. `review-code-claude`만 Claude Code를 외부 프로세스로 호출하는 Codex 전용 어댑터이므로 Claude counterpart를 두지 않는다. 변환 규칙은 [SYNC_TO_CODEX.md](docs/sync-harness/SYNC_TO_CODEX.md), [SYNC_TO_CLAUDE.md](docs/sync-harness/SYNC_TO_CLAUDE.md), [SYNC_TO_CURSOR.md](docs/sync-harness/SYNC_TO_CURSOR.md), [SYNC_TO_GROK.md](docs/sync-harness/SYNC_TO_GROK.md)에 정리되어 있다.
-
-> ⚠️ **Cursor를 쓴다면 1회성 필수 설정이 있다.** Cursor는 `~/.cursor/` 외에 `~/.claude/`·`~/.codex/`의 에이전트·스킬도 사용자 스코프로 읽으므로, **Cursor 설정에서 이 호환 경로를 꺼야 한다.** `~/.cursor/`가 우선하지만 이 설정은 UI 상태라 설치 스크립트가 보장할 수 없고, 새 머신·재설치·설정 초기화 때 되살아나며 **되살아나도 에러가 나지 않는다.** Claude 판이 채택되면 `tools:`·`effort:`가 조용히 무시되어 리뷰어 4종이 쓰기 권한을 얻는다. 되살아난 경우 `model-pin-guard.sh`가 첫 T1 dispatch에서 잡는다.
+플랫폼 변형은 **Claude ↔ Codex**(양방향) + **Claude → Cursor**(단방향) + **Claude → Grok Build**(단방향, pure 경로) 토폴로지로 마이그레이션한다. Grok Build는 Claude 호환 경로를 쓰지 않고 `skills/grok` · `agents/grok` · `hooks/grok` 전용 변형을 설치한다. Cursor는 소스가 항상 Claude 변형이며, Cursor·Grok에서 시작한 변경도 Claude 변형에 먼저 반영한 뒤 내려보낸다. `review-code-claude`만 Claude Code를 외부 프로세스로 호출하는 Codex 전용 어댑터이므로 Claude counterpart를 두지 않는다. 변환 규칙은 [SYNC_TO_CODEX.md](docs/sync-harness/SYNC_TO_CODEX.md), [SYNC_TO_CLAUDE.md](docs/sync-harness/SYNC_TO_CLAUDE.md), [SYNC_TO_CURSOR.md](docs/sync-harness/SYNC_TO_CURSOR.md), [SYNC_TO_GROK.md](docs/sync-harness/SYNC_TO_GROK.md)에 정리되어 있다.
 
 ## Prerequisites
 
@@ -43,8 +74,42 @@ personal-harness/
 참고:
 - `rg`/`fd`는 이미 폴더 구조 설명의 `hooks` 항목에서 언급한 대로 hook이 사용을 강제하므로 반드시 설치해야 한다.
 - `gh`·`glab`는 각각 personal/work 저장소에서만 호출되므로, 사용하지 않는 저장소 유형의 도구는 생략 가능하다.
-- **Cursor 변형은 1회성 수동 설정이 하나 필요하다**: Cursor 설정에서 `~/.claude`·`~/.codex` 호환 경로 읽기를 끈다. 설치 스크립트가 보장할 수 없고, 켜져 있으면 Claude 변형이 조용히 채택될 수 있다 (위 폴더 구조 절의 경고 참조).
 - 프로젝트 템플릿(`skills/*/setup-initial-repo/references/{go-makefile.md,swift-makefile.md,ts-nextjs-packagejson.md}`)이 `setup-initial-repo`로 참조될 때 함께 따라가는 `go`, `golangci-lint`, `mockery`, `gremlins`, `swag`, `swiftlint`, `swiftformat`, `eslint`, `vitest`, `playwright`, `stryker` 등은 생성되는 프로젝트의 빌드 도구이지 이 harness 자체의 prerequisite은 아니다.
+
+### 1회성 필수 설정 (Cursor · Grok Build)
+
+설치 스크립트가 대신 쓸 수 없는 UI/설정 파일 단계다. 새 머신·재설치·설정 초기화 때마다 다시 확인한다.
+
+#### Cursor — `~/.claude` / `~/.codex` 호환 경로 끄기
+
+Cursor는 `~/.cursor/` 외에 **`~/.claude/`·`~/.codex/`의 에이전트·스킬도 사용자 스코프로 읽는다.** `~/.cursor/`가 우선하지만, 호환 경로 읽기는 **Cursor 설정(UI)** 이라 설치 스크립트가 보장할 수 없다. 되살아나도 **에러가 나지 않는다.** Claude 판이 채택되면 `tools:`·`effort:`가 조용히 무시되어 리뷰어 4종이 쓰기 권한을 얻고, 모델 핀도 어긋날 수 있다. 되살아난 경우 `model-pin-guard.sh`가 첫 T1 dispatch에서 잡는다.
+
+**할 일:** Cursor 설정에서 Claude / Codex 호환(또는 “read from `~/.claude` / `~/.codex`”) 경로를 **끈다.** 설정 위치는 Cursor 버전에 따라 UI 라벨이 다를 수 있으니, Agents / Skills 관련 설정에서 호환 경로 옵션을 찾아 off 한다.
+
+#### Grok Build — `[compat.claude]` · `[compat.cursor]` 끄기
+
+Grok Build는 기본적으로 Claude/Cursor 경로를 `[compat.*]`로 읽을 수 있다. 이 harness는 **pure `~/.grok/{agents,skills,hooks,scripts,rules}` 만** 쓴다. compat가 켜져 있으면 `~/.claude/agents` 등이 섞여 frontmatter가 조용히 어긋난다.
+
+`~/.grok/config.toml`에 아래를 붙여 넣거나, 기존 블록이 있으면 값을 전부 `false`로 맞춘다.
+
+```toml
+# ~/.grok/config.toml — pure Grok 변형 (설치 스크립트가 설정하지 않음)
+[compat.claude]
+skills = false
+rules = false
+agents = false
+mcps = false
+hooks = false
+sessions = false
+
+[compat.cursor]
+skills = false
+rules = false
+agents = false
+mcps = false
+hooks = false
+sessions = false
+```
 
 ### 환경변수
 
