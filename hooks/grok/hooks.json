@@ -1,0 +1,45 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.grok/hooks/session-context.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|run_terminal_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.grok/hooks/git-identity-guard.sh"
+          },
+          {
+            "type": "command",
+            "command": "$HOME/.grok/hooks/enforce-rg.sh"
+          },
+          {
+            "type": "command",
+            "command": "$HOME/.grok/hooks/enforce-fd.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|search_replace",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.grok/hooks/auto-format.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

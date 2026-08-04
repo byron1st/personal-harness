@@ -1,6 +1,6 @@
 ---
 name: test-dev
-description: Strengthen tests by filling unit/e2e gaps and reducing LIVED mutation survivors against a git-defined scope. Use after implementation or when asked to improve coverage, harden tests, or kill mutants.
+description: "Strengthen tests by filling unit/e2e gaps and reducing LIVED mutation survivors against a git-defined scope. By default runs as the Dispatcher (main session): it resolves the review scope, then launches one `tester` Worker subagent that owns the actual test edits and returns a fixed-heading status the Dispatcher collapses to a short chat summary. If dispatch fails, it requires an explicit decision before direct fallback. Use after implementation or when asked to improve coverage, harden tests, or kill mutants."
 ---
 
 # Test Dev
@@ -11,12 +11,12 @@ Harden the project's test suite against a **git-defined scope** in three sequent
 
 ## Execution modes
 
-`test-dev` runs in one of two delegated modes, detected from the invoking prompt (the **worker signal**). The active Skill instruction is sufficient delegation intent in Codex; the user does not need to repeat "use a subagent".
+`test-dev` runs in one of two delegated modes, detected from the invoking prompt (the **worker signal**):
 
-- **Worker (delegated subagent)** — a session invoked with `You are running as the test-hardening Worker subagent.` in its prompt. It runs the three-phase flow directly against the scope handed to it, does not re-dispatch, and returns the fixed-heading Markdown from [references/worker-contract.md](references/worker-contract.md). The dispatcher hands the Worker a self-contained prompt and asks Codex to spawn it as a `worker` agent; the Worker starts cold.
-- **Dispatcher (default, main session)** — the main `test-dev` session acts as the Dispatcher. The Dispatcher does **not** edit tests itself; it resolves the review scope ([Determine Scope](#determine-scope)), gathers verification commands and conventions once, then launches exactly **one** Worker using the prompt, return schema, and chat-summary shape in [references/worker-contract.md](references/worker-contract.md), and renders a short chat summary from the Worker's fixed-heading return. The Dispatcher does not re-dispatch another Worker once one is running.
+- **Dispatcher (default, main session)** — the session that is *not* told it is the Worker. The Dispatcher does **not** edit tests itself; it resolves the review scope ([Determine Scope](#determine-scope)), gathers verification commands and conventions once, then launches exactly **one** `tester` Worker by spawning the custom `tester` agent with `fork_turns="none"`, using the prompt, return schema, and chat-summary shape in [references/worker-contract.md](references/worker-contract.md), and renders a short chat summary from the Worker's fixed-heading return. If the `tester` custom agent is unavailable, spawn a built-in `worker` with this skill's full Worker contract and mention the fallback in the summary. The Dispatcher does not re-dispatch another Worker once one is running.
+- **Worker (delegation, subagent)** — a session invoked with `You are running as the test-hardening Worker subagent.` in its prompt. It runs the three-phase flow directly against the scope handed to it, does not re-dispatch, and returns the fixed-heading Markdown from [references/worker-contract.md](references/worker-contract.md).
 
-**Delegation failure gate:** if the Worker capability is unavailable or the spawn call fails, stop before modifying tests. Report `Delegation status: unavailable` or `failed`, include the observed cause, and ask the user whether to continue with direct main-session test hardening or stop. Never enter the three-phase flow silently. Direct execution is allowed only after the user explicitly chooses that fallback; then the flow runs in-place and a blocking obstacle goes back to the user interactively rather than being returned as `blocked`.
+**Delegation failure gate:** if the `spawn or compatible Worker capability is unavailable, or dispatch fails, stop before modifying tests. Report `Delegation status: unavailable` or `failed`, include the observed cause, and ask whether to continue with direct main-session test hardening or stop. Never enter the three-phase flow silently. Direct execution is allowed only when the user explicitly chooses it; then the flow runs in-place and a blocking obstacle goes back to the user interactively rather than being returned as `blocked`.
 
 ## Global Rules
 
@@ -73,15 +73,17 @@ By default, the scope is the diff between the current branch and `main` (or `ori
 
 If the current branch *is* `main`, only staged and unstaged edits are in scope.
 
-Capture the scope once (mirroring `review-code`'s gather step): the diff, the touched files with absolute paths, and the language(s) involved. State the decided scope to the user in one sentence before dispatching (e.g. "Scope: 4 files changed vs `main`." / "Scope: entire codebase.").
+Capture the scope once (mirroring `review-code`'s gather step): the diff, the touched files with absolute paths, and the language(s) involved. `$HOME/.codex/scripts/resolve-scope.sh {branch|head|uncommitted|all}` computes the last three as JSON in one call — the diff range, the absolute paths, and the languages are shell facts, not inferences. Read the diff itself with `git diff` over the range it returns. State the decided scope to the user in one sentence before dispatching (e.g. "Scope: 4 files changed vs `main`." / "Scope: entire codebase.").
 
 If an `implement-dev` report exists for the change, the Dispatcher may pass its path to the Worker as an **optional intent hint** — never as the scope definition. Scope is always the git diff. Keeping the Worker's brief lean (diff + conventions, not the author's narrative) preserves the fresh-eyes advantage that makes gap analysis worth isolating.
 
 ## Prepare
 
-1. **Verification commands**: extract lint, unit, e2e, and mutation commands from `Makefile`, `AGENTS.md`, `CLAUDE.md`, or `README.md`. The Dispatcher resolves any missing required command before dispatch; a Worker that still finds one missing returns `blocked` with `## Decision Needed` (interactive execution asks the user).
+1. **Verification commands**: run `$HOME/.codex/scripts/detect-commands.sh` for the declared lint, unit, e2e, and mutation commands, then fill any `null` from `AGENTS.md`, `CLAUDE.md`, or `README.md` prose. The Dispatcher resolves any missing required command before dispatch; a Worker that still finds one missing returns `blocked` with `## Decision Needed` (interactive execution asks the user).
 2. **E2E layout**: locate where e2e tests live (see [references/e2e-gap-analysis.md](references/e2e-gap-analysis.md) for common conventions). If the project has no e2e suite at all, note this and skip Phase 2 with a single-line justification in the final summary.
-3. **Mutation tooling**: find the project's mutation target (typical: `make test-mutation`). If no tooling is configured, the Dispatcher decides before dispatch; a Worker returns `blocked` with the options (skip Phase 3 / nominate a command / install a standard tool), and interactive execution asks the user.
+3. **Mutation tooling**: find the project's mutation target (typical: `make test-mutation`). If no tooling is configured, the Dispatcher decides before dispatch; a Worker returns `blocked` with the options (skip Phase 3 / nominate a command / install a standard tool), and interactive execution asks the user with `ask the user`.
+
+**Caller opt-out**: when the invocation explicitly places mutation out of scope for this run — `dev-loop-light` and `dev-loop-noreview` always do — skip step 3 and Phase 3 entirely, pass `mutation: out of scope` in the dispatch prompt, and **do not treat a missing mutation command as `blocked`**. Record the skip as `out of scope (caller)` in the `## Mutation` section of the return. This opt-out covers mutation only; a missing lint/unit/e2e command is still resolved before dispatch or returned as `blocked`.
 
 ## Phase 1 — Unit test gaps
 
@@ -112,6 +114,8 @@ If the project has no e2e harness, skip this phase and note it in the summary.
 ## Phase 3 — Mutation test LIVED elimination
 
 Detail: [references/mutation-iteration.md](references/mutation-iteration.md)
+
+Skip this phase entirely when the caller placed mutation out of scope (see Prepare 3) — a missing mutation command is not a `blocked` condition in that case.
 
 **Goal**: drive **test efficacy** to **at least 80%**, then push **as high as possible** within a bounded budget. Reaching 0 LIVED mutants is generally infeasible — equivalent mutants and untestable side effects always remain — so the target is a score threshold, not zero.
 

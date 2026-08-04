@@ -14,10 +14,12 @@ CODEX_HOME="${HOME}/.codex"
 CODEX_SKILLS_DIR="${HOME}/.codex/skills"
 CODEX_AGENTS_DIR="${CODEX_HOME}/agents"
 CODEX_HOOKS_DIR="${CODEX_HOME}/hooks"
+CODEX_SCRIPTS_DIR="${CODEX_HOME}/scripts"
 CODEX_INSTRUCTIONS_FILE="${CODEX_HOME}/AGENTS.md"
 CODEX_HOOKS_FILE="${CODEX_HOME}/hooks.json"
+RUNTIME_SCRIPTS_SOURCE_DIR="${SCRIPT_DIR}/../scripts/runtime"
 
-mkdir -p "${CODEX_SKILLS_DIR}" "${CODEX_AGENTS_DIR}" "${CODEX_HOOKS_DIR}"
+mkdir -p "${CODEX_SKILLS_DIR}" "${CODEX_AGENTS_DIR}" "${CODEX_HOOKS_DIR}" "${CODEX_SCRIPTS_DIR}"
 
 codex_md="✗ not found"
 if [[ -f "${INSTRUCTIONS_SOURCE_DIR}/AGENTS.md" ]]; then
@@ -61,10 +63,20 @@ if [[ -f "${CODEX_HOOKS_SOURCE_DIR}/hooks.json" ]]; then
   codex_hooks_json_status="✓ installed"
 fi
 
+codex_scripts_status="✗ source not found"
+codex_scripts_count=0
+if [[ -d "${RUNTIME_SCRIPTS_SOURCE_DIR}" ]]; then
+  find "${CODEX_SCRIPTS_DIR}" -maxdepth 1 -mindepth 1 -exec rm -rf {} +
+  find "${RUNTIME_SCRIPTS_SOURCE_DIR}" -maxdepth 1 -mindepth 1 -exec cp -rp {} "${CODEX_SCRIPTS_DIR}/" \;
+  codex_scripts_count=$(find "${CODEX_SCRIPTS_DIR}" -maxdepth 1 -mindepth 1 -type f | wc -l | tr -d ' ')
+  codex_scripts_status="✓ installed"
+fi
+
 echo "Work harness applied:"
 echo "  Codex skills:       ${codex_skills_count} directories installed to ${CODEX_SKILLS_DIR}"
 echo "  Codex instructions: ${codex_md}"
 echo "  Codex custom agents: ${codex_agents_count} files installed to ${CODEX_AGENTS_DIR} (${codex_agents_status})"
 echo "  Codex hook scripts:  ${codex_hooks_count} files installed to ${CODEX_HOOKS_DIR} (${codex_hooks_status})"
 echo "  Codex hooks.json:    ${codex_hooks_json_status}"
+echo "  Codex runtime scripts: ${codex_scripts_count} files installed to ${CODEX_SCRIPTS_DIR} (${codex_scripts_status})"
 echo ""

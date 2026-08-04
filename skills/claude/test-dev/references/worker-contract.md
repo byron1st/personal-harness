@@ -1,6 +1,6 @@
 # Test-hardening Worker delegation contract
 
-`test-dev`'s **Dispatch mode** (the main session, default) delegates the actual test hardening to a single general-purpose subagent (the **Worker**). This file is the **single source of truth** for that delegation: the prompt the dispatcher hands the Worker, the fixed-heading return the Worker must emit (②), and the chat summary the dispatcher owes the user (③).
+`test-dev`'s **Dispatch mode** (the main session, default) delegates the actual test hardening to a single `tester` subagent (the **Worker**, dispatched via the `Agent` tool with `subagent_type: tester`; a `general-purpose` subagent given this contract in full is the fallback when that persona is unavailable). This file is the **single source of truth** for that delegation: the prompt the dispatcher hands the Worker, the fixed-heading return the Worker must emit (②), and the chat summary the dispatcher owes the user (③).
 
 `test-dev` references this contract instead of restating it. Do not duplicate these templates elsewhere; update them here. Direct main-session execution is allowed only after the user explicitly chooses it following delegation failure or directly requests direct mode.
 
@@ -27,14 +27,16 @@ Verification commands:
 - lint: {LINT_CMD}
 - unit: {UNIT_CMD}
 - e2e: {E2E_CMD or none}
-- mutation: {MUTATION_CMD or none}
+- mutation: {MUTATION_CMD, "none", or "out of scope" when the caller excluded mutation from this run}
 
 Optional intent hint (do NOT treat as scope; scope is the diff above):
 {IMPLEMENTATION_REPORT_PATH or none}
 
 Run the three phases in order — unit gaps, then e2e gaps, then mutation LIVED elimination — per the skill. Add only test code; never edit production/business logic (Global Rule 6). Do not run review-code. Do not revert edits made by others. Follow the repository's AGENTS.md / CLAUDE.md / README.md / Makefile instructions.
 
-You operate cold and cannot ask the user. If a required verification/mutation command is missing, or a direction-level decision is needed, stop that phase and return `blocked` with the choice laid out in `## Decision Needed`. Suspected business-logic defects are NOT blockers — record them per Global Rule 6 and continue.
+If the mutation line above reads `out of scope`, skip Phase 3 entirely and write `out of scope (caller)` under `## Mutation` — a missing mutation command is NOT a blocker in that case.
+
+You operate cold and cannot ask the user. If a required verification command is missing, if mutation tooling is missing and mutation was NOT placed out of scope, or if a direction-level decision is needed, stop that phase and return `blocked` with the choice laid out in `## Decision Needed`. Suspected business-logic defects are NOT blockers — record them per Global Rule 6 and continue.
 
 When done, return only the fixed-heading Markdown in section C of `references/worker-contract.md` - do not summarise the `## Findings` list (suspected business-logic defects with `TEST-NNN` ids), return it verbatim.
 ```
@@ -74,7 +76,7 @@ pass | pass-with-suspected-defects | blocked | failed
 
 The first three headings are the **common stage block** shared across Worker-returning skills (`## Stage Status` / `## Findings` / `## Decision Needed`; other skills add `## Evidence`); the headings below it are test-dev's own. The Worker assigns the `TEST-NNN` ids itself - it is the single writer, so there is no collision risk.
 
-`pass` = gaps filled, all suites green, `## Findings` empty. `pass-with-suspected-defects` = suites green but `## Findings` is non-empty. `blocked` = a required verification/mutation command or tooling is missing, or a direction-level decision is needed (no further phase work past it). `failed` = a pre-existing test broke and reverting recent test changes did not restore it, or an irrecoverable hard error.
+`pass` = gaps filled, all suites green, `## Findings` empty. `pass-with-suspected-defects` = suites green but `## Findings` is non-empty. `blocked` = a required verification command or tooling is missing, or a direction-level decision is needed (no further phase work past it) — **mutation tooling missing while mutation is `out of scope` is not a blocker**. `failed` = a pre-existing test broke and reverting recent test changes did not restore it, or an irrecoverable hard error.
 
 ## D. Dispatcher chat summary (③)
 

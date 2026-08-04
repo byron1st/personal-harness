@@ -55,7 +55,7 @@ After the happy-path is green, add edge-case tests (boundary values, error paths
 
 ### 3. Deviations: resolve details, escalate direction
 
-The plan is a coarse, human-approved **direction**. Detail-level obstacles it deliberately left open - a helper, an edge case, the *how* of a TODO - are yours to resolve, TDD-first, and record. A **direction-level** conflict - the plan's goal, chosen approach, key decisions, or non-goals turn out wrong or unworkable - **stops work and goes back before code is written for it**, because changing direction silently voids the review the plan received. This is distinct from the stuck-after-3-attempts escalation in Error Recovery: that one fires when you are technically blocked, this one fires when the plan's direction is wrong even though the code would compile. The buckets and the escalation trigger are detailed in [references/implement-flow.md](references/implement-flow.md).
+The plan is a coarse, human-approved **direction**. Detail-level obstacles it deliberately left open - a helper, an edge case, the *how* of a TODO - are yours to resolve, TDD-first, and record. A **direction-level** conflict - the plan's goal, chosen approach, key decisions, or non-goals turn out wrong or unworkable - **stops work and goes back before code is written for it**, because changing direction silently voids the review the plan received. Between the two sits a **consultable** band - two approaches both fit the plan but the wrong one is expensive to reverse - which a Worker resolves by spawning `plan-consultant` with `fork_turns="none"`, and only on a TODO tagged `(design-bearing)`. This is distinct from the stuck-after-3-attempts escalation in Error Recovery: that one fires when you are technically blocked, this one fires when the plan's direction is wrong even though the code would compile. The buckets and the escalation trigger are detailed in [references/implement-flow.md](references/implement-flow.md).
 
 **Escalation routing depends on mode:**
 
@@ -67,7 +67,7 @@ The Dispatcher itself never makes direction decisions for the Worker; if the Wor
 ## Prepare
 
 1. **Plan file**: the user (Dispatcher / interactive) or the dispatch prompt (Worker) provides the plan path. If the prompt omits it, ask the user (interactive) or surface in `## Open Questions` / `## Decision Needed` (Worker).
-2. **Verification commands**: extract lint, format, test, and build commands from `Makefile`, `AGENTS.md`, `CLAUDE.md`, or `README.md`. If none are found, ask the user (interactive) or surface in `## Open Questions` / `## Decision Needed` (Worker).
+2. **Verification commands**: run `$HOME/.codex/scripts/detect-commands.sh` for the declared ones — it reads `Makefile` targets and `package.json` scripts and returns JSON, deterministically and without inference. Fill in whatever it returns `null` for by reading `AGENTS.md`, `CLAUDE.md`, or `README.md` prose. If a command still cannot be found, ask the user (interactive) or surface in `## Open Questions` / `## Decision Needed` (Worker). **The Dispatcher does this once and passes the result in the dispatch prompt** — otherwise every Worker rediscovers the same commands cold, every round.
 3. **Project conventions**: read `AGENTS.md` / `CLAUDE.md`; their constraints apply to every implementation decision. Treat bundled conventions as defaults only where the repository's own instructions and existing code are silent.
 4. **Language conventions**: complete the [required language convention gate](#required-language-convention-gate). Do not advance from Prepare until every matching convention file has been read.
 
@@ -94,6 +94,8 @@ When verification fails:
 3. **Never weaken tests to pass** - do not remove assertions, loosen checks, or skip tests.
 4. **Fix immediately** - if you notice a failure mid-work, fix it before moving on. Do not accumulate failures.
 5. **Stop after 3 failed attempts on the same error** - describe what you tried and what you observed. In interactive mode, ask the user for guidance; in Worker mode, set `## Stage Status` to `failed` and return.
+
+A Worker `failed` return does not end the stage on its own: the Dispatcher re-dispatches **once** at T1 (`gpt-5.6-sol`) before passing `failed` up, and reports that it did. See [references/worker-contract.md](references/worker-contract.md) §E'.
 
 ## Completion
 

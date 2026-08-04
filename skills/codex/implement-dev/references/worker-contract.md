@@ -10,7 +10,7 @@ The Worker detects it is a Worker (not a Dispatcher) from the dispatch prompt it
 
 ## B. Dispatch prompt
 
-The dispatcher (the main `implement-dev` session) hands the Worker this prompt, replacing placeholders:
+The dispatcher (the main `implement-dev` session) hands the Worker this prompt, replacing placeholders. It fills the verification-command block from `Prepare` step 2 (`$HOME/.codex/scripts/detect-commands.sh` plus any prose-only commands) — passing them is the point: without this block the Worker rediscovers the same commands cold on every dispatch.
 
 ```text
 You are running as the implementation Worker subagent.
@@ -19,11 +19,19 @@ Use the `implement-dev` skill to execute this existing plan-dev plan: {PLAN_PATH
 
 You operate cold: this is a fresh subagent session with no memory of the planning run. Read the plan end-to-end first, then read each research file the plan links at the relevant TODO before touching code - the plan already did that exploration in the planning session; do not assume you "already know it". Mechanics-level detail (helpers, signatures, edge cases) is yours to decide TDD-first against the running code; the plan does not spell them out and you must not wait for them.
 
+Verification commands (already resolved - use these instead of rediscovering them; re-derive only the ones marked `none`):
+- lint: {LINT_CMD or none}
+- format: {FORMAT_CMD or none}
+- test: {TEST_CMD or none}
+- build: {BUILD_CMD or none}
+
 Whenever a `## TODOs` checkbox completes, flip `- [ ]` to `- [x]` in the plan file immediately - do not batch.
 
 Read the plan's `## Acceptance Contract` and `## Authority Boundaries` when present. Record, in the report's `## TODO Fulfillment`, which AC id(s) each TODO fulfills (`AC:` line), and collect each AC's work-specific evidence for your return's `## Evidence`. If the plan has no `## Acceptance Contract` (legacy plan), do not refuse the run: skip AC evidence and record `Acceptance Contract: none (legacy plan)` in the report's `## Summary` and the return's `## Evidence`.
 
 If you hit a direction-level conflict - the plan's goal / chosen approach / `## Key decisions` / `## Non-goals` turn out wrong or unworkable - you cannot ask the user (you are an isolated subagent). Stop, do not write code for the conflicting TODO, and return `blocked` with the decision needed laid out in `## Decision Needed`. Detail-level obstacles (a helper, an edge case, the *how* of a TODO) are yours to resolve and record in the report; do not escalate them.
+
+On a TODO tagged `(design-bearing)` you may spawn the read-only `plan-consultant` custom agent with `fork_turns="none"` (fall back to `explorer` carrying the consultant contract if unavailable) when two approaches both fit the plan and the wrong one is expensive to reverse. Record its decision under that TODO's `편차` line. TODOs tagged `(mechanical)`, and untagged TODOs from older plans, never consult. A consultant cannot authorize a direction change - if its answer would contradict the plan, return `blocked` instead.
 
 Do not re-dispatch another implementation subagent. Do not run `test-dev` or `review-code`. Do not revert edits made by others. Follow the repository's AGENTS.md / CLAUDE.md / README.md / Makefile instructions.
 
@@ -77,9 +85,22 @@ After the dispatcher receives ②, it renders a short summary for the user in ch
 
 - 2-4 bullets: what changed / verification status / red-flag and open-question gist / TODO completion at a glance (e.g. "7개 중 6개 완료, TODO4 blocked").
 - A clickable Markdown link to the ① report file by absolute path.
+- One line when a cascade retry fired (§E'): that the first Worker returned `failed` and whether the T1 retry recovered. Never omit this line to keep the summary tidy — it is the metric.
 - If `## Stage Status` is `blocked`, surface `## Decision Needed` first and prominently so the user sees what to decide, then stop - do not proceed to additional stages.
 
 When `implement-dev` runs in explicitly authorized direct mode, the same shape applies as the final chat output: short bullets + report link, with report sections kept in the file.
+
+## E'. Cascade — one T1 retry on a `failed` return
+
+**This is a different event from §E.** §E is *dispatch itself* never producing a Worker. Cascade is a Worker that ran, hit its own 3-attempts-per-error wall, and returned `## Stage Status: failed`. Do not merge the two: §E asks the user, cascade does not.
+
+When the Worker returns `failed`, the Dispatcher re-dispatches **exactly once** by spawning again with call-time model override **`gpt-5.6-sol`** and `reasoning_effort` **`high`** (outranks the implementer role's Terra pin). The retry gets the same prompt plus one line naming what the first attempt tried and observed, so it does not rediscover the same wall. Prefer the custom `implementer` agent again with those overrides; if the spawn tool cannot pass model overrides, spawn a Sol-capable agent with the same Worker prompt. If the second return is also `failed`, pass `failed` up unchanged — do not retry a third time, do not fall back to the main session, and do not escalate the model further.
+
+**The retry is capped at one.** Unbounded promotion turns a stuck Worker into an expensive stuck Worker.
+
+**Always report that it happened.** The Dispatcher's chat summary (③) carries one line: that a T1 retry fired, and whether it succeeded. This line is the only signal that the T2 implementer is under-powered for this class of work — without it there is no way to tell a working tier assignment from a wrong one that keeps getting bailed out.
+
+A loop controller never sees the first `failed`: the retry completes inside the Dispatcher, so `dev-loop*` observes only the final status. The loop's own rule — it never retries a `failed` stage — stays true, and no loop file changes.
 
 ## E. Delegation failure
 

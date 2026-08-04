@@ -129,8 +129,41 @@ Claude Code custom agent는 Markdown 파일의 YAML frontmatter와 본문으로 
 - Claude frontmatter의 `tools:`는 그대로 옮기지 않는다. Codex에서 read-only agent가 필요하면 `sandbox_mode = "read-only"` 같은 Codex config key를 사용하고, instructions에도 "no edits, no commits"를 남긴다.
 - agent 이름은 Codex에서 spawn할 때 쓰는 source of truth다. 파일명과 `name`을 맞추는 단순한 규칙을 쓴다.
 - Codex 기본 agent 이름(`default`, `worker`, `explorer`)과 충돌하는 custom `name`은 피한다. 충돌하면 custom agent가 우선되어 예상과 다른 동작이 날 수 있다.
-- Skill 본문에서 custom agent를 사용할 때는 Claude Code의 `Agent` / `subagent_type` 표현 대신 Codex agent `name`을 명시한다.
+- Skill 본문에서 custom agent를 사용할 때는 Claude Code의 `Agent` / `subagent_type` 표현 대신 Codex agent `name`을 명시한다. custom agent spawn에는 항상 `fork_turns="none"`을 붙인다.
 - 배포 스크립트가 personal harness를 Codex agent의 source of truth로 관리한다면 `~/.codex/agents/`를 먼저 정리한 뒤 `agents/codex/*.toml`만 복사한다. 기존 사용자 agent를 보존해야 하는 환경이라면 별도 디렉토리나 프로젝트 범위 `.codex/agents/`를 사용한다.
+
+### Map model and effort pins (required)
+
+Claude frontmatter의 `model` / `effort`는 Codex role TOML의 `model` / `model_reasoning_effort`로 옮긴다. role 파일은 `ConfigToml`을 flatten하므로 두 키를 그대로 추가하면 된다. **`inherit`은 쓰지 않는다** — 티어는 파일 속성이어야 한다.
+
+| Claude | Codex TOML | 비고 |
+| --- | --- | --- |
+| `model: opus` | `model = "gpt-5.6-sol"` | T1 judgment |
+| `model: sonnet` (implementer) | `model = "gpt-5.6-terra"` | 장문맥 역할 — Luna 금지 |
+| `model: sonnet` (그 외 T2) | `model = "gpt-5.6-luna"` | tester / fixer / T2 reviewers |
+| `effort: high` / `medium` / … | `model_reasoning_effort = "high"` 등 | 공통 구간 값 그대로 |
+| `tools: Read, Grep, Glob, Bash` | `sandbox_mode = "read-only"` + 본문 hard rule | 툴 화이트리스트는 없음 |
+| (없음 — write agent) | `sandbox_mode = "workspace-write"` | implementer / tester / fixer |
+
+**배치 요약 (하네스 기준):**
+
+| 역할 | model | effort |
+| --- | --- | --- |
+| planner · plan-consultant · security-reviewer · reliability-reviewer | `gpt-5.6-sol` | high (리뷰어 T1은 medium) |
+| implementer | `gpt-5.6-terra` | high |
+| tester · fixer · maintainability-reviewer · senior-generalist-reviewer | `gpt-5.6-luna` | high |
+
+- **`ultra` 금지.** automatic task delegation을 동반해 dev-loop 위임과 충돌한다.
+- **Luna를 implementer에 두지 않는다.** MRCR 장문맥 절벽(41.3%)이 plan+research+코드 입력과 겹친다.
+- cascade(Worker `failed` → T1 1회 재시도)는 spawn 호출 인자의 `model` / `reasoning_effort`로 role 핀을 이긴다. 재시도 모델은 Sol. 요약에 retry 한 줄을 남긴다.
+- Codex의 `[agents] default_subagent_*`는 **fallback**이다 — role이 명시한 값을 덮어쓰지 않는다. Claude의 `CLAUDE_CODE_SUBAGENT_MODEL`과 다르다.
+- 각 본문에 `Tier: T1|T2 — {근거 한 줄}`을 남긴다. 모델명이 아니라 근거가 문서화 대상이다.
+- 리뷰어 4종의 `## Reporting contract`는 에이전트 본문(`developer_instructions`)에 둔다. dispatch 프롬프트에 축자 재전달하지 않는다.
+
+### Runtime scripts path
+
+- 소스는 공용 `scripts/runtime/*.sh`다. `apply-to-work.sh`가 `~/.codex/scripts/`로 복사한다.
+- 소비 스킬 본문의 호출 경로는 `$HOME/.codex/scripts/detect-commands.sh` · `$HOME/.codex/scripts/resolve-scope.sh` 리터럴이다 (Claude의 `$HOME/.claude/scripts/…` 대응).
 
 ## Hook migration
 
