@@ -24,7 +24,7 @@ from pathlib import Path
 
 FAILURES: list[tuple[str, str]] = []
 WARNINGS: list[tuple[str, str]] = []
-CODEX_ONLY_SKILLS = {"review-code-claude"}
+CODEX_ONLY_SKILLS: set[str] = set()
 
 
 def fail(section: str, msg: str) -> None:

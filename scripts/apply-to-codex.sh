@@ -32,7 +32,7 @@ if [[ ! -d "${CODEX_SKILLS_SOURCE_DIR}" ]]; then
   exit 1
 fi
 
-echo "Cleaning existing work skills..."
+echo "Cleaning existing Codex skills..."
 find "${CODEX_SKILLS_DIR}" -maxdepth 1 -mindepth 1 -exec rm -rf {} +
 
 find "${CODEX_SKILLS_SOURCE_DIR}" -maxdepth 1 -mindepth 1 -exec cp -r {} "${CODEX_SKILLS_DIR}/" \;
@@ -72,7 +72,7 @@ if [[ -d "${RUNTIME_SCRIPTS_SOURCE_DIR}" ]]; then
   codex_scripts_status="✓ installed"
 fi
 
-echo "Work harness applied:"
+echo "Codex harness applied:"
 echo "  Codex skills:       ${codex_skills_count} directories installed to ${CODEX_SKILLS_DIR}"
 echo "  Codex instructions: ${codex_md}"
 echo "  Codex custom agents: ${codex_agents_count} files installed to ${CODEX_AGENTS_DIR} (${codex_agents_status})"

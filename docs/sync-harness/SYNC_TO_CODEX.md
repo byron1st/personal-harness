@@ -2,13 +2,9 @@
 
 이 문서는 **Claude Code → Codex** 마이그레이션 점검표다. 특정 스킬에 묶이지 않도록 작성하며, 새 스킬·서브에이전트·훅이 추가될 때도 같은 기준으로 검사한다.
 
-마이그레이션 토폴로지는 **Claude ↔ Codex**다. Personal 환경의 중심은 Claude Code이고 Work 환경의 중심은 Codex이므로, Claude Code와 Codex 변형은 양방향으로 공유할 수 있다. 이 문서의 소스는 Claude 변형(`skills/claude/`, `agents/claude/`, `hooks/claude/`)이고, 대상은 Codex 변형(`skills/codex/`, `agents/codex/`, `hooks/codex/`)이다. Codex → Claude Code 단계는 [SYNC_TO_CLAUDE.md](SYNC_TO_CLAUDE.md)를 참고한다.
+마이그레이션 토폴로지는 **Claude ↔ Codex**(양방향)다. 이 문서의 소스는 Claude 변형(`skills/claude/`, `agents/claude/`, `hooks/claude/`)이고, 대상은 Codex 변형(`skills/codex/`, `agents/codex/`, `hooks/codex/`)이다. Codex → Claude Code 단계는 [SYNC_TO_CLAUDE.md](SYNC_TO_CLAUDE.md)를 참고한다. Claude와 Codex의 공유 스킬 집합은 동일해야 하며 플랫폼 전용 스킬 예외는 없다.
 
 옮기는 대상은 크게 세 가지 — 스킬(`SKILL.md`), 서브에이전트(custom agent 정의 파일), 훅(hook 설정·스크립트) — 이고, 아래도 그 순서로 나눈다.
-
-## Platform-specific exception
-
-`skills/codex/review-code-claude`는 Claude Code의 `/review-code`를 별도 프로세스로 호출하는 Codex 전용 어댑터다. Claude 소스에서 생성하는 공유 스킬이 아니며 `skills/claude/review-code-claude` counterpart를 만들지 않는다. verifier는 이 이름 하나만 필수 Codex-only 예외로 허용하고 그 밖의 스킬 집합 차이는 계속 실패시켜야 한다.
 
 ## Platform invariants (do not translate)
 
@@ -162,7 +158,7 @@ Claude frontmatter의 `model` / `effort`는 Codex role TOML의 `model` / `model_
 
 ### Runtime scripts path
 
-- 소스는 공용 `scripts/runtime/*.sh`다. `apply-to-work.sh`가 `~/.codex/scripts/`로 복사한다.
+- 소스는 공용 `scripts/runtime/*.sh`다. `apply-to-codex.sh`가 `~/.codex/scripts/`로 복사한다.
 - 소비 스킬 본문의 호출 경로는 `$HOME/.codex/scripts/detect-commands.sh` · `$HOME/.codex/scripts/resolve-scope.sh` 리터럴이다 (Claude의 `$HOME/.claude/scripts/…` 대응).
 
 ## Hook migration
