@@ -72,16 +72,7 @@ Before writing each new test, confirm:
 
 ## 6. Verify
 
-Run the project's lint + unit suite. Examples:
-
-```bash
-# Go:    go vet ./... && go test ./...
-# Node:  npm run lint && npm test
-# Python: ruff check . && pytest
-# Rust:  cargo clippy --all-targets && cargo test
-```
-
-All must pass before moving to Phase 2. If anything fails, follow Error Recovery in `SKILL.md`.
+Run the lint + unit commands resolved in `SKILL.md`'s `Prepare` step; all must pass before moving to Phase 2 (`SKILL.md` Global Rule 4).
 
 ## 7. What to record for the summary
 

@@ -30,11 +30,7 @@ The convention is a Makefile target, typically `make test-mutation`. Check, in t
 
 If found, note both the command and the underlying tool (the tool determines the report format and how to filter by path).
 
-If **not** found, ask the user:
-
-- **Skip Phase 3** — proceed to Final Verification with mutation testing skipped.
-- **Nominate a command** — user provides the exact command to run.
-- **Install a standard tool** — install the language-standard mutation tool (Go: `go-mutesting` or `gremlins`; Node/TS: `stryker`; Python: `mutmut`; Rust: `cargo-mutants`; Java/Kotlin: `pitest`). Confirm the choice with the user before installing anything.
+If **not** found, do not decide alone — `SKILL.md`'s `Prepare` step 3 owns that routing (the Dispatcher resolves it before dispatch, a Worker returns `blocked`, interactive execution asks the user). The options to offer are: skip Phase 3, nominate a command, or install the language-standard tool (Go: `go-mutesting` or `gremlins`; Node/TS: `stryker`; Python: `mutmut`; Rust: `cargo-mutants`; Java/Kotlin: `pitest`) — never install anything without the user's confirmation.
 
 ## 2. Run mutation testing on the in-scope files
 
@@ -121,16 +117,7 @@ For each such mutant, record file:line, operator, and reason. Surface the list i
 
 ## 7. Verify
 
-Run the full lint + unit (+ e2e) suite once Phase 3 ends:
-
-```bash
-# Examples — adapt to the project's tech stack:
-# make lint && make test
-# go vet ./... && go test ./...
-# npm run lint && npm test
-```
-
-All must pass. If anything fails, follow Error Recovery in `SKILL.md`.
+Run the full lint + unit (+ e2e) commands resolved in `SKILL.md`'s `Prepare` step once Phase 3 ends; all must pass (`SKILL.md` Global Rule 4).
 
 ## 8. What to record for the summary
 

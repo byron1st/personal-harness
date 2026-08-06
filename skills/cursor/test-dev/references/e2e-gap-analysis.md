@@ -71,17 +71,7 @@ Avoid:
 
 ## 6. Verify
 
-Run the project's e2e suite end-to-end:
-
-```bash
-# Examples:
-# make test-e2e
-# npm run e2e
-# npx playwright test
-# go test -tags=e2e ./...
-```
-
-All must pass. If a pre-existing test breaks because of changes made earlier in the session, follow Error Recovery in `SKILL.md`.
+Run the e2e command resolved in `SKILL.md`'s `Prepare` step end-to-end; all must pass before moving to Phase 3 (`SKILL.md` Global Rule 4).
 
 ## 7. What to record for the summary
 

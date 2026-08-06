@@ -84,7 +84,7 @@ Every plan carries a `## Acceptance Contract` section: the completion conditions
 
 - IDs are `AC-N`, numbered from 1.
 - An optional fourth column `Do not mark done if` names explicit disqualifiers for a row.
-- Record only work-specific outcomes and evidence the repository cannot announce on its own. Generic lint/unit/e2e/build gates are rediscovered by `implement-dev` at implementation time and are never copied here.
+- Record only work-specific outcomes and evidence the repository cannot announce on its own; generic gates stay out (SKILL.md, Plan granularity).
 - Every `## TODOs` item references the AC id(s) it fulfills as `(AC-N)` (section 7).
 
 ## 6. Authority Boundaries

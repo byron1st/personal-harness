@@ -92,7 +92,7 @@ Translate to Korean if the Worker returned English; keep paths, command names, a
 
 ## E. Delegation failure
 
-If the spawn or compatible Worker capability is unavailable, or dispatch fails, the Dispatcher must stop before modifying tests. It reports `Delegation status: unavailable` or `failed`, includes the observed cause, and uses `a direct question to the user` to ask whether to continue with direct main-session test hardening or stop. Direct execution starts only after the user explicitly chooses that fallback; the Dispatcher never silently substitutes itself for a failed Worker and never retries by dispatching another Worker.
+If the Worker capability is unavailable or the spawn call fails, the Dispatcher must stop before modifying tests. It reports `Delegation status: unavailable` or `failed`, includes the observed cause, and asks the user whether to continue with direct main-session test hardening or stop. Direct execution starts only after the user explicitly chooses that fallback; the Dispatcher never silently substitutes itself for a failed Worker and never retries by dispatching another Worker.
 
 ## F. Boundary
 
