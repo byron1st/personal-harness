@@ -2,7 +2,7 @@
 
 A RESEARCH file is a structured record of codebase investigation performed before creating an implementation plan. It captures what was discovered about the current state of the code: execution paths, component relationships, and surrounding constraints, so the plan document can reference concrete findings rather than embedding raw investigation details.
 
-Within `plan-dev`, research is **drafted in memory during plan mode** and **written to disk after plan mode exits** (step 11 of `SKILL.md`). Investigation itself uses only read tools, which is compatible with plan mode.
+Within `plan-dev`, research is **drafted in memory during plan mode** and **written to disk after plan mode exits** (step 12 of `SKILL.md`). Investigation itself uses only read tools, which is compatible with plan mode.
 
 Not every task needs the same depth or angle. A single task may produce multiple RESEARCH files of different types when the scope requires understanding the codebase from more than one angle.
 
@@ -70,7 +70,7 @@ File name: `{title}.md`
 
 Storage location: `docs/agents/research/` under the project root. Create the directory if it does not exist.
 
-The actual file write happens in step 11 of `SKILL.md`, after plan mode is exited.
+The actual file write happens in step 12 of `SKILL.md`, after plan mode is exited.
 
 ## 4. Required frontmatter
 

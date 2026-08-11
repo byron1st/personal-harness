@@ -30,18 +30,11 @@ Plan and research file content is **always written in Korean**, regardless of th
 - Research files: `docs/agents/research/{title}.md`
 - Research index: `docs/agents/research/index.md`
 
-`timestamp` is local time in `YYYYMMDDHHMMSS` format. `{title}` is a short kebab-case descriptor. `{Jira ticket}` is extracted from the current branch name using `[A-Z]+-[0-9]+`; if it cannot be extracted, ask the user unless they explicitly confirm `NO-JIRA`.
+The naming rules behind those placeholders are enforced by the references: plan files in [single-step-plan.md](references/single-step-plan.md) section 1 (and [multi-steps-plan.md](references/multi-steps-plan.md) section 1 for `-STEP-N` sub-plans), research files in [research-file.md](references/research-file.md) section 3.
 
 ## Content format
 
-Inside plan and research files, the **frontmatter** and **language** (Korean) are always enforced. Each reference document specifies any additional enforced elements.
-
-Body shape differs by mode:
-
-- **single-step** - only the research file links (when applicable), the `## Acceptance Contract` / `## Authority Boundaries` boundary sections, and a final `## TODOs` checklist are enforced. The rest of the body is free-form: when the plan was produced by a planning agent, copy its output **verbatim** between those two anchors instead of normalizing it into a fixed template. See [references/single-step-plan.md](references/single-step-plan.md).
-- **multi-steps** - choose whatever section structure best fits the work. Each reference document includes a suggested default structure as a starting point. Drop sections that do not apply, add ones that do, reorder freely.
-
-File naming, storage location, and (for multi-steps) Markdown link conventions in the references *are* enforced. Those are structural metadata, not content format.
+Inside plan and research files, the **frontmatter** and **language** (Korean) are always enforced. Beyond those two, each reference document owns its own enforced-vs-flexible list - read the mode's reference rather than assuming a section template here. What all modes share: structural metadata (file naming, storage location, Markdown link conventions) is enforced, and body *shape* is not.
 
 ## Plan granularity
 
@@ -100,11 +93,8 @@ If research is required:
 
 - Inspect `docs/agents/research/index.md` first. It lists each research file's frontmatter metadata plus a Markdown link to the file. Use this index to decide which research files are relevant to the planned change. If the index is missing, treat existing research as unavailable for this planning run; do not open every research file to reconstruct metadata unless the user explicitly asks you to rebuild the index.
 - Read relevant research files inline as read-only inputs.
-- Evaluate whether existing research covers the planned change. If gaps remain, investigate the codebase using read tools:
-  - **Trace callers & callees** for each function to be modified; follow the chain to stable boundaries (entry points, external APIs, data stores).
-  - **Check interfaces & contracts**; find all implementations and verify whether changes require updating them.
-  - **Review existing tests**; read test files to understand expected behavior, edge cases, and testing patterns.
-- Draft any new research findings as research file content **in memory**. Do not write yet. The actual write happens in step 12. Use [references/research-file.md](references/research-file.md) for naming and frontmatter.
+- Evaluate whether existing research covers the planned change. If gaps remain, investigate the codebase with read tools per [references/research-file.md](references/research-file.md) section 1, which owns the investigation procedure.
+- Draft any new research findings as research file content **in memory**. Do not write yet. The actual write happens in step 12; [references/research-file.md](references/research-file.md) also carries naming, frontmatter, and index rules.
 
 **Planner touchpoint ① (conditional)**: when the work is ambiguous, cross-cutting, or architecture-sensitive, dispatch the read-only `planner` agent with the collected context. It returns (a) a compact architecture view to fold into the draft, and (b) a list of high-impact questions for the user, each with options and a recommended default. Relay those questions in steps 5-6 - a subagent cannot talk to the user, so the interview always stays in the main session. Skip for trivial work.
 
@@ -142,8 +132,8 @@ Every technical decision must be consistent with the key requirements in `AGENTS
 
 Compose plan file content in memory according to the chosen mode's reference:
 
-- single-step -> [references/single-step-plan.md](references/single-step-plan.md). Frontmatter, the **strengthened research file links** (one-line summary + `**TODO N·M**` tags per research), the `## Acceptance Contract` (from the acceptance round) and `## Authority Boundaries` sections, and the final `## TODOs` checklist (with `(AC-N)` references and `(→ research: …)` hints where relevant) are enforced. The body in between is free-form; when the plan came from a planning agent, copy its output verbatim instead of reshaping it. For each research file you link, record which TODOs / areas it applies to - the Worker starts cold and relies on this annotation to read the right research for the right TODO without re-exploration.
-- multi-steps -> [references/multi-steps-plan.md](references/multi-steps-plan.md). Frontmatter and language must follow the reference. Section structure is your call. Draft the main plan and every sub-plan in memory; verify link targets match the sub-plan filenames you intend to use. Each sub-plan inherits the strengthened research links, TODO hints, its own `## Acceptance Contract` / `## Authority Boundaries` sections, and (when non-trivial) `## Non-goals` / `## Key decisions` anchors, because each sub-plan is itself a cold-handoff implementation unit.
+- single-step -> [references/single-step-plan.md](references/single-step-plan.md), which lists what it enforces and what it leaves free. Fold the `## Acceptance Contract` agreed in step 6 into the draft.
+- multi-steps -> [references/multi-steps-plan.md](references/multi-steps-plan.md). Draft the main plan **and every sub-plan** in memory; each sub-plan is a full single-step plan and inherits that reference's enforcement, because each is itself a cold-handoff implementation unit. Verify link targets match the sub-plan filenames you intend to write.
 
 ### 9. Review
 
@@ -173,7 +163,7 @@ Persistence steps are skill mechanics, not part of the plan content the user rev
 
 These are the very first tool calls after the session transitions out of plan mode, before any other follow-up:
 
-1. **Write research files** (if any were drafted in step 4). Ensure `docs/agents/research/` exists, then save each file per [references/research-file.md](references/research-file.md). After writing or updating research files, ensure `docs/agents/research/index.md` exists, creating it when no index.md was present beforehand, then update it so it contains the current metadata and links for every research file.
+1. **Write research files** (if any were drafted in step 4). Ensure `docs/agents/research/` exists, then save each file per [references/research-file.md](references/research-file.md), applying its `index.md` maintenance rules (section 5) in the same step - create the index when the project has none yet.
 2. **Write plan file(s)**. Ensure `docs/agents/dev/` exists, then save the plan file(s) per the chosen mode's reference. For multi-steps, write the main plan and every sub-plan, then verify each Markdown link in the main plan resolves to an existing sub-plan filename.
 
 After persistence, report the file paths to the user and proceed with whatever follow-up they request (typically: invoke `implement-dev` or another execution skill).

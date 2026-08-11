@@ -87,50 +87,25 @@ If an `implement-dev` report exists for the change, the Dispatcher may pass its 
 
 ## Phase 1 — Unit test gaps
 
-Detail: [references/unit-gap-analysis.md](references/unit-gap-analysis.md)
+Read [references/unit-gap-analysis.md](references/unit-gap-analysis.md) before starting this phase — it carries the procedure (enumerate the public surface → map symbols to existing tests → inspect bodies for missed branches → fill each gap Red → Green).
 
-For each in-scope file:
-
-1. Enumerate public/exported functions and methods.
-2. For each, locate any existing tests. A function is "covered" if at least one test exercises its happy path.
-3. Inspect the function body for obvious branches the existing tests miss — error returns, nil/empty inputs, boundary values, switch arms, select cases, retry loops.
-4. For every gap, add a Red → Green test (write a failing test first, then confirm the existing implementation makes it pass). Each edge case is its own Red → Green mini-cycle.
-5. Run the unit-test suite. All must pass.
+Target: every public function in the in-scope files has at least one happy-path test, plus tests for the obvious edge cases its body implies.
 
 ## Phase 2 — E2E test gaps
 
-Detail: [references/e2e-gap-analysis.md](references/e2e-gap-analysis.md)
+Read [references/e2e-gap-analysis.md](references/e2e-gap-analysis.md) before starting this phase — it carries the procedure (locate the harness → identify boundary-crossing changes → map them to existing e2e tests → fill each gap with one happy-path test).
 
-For in-scope changes that cross a system boundary (HTTP route, DB write, external IO, queue consumer, UI flow), check whether at least one e2e test exercises the happy path end-to-end:
-
-1. Read the existing e2e tests to understand what is already covered.
-2. Identify boundary-crossing changes in the in-scope files.
-3. For each genuinely uncovered boundary, add an e2e test exercising the happy path (and one obvious failure path if the boundary has user-visible error semantics).
-4. Do not duplicate unit-test coverage at the e2e layer — e2e exists to verify integration, not branches.
-5. Run the e2e suite. All must pass.
+Target: every in-scope change that crosses a system boundary (HTTP route, DB write, external IO, queue consumer, UI flow) has at least one e2e test covering it end-to-end. E2E exists to verify integration — do not duplicate unit-level branch coverage here.
 
 If the project has no e2e harness, skip this phase and note it in the summary.
 
 ## Phase 3 — Mutation test LIVED elimination
 
-Detail: [references/mutation-iteration.md](references/mutation-iteration.md)
+Read [references/mutation-iteration.md](references/mutation-iteration.md) before starting this phase — it carries the efficacy formula, the per-tool run commands and report states, the distinguishing-test technique, and the iteration budgets (pre-threshold uncapped, post-threshold ≤ 3, per-mutant 3 attempts).
 
 Skip this phase entirely when the caller placed mutation out of scope (see Prepare 3) — a missing mutation command is not a `blocked` condition in that case.
 
-**Goal**: drive **test efficacy** to **at least 80%**, then push **as high as possible** within a bounded budget. Reaching 0 LIVED mutants is generally infeasible — equivalent mutants and untestable side effects always remain — so the target is a score threshold, not zero.
-
-**Test efficacy** = the mutation-score metric reported by the tool (`KILLED / (KILLED + LIVED)`, with EQUIVALENT/ERROR/TIMEOUT excluded; NO COVERAGE counted as LIVED unless the tool reports it separately as a coverage gap).
-
-1. Run mutation testing against the in-scope files (use the project's target — typical: `make test-mutation`). If the target supports a path/package filter, restrict to in-scope paths to keep the run tractable.
-2. Read the report. Compute or read the test efficacy. List every `LIVED` mutant with file, line, and operator.
-3. **Pre-threshold iterations** (efficacy < 80%): iterate with no fixed cap. For each LIVED mutant:
-   - Locate the public surface that exercises the mutated code path.
-   - Add an assertion or new test case that fails when the mutant is applied.
-   - Re-run mutation testing on the affected file/package.
-   Continue until efficacy ≥ 80% or no further progress is possible (an iteration adds zero new tests).
-4. **Post-threshold iterations** (efficacy ≥ 80%): perform **at most 3 additional iterations** of LIVED hardening to push efficacy higher. Stop early if any iteration adds zero new tests.
-5. Stop after 3 attempts on the same individual mutant without progress and surface it to the user with a description of why a distinguishing test seems infeasible (equivalent mutant, untestable side effect, etc.).
-6. If efficacy stays below 80% after pre-threshold iterations exhaust their progress, stop and surface the residual LIVED list to the user — do not contort tests to chase the number.
+**Goal**: drive **test efficacy** (the mutation-score metric the tool reports) to **at least 80%**, then push **as high as possible** within that budget. Reaching 0 LIVED mutants is generally infeasible — equivalent mutants and untestable side effects always remain — so the target is a score threshold, not zero. If efficacy stalls below 80%, surface the residual LIVED list rather than contorting tests to chase the number.
 
 ## Final Verification
 
@@ -143,12 +118,11 @@ If a pre-existing test is red and reverting recent test changes does not restore
 
 ## Output
 
-The result is delivered as two artifacts, defined in [references/worker-contract.md](references/worker-contract.md):
+The result is delivered as two artifacts — the **Worker return (②)** and the **Dispatcher chat summary (③)** — whose headings and shapes are defined in [references/worker-contract.md](references/worker-contract.md) §C and §D.
 
-- **Worker return (②)** — the fixed-heading Markdown the Worker hands back (the `## Stage Status` / `## Findings` / `## Decision Needed` common block, then `## Scope` … `## Remaining Attention Items`). No file artifact is written, so the return **is** the deliverable: the Worker must emit the `## Findings` list (suspected business-logic defects, `TEST-NNN` ids) **verbatim**, never summarised or dropped.
-- **Dispatcher chat summary (③)** — the Dispatcher renders a short summary for the user: scope, per-phase one-liners (unit added/result, e2e added/result or skipped, mutation start→final efficacy and whether the 80% threshold was reached), and the `## Findings` list surfaced **prominently and verbatim** as the most important attention item. If the Worker returns `pass-with-suspected-defects`, do not auto-proceed to review-code or any next stage: notify the user and present each finding as a `fix-dev` candidate. If the Worker returns `blocked`, surface `## Decision Needed` first and stop. Translate to Korean if the Worker returned English; keep paths and identifiers as-is.
+**No file artifact is written, so the return is the deliverable.** That makes one rule outrank brevity in both artifacts: the `## Findings` list (suspected business-logic defects with `TEST-NNN` ids) is carried **verbatim**, never summarised or dropped, and a `pass-with-suspected-defects` return does not auto-proceed to any next stage.
 
-In explicitly authorized direct execution, the same shape is the final chat output. Do not write a separate report file. Do not modify `docs/agents/dev` implementation reports.
+In explicitly authorized direct execution, ③'s shape is the final chat output. Do not write a separate report file. Do not modify `docs/agents/dev` implementation reports.
 
 ## Error Recovery
 

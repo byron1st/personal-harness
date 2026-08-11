@@ -14,23 +14,23 @@ Read the plan file end-to-end. The plan is a coarse-grained **direction** - it l
 
 Do **not** expect a hardcoded `## Goal` / `## Technical Approach` / `## Affected Files` / `## Verification` template - the plan body is free-form between the anchors above. Adopt whatever sections it does carry; do not invent missing ones.
 
-**Verification commands** are not read off a plan section: extract lint / format / test / build commands from `Makefile`, `AGENTS.md`, `CLAUDE.md`, or `README.md` during the `Prepare` step. (`implement-dev` already does this in SKILL.md.)
+**Verification commands** are not read off a plan section - `implement-dev`'s `Prepare` step (SKILL.md) resolves them before this flow starts.
 
 ## 2. Implement task-by-task with TDD
 
 Walk the `## TODOs` list in order. For each item:
 
 1. **Read its linked research first** (when the plan tags the TODO with `(→ research: xxx)` or the research links name this TODO). You are cold; the research is what stops you from re-exploring code the planning session already mapped.
-2. **Red** - add or update a failing test that expresses the expected behavior.
-3. **Green** - write the minimum production code to make the test pass.
-4. **Refactor** - clean up names, duplication, structure; keep tests green.
-5. **Expand** - add edge-case tests (boundary values, error paths, empty inputs, concurrency as relevant). Each edge case is its own Red -> Green mini-cycle.
-6. **Check off the TODO** - immediately flip the matching `- [ ]` to `- [x]` in the plan file. Do not batch.
+2. **Red** - add or update a failing test that expresses the expected behavior. It must actually fail (or not compile), proving the test is valid and the behavior does not already exist by accident.
+3. **Green** - write the minimum production code to make the test pass. Do not optimize or handle edge cases yet.
+4. **Refactor** - clean up names, duplication, structure; keep tests green. Not optional; skipping it accumulates mess.
+5. **Expand** - add edge-case tests (boundary values, error paths, empty inputs, concurrency as relevant). Each edge case is its own Red -> Green -> Refactor mini-cycle.
+6. **Check off the TODO** - immediately flip the matching `- [ ]` to `- [x]` in the plan file. Do not batch: the plan file is what makes the run resumable at any point with no ambiguity about what has shipped.
 
 Testing rules:
 - Match the existing test style and structure in the project.
 - Test **public/exported** methods and functions. Do not write tests for internal/private helpers.
-- Exception to TDD: pure documentation, configuration, or trivially obvious one-line changes. When in doubt, write the test.
+- Exception to TDD: pure documentation, configuration, or trivially obvious one-line changes where a test would add no signal. When in doubt, write the test.
 
 Deviations - resolve details, escalate direction:
 - **Detail-level** - a helper / type / signature the plan did not spell out, a library quirk, an edge case, a local naming or structure choice: the *how* of a TODO whose *what* is unchanged. Resolve it yourself, TDD-first, and record it under the matching TODO's `편차` line in `## TODO Fulfillment` (and, where it widened scope, also in `## Plan Divergence`'s **Added** bucket, cross-referencing a `## Red Flags` entry by id). This is the discretion the coarse plan deliberately left you.
@@ -66,7 +66,7 @@ If the implementation changed public APIs, commands, architecture, or setup step
 
 ## 5. Write the completion report (①)
 
-Create the completion report (①) under `docs/agents/dev/` following [report-file.md](report-file.md). The spine is `## TODO Fulfillment`: one sub-section per plan TODO, with `path:line` + symbol (implementation), `path:line` + test name (the behavior it pins), the `AC:` line (fulfilled AC id(s) + evidence pointer), and per-TODO deviation. The filename mirrors the plan filename by replacing `_PLAN_` with `_IMPL_`, and the report links back to the plan using a Markdown link.
+Create the completion report (①) under `docs/agents/dev/` following [report-file.md](report-file.md), which owns the filename convention, the `## TODO Fulfillment` spine, and the section templates.
 
 After writing the report, add a Markdown link to it at the top of the plan file (under the plan's frontmatter or heading) so the plan/report link is bidirectional.
 
@@ -74,7 +74,9 @@ After writing the report, add a Markdown link to it at the top of the plan file 
 
 How this step manifests depends on mode:
 
-- **Worker mode** - return only the fixed-heading Markdown ② from [worker-contract.md](worker-contract.md). Link the ① report by absolute path under `## Implementation Report`; do not paste its sections.
-- **Interactive (Dispatcher direct) mode** - render the ③ chat summary: 2-4 bullets (what changed / verification status / red-flag and open-question gist / TODO completion at a glance) plus a clickable ① report link. Do not paste `## TODO Fulfillment`, `## Red Flags`, `## Open Questions`, `## Plan Divergence`, or lower ① sections verbatim; the report file carries those.
+- **Worker mode** - return only the fixed-heading Markdown ② from [worker-contract.md](worker-contract.md).
+- **Interactive (Dispatcher direct) mode** - render the ③ chat summary described in `implement-dev`'s `## Report` (SKILL.md).
+
+Either way the ① report is **linked, never pasted**; the report file carries its own sections.
 
 If `## Stage Status` (Worker) / verification (interactive) is `blocked` on a direction-level decision, surface the decision needed first and stop - do not proceed to additional stages, and do not retry the same conflict.

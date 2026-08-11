@@ -226,4 +226,4 @@ Before finalizing (still inside plan mode, in the Review step):
 
 - "If I completed only steps 1 through N, does the project compile and do all tests pass?" If not, restructure.
 - "Does every FR-N (when SPEC.md is an input) appear in at least one step?" If not, add the missing coverage.
-- "Do the main plan's Markdown links match the sub-plan filenames I will write?" Verify each link before passing the plan to `ExitPlanMode`. After writing the files in the persistence step, double-check that every link resolves.
+- "Do the main plan's Markdown links match the sub-plan filenames I will write?" Verify each link before presenting the plan for approval. (The post-write re-check belongs to SKILL.md's persistence step.)

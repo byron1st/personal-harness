@@ -35,34 +35,10 @@ Repository `AGENTS.md` / `CLAUDE.md` instructions override bundled defaults, but
 
 ## Rules
 
-### 1. Keep the plan's TODO list current - update immediately
+The rules that bind whoever edits the code - TDD Red-Green-Refactor, flipping each plan checkbox the moment its item completes, and the deviation buckets (detail-level / consultable / direction-level) with their per-mode escalation routing - live in [references/implement-flow.md](references/implement-flow.md). Two points belong here instead:
 
-Each checkbox in the plan file - the `## TODOs` checklist and any `## Verification` checklist - must be flipped from `- [ ]` to `- [x]` **the moment that item is complete**. Do **not** batch updates to the end.
-
-This contract ensures that work can be paused and resumed at any time with no ambiguity about what has shipped.
-
-### 2. TDD - Red-Green-Refactor
-
-All new behavior is built test-first:
-
-1. **Red** - write a failing test that defines the desired behavior. The test must fail (or not compile) to prove it is valid and the behavior does not accidentally exist.
-2. **Green** - write the minimum production code to make the test pass. Do not optimize or handle edge cases yet.
-3. **Refactor** - improve names, remove duplication, simplify structure while keeping tests green. Not optional; skipping it accumulates mess.
-
-After the happy-path is green, add edge-case tests (boundary values, error paths, empty inputs, concurrency, etc.). Each edge case is its own Red -> Green -> Refactor mini-cycle.
-
-**Exception**: pure documentation, configuration, or trivially obvious one-line changes where a test would add no signal. When in doubt, write the test.
-
-### 3. Deviations: resolve details, escalate direction
-
-The plan is a coarse, human-approved **direction**. Detail-level obstacles it deliberately left open - a helper, an edge case, the *how* of a TODO - are yours to resolve, TDD-first, and record. A **direction-level** conflict - the plan's goal, chosen approach, key decisions, or non-goals turn out wrong or unworkable - **stops work and goes back before code is written for it**, because changing direction silently voids the review the plan received. Between the two sits a **consultable** band - two approaches both fit the plan but the wrong one is expensive to reverse - which a Worker resolves by dispatching `plan-consultant`, and only on a TODO tagged `(design-bearing)`. This is distinct from the stuck-after-3-attempts escalation in Error Recovery: that one fires when you are technically blocked, this one fires when the plan's direction is wrong even though the code would compile. The buckets and the escalation trigger are detailed in [references/implement-flow.md](references/implement-flow.md).
-
-**Escalation routing depends on mode:**
-
-- **Worker mode** - you are an isolated subagent and **cannot ask the user**. On a direction-level conflict, stop, do not write code for the conflicting TODO, set `## Stage Status` to `blocked`, and surface the conflict plus the choices in `## Decision Needed` (see [references/worker-contract.md](references/worker-contract.md)). Detail-level obstacles stay yours to resolve and record; never escalate them.
-- **Interactive (direct main-session) execution** - ask the user before writing code for the conflicting TODO, then resume after they decide.
-
-The Dispatcher itself never makes direction decisions for the Worker; if the Worker returns `blocked`, the Dispatcher surfaces `## Decision Needed` to the user and stops - it does not retry or self-decide.
+- **Direction-level escalation is not the Error Recovery escalation.** A direction-level conflict - the plan's goal, chosen approach, key decisions, or non-goals turn out wrong or unworkable - **stops work before code is written for it**, because changing direction silently voids the review the plan received. The stuck-after-3-attempts rule below fires when you are technically blocked; this one fires when the plan's direction is wrong even though the code would compile.
+- **The Dispatcher never makes direction decisions for the Worker.** If the Worker returns `blocked`, the Dispatcher surfaces `## Decision Needed` to the user and stops - it does not retry or self-decide.
 
 ## Prepare
 
@@ -100,7 +76,7 @@ A Worker `failed` return does not end the stage on its own: the Dispatcher re-di
 ## Completion
 
 - All plan TODO checkboxes are up to date.
-- Every AC in the plan's `## Acceptance Contract` has its work-specific evidence collected and recorded (report `AC:` lines + return `## Evidence`) - an unproven AC blocks `pass`. Plans without `## Acceptance Contract` (legacy) are not refused: skip AC evidence, run only the rediscovered generic gates, and record `Acceptance Contract: none (legacy plan)` in the report's `## Summary` and the return's `## Evidence`.
+- Every AC in the plan's `## Acceptance Contract` has its work-specific evidence collected and recorded (report `AC:` lines + return `## Evidence`) - an unproven AC blocks `pass`. Legacy plans without an `## Acceptance Contract` are not refused; they take the fallback in [references/implement-flow.md](references/implement-flow.md) step 3.
 - The completion report (①) is saved under `docs/agents/dev`, and the plan/report Markdown links are bidirectional.
 - If running as a Worker, the return message ② uses the fixed headings and links ① by absolute path.
 - The completion report's `## Summary` records every language-specific convention file consulted and any de facto fallback used, or states that no table mapping applied.
