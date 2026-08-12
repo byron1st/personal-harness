@@ -49,9 +49,9 @@ subagent_model=$(echo "$input" | jq -r '.subagent_model // ""')
 case "$subagent_type" in
   planner|plan-consultant|security-reviewer|reliability-reviewer)
     expected="grok-4.5"; tier="T1" ;;
-  implementer)
+  implementer|fixer)
     expected="grok-4.5"; tier="T2" ;;
-  tester|fixer|maintainability-reviewer|senior-generalist-reviewer)
+  tester|maintainability-reviewer|senior-generalist-reviewer)
     expected="composer-2.5"; tier="T2" ;;
   *)
     allow ;;

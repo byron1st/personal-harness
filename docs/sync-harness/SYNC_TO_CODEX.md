@@ -134,9 +134,9 @@ Claude frontmatter의 `model` / `effort`는 Codex role TOML의 `model` / `model_
 
 | Claude | Codex TOML | 비고 |
 | --- | --- | --- |
-| `model: opus` | `model = "gpt-5.6-sol"` | T1 judgment |
-| `model: sonnet` (implementer) | `model = "gpt-5.6-terra"` | 장문맥 역할 — Luna 금지 |
-| `model: sonnet` (그 외 T2) | `model = "gpt-5.6-luna"` | tester / fixer / T2 reviewers |
+| T1 역할 (planner · plan-consultant · security/reliability reviewer) | `model = "gpt-5.6-sol"` | T1 judgment |
+| `implementer` · `fixer` | `model = "gpt-5.6-terra"` | Claude에서 `opus`인 두 T2 쓰기 역할 — Luna 금지 |
+| 그 외 T2 | `model = "gpt-5.6-luna"` | tester / T2 reviewers |
 | `effort: high` / `medium` / … | `model_reasoning_effort = "high"` 등 | 공통 구간 값 그대로 |
 | `tools: Read, Grep, Glob, Bash` | `sandbox_mode = "read-only"` + 본문 hard rule | 툴 화이트리스트는 없음 |
 | (없음 — write agent) | `sandbox_mode = "workspace-write"` | implementer / tester / fixer |
@@ -146,11 +146,12 @@ Claude frontmatter의 `model` / `effort`는 Codex role TOML의 `model` / `model_
 | 역할 | model | effort |
 | --- | --- | --- |
 | planner · plan-consultant · security-reviewer · reliability-reviewer | `gpt-5.6-sol` | high (리뷰어 T1은 medium) |
-| implementer | `gpt-5.6-terra` | high |
-| tester · fixer · maintainability-reviewer · senior-generalist-reviewer | `gpt-5.6-luna` | high |
+| implementer · fixer | `gpt-5.6-terra` | high |
+| tester · maintainability-reviewer · senior-generalist-reviewer | `gpt-5.6-luna` | high |
 
 - **`ultra` 금지.** automatic task delegation을 동반해 dev-loop 위임과 충돌한다.
-- **Luna를 implementer에 두지 않는다.** MRCR 장문맥 절벽(41.3%)이 plan+research+코드 입력과 겹친다.
+- **매핑 키는 Claude의 `model:` 값이 아니라 역할의 티어다.** Claude는 `implementer`·`fixer`를 `opus` / `medium`으로 두므로(T1 모델 + T2 effort), `model: opus` → Sol로 기계 변환하면 두 역할이 Sol로 올라간다.
+- **Luna를 implementer·fixer에 두지 않는다.** MRCR 장문맥 절벽(41.3%)이 plan+research+코드 입력과 겹친다.
 - cascade(Worker `failed` → T1 1회 재시도)는 spawn 호출 인자의 `model` / `reasoning_effort`로 role 핀을 이긴다. 재시도 모델은 Sol. 요약에 retry 한 줄을 남긴다.
 - Codex의 `[agents] default_subagent_*`는 **fallback**이다 — role이 명시한 값을 덮어쓰지 않는다. Claude의 `CLAUDE_CODE_SUBAGENT_MODEL`과 다르다.
 - 각 본문에 `Tier: T1|T2 — {근거 한 줄}`을 남긴다. 모델명이 아니라 근거가 문서화 대상이다.

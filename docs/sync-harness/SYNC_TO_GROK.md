@@ -89,12 +89,13 @@ agents_md: true
 
 | Claude | Grok |
 | --- | --- |
-| `model: opus` + `effort: *` | `model: grok-4.5` + `effort: high` (T1) |
-| `model: sonnet` + `effort: high` (implementer) | `model: grok-4.5` + `effort: medium` |
-| `model: sonnet` + `effort: medium` (T2 bulk) | `model: grok-4.5` + `effort: medium` |
+| T1 역할(planner · plan-consultant · security/reliability reviewer) | `model: grok-4.5` + `effort: high` |
+| T2 역할(implementer · fixer · tester · T2 리뷰어) | `model: grok-4.5` + `effort: medium` |
 | `tools: Read, …` (read-only) | `permission_mode: plan` + spawn `capability_mode: read-only` |
 | `tools: …, Agent` | 삭제. depth 1이라 Worker는 consultant를 부르지 않음 |
 | `inherit` | **금지** |
+
+**Claude의 `model:` 값으로 매핑하지 않는다 — 역할의 티어로 매핑한다.** Claude는 `implementer`·`fixer`를 `opus` / `medium`(T1 모델 + T2 effort)에 두므로, 모델명만 보고 옮기면 두 역할이 T1 effort로 올라간다. `AGENTS.md`의 Model Tier 표가 source of truth다.
 
 **effort 메뉴는 `low` · `medium` · `high`뿐** (기본 high). `xhigh`/`max`를 쓰지 않는다.
 
