@@ -1,3 +1,0 @@
-- 하네스 업데이트
-- cursor, copilot 변형 추가
-- global instruction 내용 검토
