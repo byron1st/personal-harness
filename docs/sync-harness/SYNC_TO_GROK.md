@@ -60,7 +60,7 @@ Grok은 **탑레벨만** 서브에이전트를 낳는다. `implementer → plan-
 
 ### No multi-model cascade
 
-카탈로그가 `grok-4.5` 단일이다. Claude의 “failed → T1 opus 1회” cascade는 **같은 persona 1회 재시도**로 번역하고, 다른 `model:` 패밀리로 올리지 않는다. `implementer-strict` 파일을 만들지 않는다(현행 결정).
+카탈로그는 `grok-4.6`(기본) + `grok-4.5`다. Claude의 “failed → T1 opus 1회” cascade는 **같은 persona 1회 재시도**로 번역하고, 다른 `model:` 패밀리로 올리지 않는다. `implementer-strict` 파일을 만들지 않는다(현행 결정).
 
 ### Plan-mode approval
 
@@ -80,7 +80,7 @@ Grok은 **탑레벨만** 서브에이전트를 낳는다. `implementer → plan-
 ---
 name: security-reviewer
 description: "…(Claude 서술 유지)"
-model: grok-4.5
+model: grok-4.6       # T2 reviewers stay grok-4.5 — see table below
 effort: high          # or medium — see AGENTS.md Model Tier
 permission_mode: plan # read-only roles; writers use default
 agents_md: true
@@ -89,15 +89,16 @@ agents_md: true
 
 | Claude | Grok |
 | --- | --- |
-| T1 역할(planner · plan-consultant · security/reliability reviewer) | `model: grok-4.5` + `effort: high` |
-| T2 역할(implementer · fixer · tester · T2 리뷰어) | `model: grok-4.5` + `effort: medium` |
+| T1 역할(planner · plan-consultant · security/reliability reviewer) | `model: grok-4.6` + `effort: high` |
+| T2 쓰기·tester(implementer · fixer · tester) | `model: grok-4.6` + `effort: medium` |
+| T2 리뷰어(maintainability · senior-generalist) | `model: grok-4.5` + `effort: medium` |
 | `tools: Read, …` (read-only) | `permission_mode: plan` + spawn `capability_mode: read-only` |
 | `tools: …, Agent` | 삭제. depth 1이라 Worker는 consultant를 부르지 않음 |
 | `inherit` | **금지** |
 
 **Claude의 `model:` 값으로 매핑하지 않는다 — 역할의 티어로 매핑한다.** Claude는 `implementer`·`fixer`를 `opus` / `medium`(T1 모델 + T2 effort)에 두므로, 모델명만 보고 옮기면 두 역할이 T1 effort로 올라간다. `AGENTS.md`의 Model Tier 표가 source of truth다.
 
-**effort 메뉴는 `low` · `medium` · `high`뿐** (기본 high). `xhigh`/`max`를 쓰지 않는다.
+**4.6 effort 메뉴는 `low` · `medium` · `high` · `xhigh`** (기본 high). `xhigh`는 `plan-dev` 세션에만 쓴다. 에이전트 핀에는 `xhigh`를 넣지 않는다. 4.5는 `low` · `medium` · `high`뿐이다.
 
 **`permission_mode: plan`은 읽기 셸을 막지 않는다** (`git diff`, `rg` 가능). 편집만 막힌다.
 
@@ -132,13 +133,13 @@ agents_md: true
 
 | Session | Model / effort |
 | --- | --- |
-| `plan-dev` | `grok-4.5` / **high** |
-| every `dev-loop*` | `grok-4.5` / **medium** |
+| `plan-dev` | `grok-4.6` / **xhigh** |
+| every `dev-loop*` | `grok-4.6` / **medium** |
 
 ## Checklist (verifier)
 
 - [ ] compat.claude / compat.cursor off
-- [ ] 9 agents under `agents/grok/` with `model: grok-4.5`, explicit `effort`, no `inherit`
+- [ ] 9 agents under `agents/grok/` with explicit `model` + `effort`, no `inherit` (T1 + implementer/fixer/tester = `grok-4.6`; T2 reviewers = `grok-4.5`)
 - [ ] read-only six use `permission_mode: plan`
 - [ ] implementer has Dispatcher escalation, not nested consultant
 - [ ] 17 skills; scripts path `$HOME/.grok/scripts`

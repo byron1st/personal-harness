@@ -8,6 +8,8 @@
 >
 > **2026-08-03 개정**: 초판 §8 미결 8건을 사용자 답변으로 전부 닫았다(이 문서 §8·§9). 과금은 **SuperGrok 구독 쿼터**, agent `effort` frontmatter **적용 확인**, `permission_mode: plan`은 읽기 셸 허용, cascade/`implementer-strict` **없음**, 전역 지침 파일명 **`AGENTS.md`**, sync는 **Claude → Grok 단방향**, 모델은 **`grok-4.5` 단일**. `PreToolUse` spawn payload에 model·타입이 있어 선택 가드는 가능하나 **기본 범위에는 넣지 않는다**.
 >
+> **2026-08-13 개정**: Grok 4.6 출시 후 현행 핀은 `AGENTS.md` Model Tier가 권위다. 카탈로그는 `grok-4.6`(기본) + `grok-4.5`. T1·implementer/fixer/tester는 4.6, T2 리뷰어는 4.5. `plan-dev` 세션은 4.6 / **xhigh**. 이 문서 본문의 “단일 모델·effort 3단”은 초판 시점의 기록이다.
+>
 > **참조 표기**: `§N`은 상위 문서 [ANALYSIS_AND_PROPOSAL.md](ANALYSIS_AND_PROPOSAL.md)의 절, `PLAN_CLAUDE` · `PLAN_CURSOR` · `PLAN_CODEX`는 각 계획서, 그 외 `§N`이 이 문서 자신을 가리킬 때는 "이 문서 §N"으로 적는다.
 
 ## 요약 (결론 먼저)

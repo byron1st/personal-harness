@@ -94,7 +94,7 @@ When `implement-dev` runs in explicitly authorized direct mode, the same shape a
 
 **This is a different event from §E.** §E is *dispatch itself* never producing a Worker. Cascade is a Worker that ran, hit its own 3-attempts-per-error wall, and returned `## Stage Status: failed`. Do not merge the two: §E asks the user, cascade does not.
 
-When the Worker returns `failed`, the Dispatcher re-dispatches **exactly once** with the `Task` tool's call-time `model: grok-4.5[effort=high]` argument, which outranks the persona's frontmatter. The retry gets the same prompt plus one line naming what the first attempt tried and observed, so it does not rediscover the same wall. If the second return is also `failed`, pass `failed` up unchanged — do not retry a third time, do not fall back to the main session, and do not escalate the model further.
+When the Worker returns `failed`, the Dispatcher re-dispatches **exactly once** with the `Task` tool's call-time `model: grok-4.6[effort=high]` argument, which outranks the persona's frontmatter. The retry gets the same prompt plus one line naming what the first attempt tried and observed, so it does not rediscover the same wall. If the second return is also `failed`, pass `failed` up unchanged — do not retry a third time, do not fall back to the main session, and do not escalate the model further.
 
 **The retry is capped at one.** Unbounded promotion turns a stuck Worker into an expensive stuck Worker.
 

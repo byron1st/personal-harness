@@ -103,5 +103,5 @@ the **Dispatcher (this main session)** must:
 
 Do not treat `needs-design-decision` as `blocked` (user direction conflict) or as a free pass for the main session to implement.
 
-There is **no T1 model cascade** on Grok Build (single model `grok-4.5`). On Worker `failed`, follow the skill's existing retry/escalation text without escalating `model:` to another family; the implementer stays `effort: medium`.
+There is **no T1 model cascade** on Grok Build. On Worker `failed`, follow the skill's existing retry/escalation text without escalating `model:` or `effort:`; the implementer stays `grok-4.6` / `medium`.
 

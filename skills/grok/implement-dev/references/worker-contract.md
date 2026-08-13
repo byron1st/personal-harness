@@ -94,7 +94,7 @@ When `implement-dev` runs in explicitly authorized direct mode, the same shape a
 
 **This is a different event from §E.** §E is *dispatch itself* never producing a Worker. This is a Worker that ran, hit its own 3-attempts-per-error wall, and returned `## Stage Status: failed`. Do not merge the two: §E asks the user; this retry does not.
 
-When the Worker returns `failed`, the Dispatcher re-dispatches **exactly once** with the same `implementer` persona (`model: grok-4.5`, `effort: medium` — Grok has no higher model tier). 
+When the Worker returns `failed`, the Dispatcher re-dispatches **exactly once** with the same `implementer` persona (`model: grok-4.6`, `effort: medium` — no model-family cascade). 
 **The retry is capped at one.** Unbounded promotion turns a stuck Worker into an expensive stuck Worker.
 
 **Always report that it happened.** The Dispatcher's chat summary (③) carries one line: that a retry fired, and whether it succeeded. On Grok Build the model does not change — the line still matters so failures are not silent.

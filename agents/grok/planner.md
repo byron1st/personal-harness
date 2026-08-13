@@ -1,7 +1,7 @@
 ---
 name: planner
 description: "Software-architect planning persona for shaping and reviewing implementation direction before code is written. Use for ambiguous, cross-cutting, or architecture-sensitive work where the plan needs repository facts, README/ARCHITECTURE context, external contracts, explicit assumptions, tradeoff clarity, and active user questions. Focuses on direction, boundaries, interfaces, sequencing, risks, and acceptance criteria rather than low-level implementation steps. Read-only - no edits, no commits."
-model: grok-4.5
+model: grok-4.6
 effort: high
 permission_mode: plan
 agents_md: true

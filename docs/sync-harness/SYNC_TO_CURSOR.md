@@ -16,7 +16,7 @@
 - `effort:`도 무시된다.
 - `model: sonnet`을 Cursor가 어떻게 해석하는지 불명이다.
 
-셋 다 조용히 일어난다. 감지 장치는 `hooks/cursor/hooks/model-pin-guard.sh` 하나뿐이며, T1 에이전트의 해석된 모델이 `grok-4.5` 계열이 아니게 되는 것으로 첫 라운드에 잡는다.
+셋 다 조용히 일어난다. 감지 장치는 `hooks/cursor/hooks/model-pin-guard.sh` 하나뿐이며, T1 에이전트의 해석된 모델이 `grok-4.6` 계열이 아니게 되는 것으로 첫 라운드에 잡는다.
 
 ## Platform invariants (do not translate)
 
@@ -65,7 +65,7 @@ Cursor 스킬 프론트매터가 받는 키는 `name`(부모 폴더명과 일치
 
 3-fail cascade는 T1으로 1회 재시도한다. Cursor의 task 요청도 호출 시점 `model` 인자를 받으므로 이 장치는 살아남는다 — **값만 바꾼다.**
 
-- `model: opus` → `model: grok-4.5[effort=high]`
+- `model: opus` → `model: grok-4.6[effort=high]`
 - 상한(1회)·"세 번째 시도 금지"·"메인 세션 폴백 금지"는 그대로.
 
 ### Use Cursor plan-mode approval, not host-specific exit tools
@@ -99,18 +99,18 @@ Cursor 서브에이전트 프론트매터는 `name` · `description` · `model` 
 ---
 name: security-reviewer
 description: "…(Claude 판 그대로)"
-model: grok-4.5[effort=high]
+model: grok-4.6[effort=high]
 readonly: true
 ---
 ```
 
-`model` 문자열의 파라미터 문법: `composer-2.5[]` · `composer-2.5[fast=false]` · `grok-4.5[effort=high]` · `claude-opus-5[effort=high,context=300k]`.
+`model` 문자열의 파라미터 문법: `composer-2.5[]` · `composer-2.5[fast=false]` · `grok-4.6[effort=high]` · `claude-opus-5[effort=high,context=300k]`.
 
 **`[fast=false]`를 Composer 전 행에 반드시 붙인다.** 빠뜨리면 조용히 Fast로 돌아간다 — 지능은 같은데 약 6배 비싸고, **T1인 Grok보다도 비싸서 티어가 역전되며**, first-party 풀을 3.6배 빨리 태운다. Cursor 변형에서 가장 자주·가장 조용히 틀릴 수 있는 한 토큰이다.
 
 **`[context=300k]`는 쓰지 않는다.** Grok은 200K 프롬프트 토큰을 넘기면 요청 **전체**가 2배 요금이 되므로, 컨텍스트를 키우는 파라미터는 정확히 반대 방향이다.
 
-**effort 값을 Claude에서 그대로 옮기지 않는다.** Grok 4.5는 `low/medium/high` 3단뿐이고 기본값이 `high`다. Claude에서 리뷰어를 `medium`으로 둔 근거(*"최상단 effort는 사지 마라"*)는 `xhigh`·`max`가 있는 스케일 전제라 Grok에는 적용되지 않는다 → **리뷰어는 `high`.** Composer는 effort를 받지 않으므로 그 자리에 `[fast=false]`가 들어간다.
+**effort 값을 Claude에서 그대로 옮기지 않는다.** Grok 4.6은 `low/medium/high/xhigh`이고 기본값이 `high`다. T1 리뷰어는 `high`(예약된 `xhigh` 바로 아래). Composer는 effort를 받지 않으므로 그 자리에 `[fast=false]`가 들어간다.
 
 현행 배치는 `AGENTS.md`의 Model Tier 절이 source of truth다. 표를 고치면 `hooks/cursor/hooks/model-pin-guard.sh`의 `case` 문도 함께 고친다 — **두 곳이 갈라지면 가드가 정상 dispatch를 거부한다.**
 
@@ -183,7 +183,7 @@ Claude의 `tools: Read, Grep, Glob, Bash`는 Cursor에서 `readonly: true` 하�
 `model-pin-guard.sh`는 **Claude 변형에 대응물이 없는 Cursor 전용 훅**이다. Cursor의 모델 핀은 보장이 아니라서(관리자 제한·플랜 제약·알 수 없는 모델 ID 셋 중 하나면 조용히 폴백) `subagentStart`가 해석된 모델을 볼 수 있는 유일한 지점이다.
 
 - **T1은 거부, T2는 로그 후 허용.** `subagentStart`의 출력은 `allow`/`deny` 둘뿐이라 "경고"가 없다. 전부 거부하면 폴백 한 번에 루프가 멈춘다.
-- **비교는 base 모델 ID로 한다.** `subagent_model`은 해석된 모델(`grok-4.5`)을 주고 `[effort=…]` 파라미터는 돌아오지 않는다. 전체 문자열을 비교하면 매 dispatch마다 발화한다.
+- **비교는 base 모델 ID로 한다.** `subagent_model`은 해석된 모델(`grok-4.6`)을 주고 `[effort=…]` 파라미터는 돌아오지 않는다. 전체 문자열을 비교하면 매 dispatch마다 발화한다.
 - **모르는 `subagent_type`은 항상 허용한다.** Cursor 빌트인(`generalPurpose`·`explore`·`shell`)과 하네스 소유가 아닌 에이전트를 막지 않기 위해서다.
 - 에이전트 배치를 바꾸면 이 스크립트의 `case` 문과 `AGENTS.md` Model Tier 표를 **함께** 고친다.
 

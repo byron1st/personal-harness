@@ -1,7 +1,7 @@
 ---
 name: plan-consultant
 description: The escalation hatch the `implement-dev` Dispatcher calls when the implementer returns `needs-design-decision` — two approaches both fit the approved plan but picking wrong is expensive to undo. Returns a short decision plus its reasoning — never code, never a redesign. Read-only, and does not reopen the plan's direction. Dispatched by the main session only (Grok depth 1); not for detail-level mechanics or direction-level conflicts (those stop the work and go to the user).
-model: grok-4.5
+model: grok-4.6
 effort: high
 permission_mode: plan
 agents_md: true

@@ -83,4 +83,4 @@ Disk is the source of truth: the LOOP file, the plan's TODO checkboxes, and the 
 
 ## Grok Build session habit
 
-Run this controller in a **`grok-4.5` / medium** session. T1 agents keep their own frontmatter pins (`high`). SuperGrok subscription quota still benefits from fewer rounds — prefer the lightest loop variant that fits the work; **default recommendation for ordinary work is `dev-loop-noreview`**.
+Run this controller in a **`grok-4.6` / medium** session. T1 agents keep their own frontmatter pins (`high`). SuperGrok subscription quota still benefits from fewer rounds — prefer the lightest loop variant that fits the work; **default recommendation for ordinary work is `dev-loop-noreview`**.

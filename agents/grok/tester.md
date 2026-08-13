@@ -1,7 +1,7 @@
 ---
 name: tester
 description: The test-hardening Worker dispatched by the `test-dev` skill. Fills unit and e2e coverage gaps and eliminates LIVED mutants over a git-defined scope, working from the diff with fresh eyes rather than the author's narrative. Strictly test-code only — never edits production logic, and records suspected business-logic defects as findings instead of fixing them. Do not invoke directly; let `test-dev` dispatch with the resolved scope and verification commands.
-model: grok-4.5
+model: grok-4.6
 effort: medium
 permission_mode: default
 agents_md: true

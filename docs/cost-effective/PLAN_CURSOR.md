@@ -6,6 +6,8 @@
 >
 > **2026-08-03 개정**: 초판의 검토·검증 항목 7건이 전부 확정됐다(이 문서 §8). 가장 큰 변화는 **설치 충돌(초판 §5, 최대 위험 항목)이 Cursor 옵션으로 해소**된 것이다 — 이에 따라 선행 실험 K0이 사라지고 프로젝트 스코프 설치라는 분기도 없어졌다. `Task` 툴과 `AskQuestion` 툴 이름이 확정되어 **텍스트 프로토콜 후퇴도 불필요**해졌고, `readonly`가 읽기 셸을 막지 않는 것이 확인되어 리뷰어 4종의 `readonly: true`가 안전해졌다.
 >
+> **2026-08-13 개정**: Grok 4.6 출시 후 현행 핀은 `AGENTS.md` Model Tier가 권위다. T1·implementer/fixer는 `grok-4.6`, T2 bulk(tester·maintainability·senior-generalist)는 Composer 유지. `plan-dev` 세션은 Grok 4.6 / **xhigh**. 이 문서 본문의 `grok-4.5[effort=…]` 예시는 초판 시점의 기록이다.
+>
 > **참조 표기**: `§N`은 상위 문서 [ANALYSIS_AND_PROPOSAL.md](ANALYSIS_AND_PROPOSAL.md)의 절, `PLAN_CLAUDE §N`은 Claude 계획서의 절, 그 외 `§N`이 이 문서 자신을 가리킬 때는 "이 문서 §N"으로 적는다.
 
 ## 요약 (결론 먼저)

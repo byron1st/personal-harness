@@ -167,3 +167,7 @@ These are the very first tool calls after the session transitions out of plan mo
 2. **Write plan file(s)**. Ensure `docs/agents/dev/` exists, then save the plan file(s) per the chosen mode's reference. For multi-steps, write the main plan and every sub-plan, then verify each Markdown link in the main plan resolves to an existing sub-plan filename.
 
 After persistence, report the file paths to the user and proceed with whatever follow-up they request (typically: invoke `implement-dev` or another execution skill).
+
+## Cursor session habit
+
+Run `plan-dev` in a **Grok 4.6 / xhigh** session. `xhigh` is the one reserved slot for decisions that cannot be revisited; `planner` stays at `high`. Approval is the user leaving plan mode — there is no exit tool to call.

@@ -30,8 +30,8 @@ plan-dev → (플랜 검토·승인) → dev-loop | dev-loop-light | dev-loop-no
 
 | 호출 | Claude | Codex | Cursor | Grok Build |
 | --- | --- | --- | --- | --- |
-| `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.5** (effort high) | **Grok 4.5 / high** |
-| `dev-loop` · `dev-loop-light` · `dev-loop-noreview` | **Sonnet** | **Luna / medium** | **Composer 2.5 Standard** (`fast=false`) | **Grok 4.5 / medium** |
+| `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.6** (effort xhigh) | **Grok 4.6 / xhigh** |
+| `dev-loop` · `dev-loop-light` · `dev-loop-noreview` | **Sonnet** | **Luna / medium** | **Composer 2.5 Standard** (`fast=false`) | **Grok 4.6 / medium** |
 
 - 루프 세션을 싸게 두어도 T1 역할(planner·plan-consultant·security/reliability 리뷰어)은 파일 핀으로 T1에서 돈다.
 - `dev-loop-noreview`는 리뷰어가 변경을 읽지 않으므로, READY_TO_COMMIT에서 IMPL 리포트의 `## TODO Fulfillment`와 AC 증거를 직접 확인한다.
@@ -146,8 +146,8 @@ plan-dev → dev-loop*( implement-dev → test-dev → [review-code] → (fix-de
 
 **어느 변형도 게이트가 없지는 않다.** 셋 다 사람 게이트 2개(TESTING의 suspected-defect **Fix/Accept** 분류, READY_TO_COMMIT)를 그대로 갖는다. 리뷰를 끄면 사라지는 것은 리뷰어 4종이지 사람의 판단이 아니다.
 
-1. **계획 수립**: `plan-dev` 스킬을 호출해 인터뷰로 계획을 수립한다. 완료 조건 라운드에서 TODO별 완료 조건·증거(`Acceptance Contract`)와 권한 경계·루프 예산(`Authority Boundaries`)을 함께 확정하고, 계획을 승인하면 PLAN/RESEARCH 파일이 `docs/agents/` 아래에 저장된다. **`plan-dev` 세션 모델은 플랫폼별로 다르다** — Claude Opus · Codex Sol/xhigh · Cursor Grok 4.5 high · Grok Build Grok 4.5 high([Model Tier](#model-tier)).
-2. **루프 실행**: 위 표에서 변형을 고른 뒤 승인된 플랜 경로를 지정해 명시적으로 호출한다. 이후 종료 술어(TODO 완료 ∧ AC 증거 충족 ∧ 검증 green ∧ 차단 finding 0)를 만족할 때까지 자율 반복된다. 멀티스텝 플랜은 sub-plan(`-STEP-N`) 단위로 호출한다. **루프 실행 세션도 플랫폼별** — Claude Sonnet · Codex Luna/medium · Cursor Composer 2.5 Standard · Grok Build Grok 4.5 medium. T1 에이전트는 역할 핀으로 T1에서 돈다.
+1. **계획 수립**: `plan-dev` 스킬을 호출해 인터뷰로 계획을 수립한다. 완료 조건 라운드에서 TODO별 완료 조건·증거(`Acceptance Contract`)와 권한 경계·루프 예산(`Authority Boundaries`)을 함께 확정하고, 계획을 승인하면 PLAN/RESEARCH 파일이 `docs/agents/` 아래에 저장된다. **`plan-dev` 세션 모델은 플랫폼별로 다르다** — Claude Opus · Codex Sol/xhigh · Cursor Grok 4.6 xhigh · Grok Build Grok 4.6 xhigh([Model Tier](#model-tier)).
+2. **루프 실행**: 위 표에서 변형을 고른 뒤 승인된 플랜 경로를 지정해 명시적으로 호출한다. 이후 종료 술어(TODO 완료 ∧ AC 증거 충족 ∧ 검증 green ∧ 차단 finding 0)를 만족할 때까지 자율 반복된다. 멀티스텝 플랜은 sub-plan(`-STEP-N`) 단위로 호출한다. **루프 실행 세션도 플랫폼별** — Claude Sonnet · Codex Luna/medium · Cursor Composer 2.5 Standard · Grok Build Grok 4.6 medium. T1 에이전트는 역할 핀으로 T1에서 돈다.
 3. **중간 개입은 두 경우뿐**: (a) 리뷰(있는 변형만) 또는 TESTING 게이트에서 finding이 나오면 항목별 Fix/Accept 분류 질문에 답한다 — Accept 항목은 `AGENTS.md`의 `Accepted Review Exceptions`에 기록되어 다음 리뷰부터 Waived(`Applied Exceptions`)로 강등 표시되고 차단 finding으로 계산되지 않는다. (b) blocked·예산 소진·no-progress로 에스컬레이션되면 지시를 내린다 — 방향 문제면 `plan-dev`로 재진입한다.
 4. **완료 확인과 커밋**: 루프는 READY_TO_COMMIT에서 멈춘다. Implementation Report와 LOOP 상태 파일을 확인한 뒤 `commit-code`, 필요 시 `request-merge`를 직접 호출한다 — 커밋·푸시·PR/MR 생성은 루프 권한 밖이다. **`dev-loop-noreview`에서는 리뷰어가 아무도 변경을 읽지 않았으므로**, IMPL 리포트의 `## TODO Fulfillment`와 AC 증거를 직접 본다 — 4축 리뷰가 잡아주던 instruction drift가 여기서는 사람 몫이다.
 5. **중단·재개**: 루프가 중간에 끊겨도 상태는 `docs/agents/dev/*_LOOP_*.md`에 남으므로(LOOP 포맷은 세 변형 공통), 같은 플랜으로 같은 변형을 다시 호출하면 마지막 라운드에서 이어서 진행한다.
@@ -255,11 +255,11 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 
 | 티어 | 정의 | Claude | Codex | Cursor | Grok Build |
 | --- | --- | --- | --- | --- | --- |
-| **T1 judgment** | 되돌릴 수 없고 기계 검증이 불가능한 결정 | `opus` | `gpt-5.6-sol` | `grok-4.5` | `grok-4.5` |
-| **T2 execution** | 명세가 있고 결과가 기계로 검증 가능한 작업 | `sonnet`, 단 쓰기 역할 둘은 `opus` / `medium` | **Terra**(긴 컨텍스트) 또는 **Luna**(짧은 컨텍스트) | `composer-2.5`, 단 agentic 역할은 예외 | **같은 `grok-4.5`**(effort만) |
+| **T1 judgment** | 되돌릴 수 없고 기계 검증이 불가능한 결정 | `opus` | `gpt-5.6-sol` | `grok-4.6` | `grok-4.6` |
+| **T2 execution** | 명세가 있고 결과가 기계로 검증 가능한 작업 | `sonnet`, 단 쓰기 역할 둘은 `opus` / `medium` | **Terra**(긴 컨텍스트) 또는 **Luna**(짧은 컨텍스트) | `composer-2.5`, 단 agentic 역할은 예외 | 쓰기·tester는 `grok-4.6`; T2 리뷰어는 `grok-4.5` |
 | **T3 mechanical** | 판단이 사실상 없는 변환·집계 | *(미사용 — 아래 참조)* | *(미사용)* | *(미사용)* | *(미사용)* |
 
-**T3는 의도적으로 비어 있다.** Haiku는 컨텍스트 200K·캐시 최소 프리픽스 4096 tok·모델 레벨 effort 미지원인데, 이 하네스의 T2 작업은 대부분 repo-slice 추론이라 최저 티어가 가장 못하는 일이다. Composer 2.5의 200K와 Luna의 긴 컨텍스트 절벽(MRCR 41.3%) 때문에 그쪽 최저 티어도 같은 이유로 탈락한다. **Grok Build는 현재 카탈로그가 `grok-4.5` 하나**라 T2를 싼 모델로 내릴 수 없고 effort만 낮춘다. 진짜 기계적인 일은 셸로 내린다(위 Runtime Scripts). 과금은 SuperGrok **구독 쿼터**다.
+**T3는 의도적으로 비어 있다.** Haiku는 컨텍스트 200K·캐시 최소 프리픽스 4096 tok·모델 레벨 effort 미지원인데, 이 하네스의 T2 작업은 대부분 repo-slice 추론이라 최저 티어가 가장 못하는 일이다. Composer 2.5의 200K와 Luna의 긴 컨텍스트 절벽(MRCR 41.3%) 때문에 그쪽 최저 티어도 같은 이유로 탈락한다. **Grok Build 카탈로그는 `grok-4.6`(기본)과 `grok-4.5`.** T1과 쓰기·tester는 4.6, T2 리뷰어 둘은 4.5에 남긴다. 진짜 기계적인 일은 셸로 내린다(위 Runtime Scripts). 과금은 SuperGrok **구독 쿼터**다.
 
 ### 에이전트 배치
 
@@ -267,27 +267,27 @@ Claude는 `model`·`effort` 두 필드를 쓴다. **Codex**는 TOML `model` + `m
 
 | 에이전트 | Claude | Codex | Cursor | Grok Build | 근거 |
 | --- | --- | --- | --- | --- | --- |
-| `planner` | `opus` / `high` | Sol / high | `grok-4.5[effort=high]` | `grok-4.5` / high (plan) | 아키텍처 판단 |
-| `plan-consultant` | `opus` / `high` | Sol / high | `grok-4.5[effort=high]` | `grok-4.5` / high (plan) | **Grok은 메인이 spawn**(depth 1) |
-| `security-reviewer` | `opus` / `medium` | Sol / medium | `grok-4.5[effort=high]` | `grok-4.5` / high (plan) | miss 비용 최대 |
-| `reliability-reviewer` | `opus` / `medium` | Sol / medium | `grok-4.5[effort=high]` | `grok-4.5` / high (plan) | 반사실 시뮬레이션 |
-| `implementer` | **`opus` / `medium`** | **Terra / high** | `grok-4.5[effort=medium]` | `grok-4.5` / **medium** | 장문맥; Grok은 effort만 내림 |
-| `tester` | `sonnet` / `medium` | Luna / high | `composer-2.5[fast=false]` | `grok-4.5` / medium | 기계 목표 |
-| `fixer` | **`opus` / `medium`** | **Terra / high** | **`grok-4.5[effort=medium]`** | `grok-4.5` / medium | finding = 명세; 단 전 플랫폼에서 `implementer`와 동급 |
+| `planner` | `opus` / `high` | Sol / high | `grok-4.6[effort=high]` | `grok-4.6` / high (plan) | 아키텍처 판단 |
+| `plan-consultant` | `opus` / `high` | Sol / high | `grok-4.6[effort=high]` | `grok-4.6` / high (plan) | **Grok은 메인이 spawn**(depth 1) |
+| `security-reviewer` | `opus` / `medium` | Sol / medium | `grok-4.6[effort=high]` | `grok-4.6` / high (plan) | miss 비용 최대 |
+| `reliability-reviewer` | `opus` / `medium` | Sol / medium | `grok-4.6[effort=high]` | `grok-4.6` / high (plan) | 반사실 시뮬레이션 |
+| `implementer` | **`opus` / `medium`** | **Terra / high** | `grok-4.6[effort=medium]` | `grok-4.6` / **medium** | 장문맥; T1 모델 + T2 effort |
+| `tester` | `sonnet` / `medium` | Luna / high | `composer-2.5[fast=false]` | `grok-4.6` / medium | 기계 목표; Grok noreview 품질 게이트 |
+| `fixer` | **`opus` / `medium`** | **Terra / high** | **`grok-4.6[effort=medium]`** | `grok-4.6` / medium | finding = 명세; 단 전 플랫폼에서 `implementer`와 동급 |
 | `maintainability-reviewer` | `sonnet` / `medium` | Luna / high | `composer-2.5[fast=false]` | `grok-4.5` / medium (plan) | 패턴 매칭 |
 | `senior-generalist-reviewer` | `sonnet` / `medium` | Luna / high | `composer-2.5[fast=false]` | `grok-4.5` / medium (plan) | catch-all |
 
 **effort 규칙 둘.** 최상단은 사지 않는다 — 기본 effort에서 `max`까지 올려도 티어 전반에서 몇 점 차이라, `xhigh`는 되돌릴 수 없는 결정에만 쓴다. 그리고 모델을 내릴 때 effort까지 같이 내리지 않는다: Codex T2 행이 Luna/Terra에 `high`를 쓰는 이유가 그것이다(싼 모델, 높은 effort).
 
-**`fixer`는 전 플랫폼에서 T2 bulk가 아니라 `implementer`를 따라간다.** 수정을 쓰는 일은 변경을 쓰는 일과 입력 모양이 같다(브리프 · 리포트 · 주변 코드), 그리고 싼 모델은 그 가격 이점을 턴 수로 반납했다. 그래서 Codex는 Terra, Cursor는 Grok, Claude는 Opus에 둔다. Grok Build는 모델이 하나라 이미 동급이었다. 그 아래 T2 세 행은 그대로다.
+**`fixer`는 전 플랫폼에서 T2 bulk가 아니라 `implementer`를 따라간다.** 수정을 쓰는 일은 변경을 쓰는 일과 입력 모양이 같다(브리프 · 리포트 · 주변 코드), 그리고 싼 모델은 그 가격 이점을 턴 수로 반납했다. 그래서 Codex는 Terra, Cursor는 Grok 4.6, Claude는 Opus에 둔다. Grok Build의 `tester`도 4.6 medium이다 — noreview에 리뷰어가 없어 tester가 유일한 기계 품질 게이트다. `maintainability-reviewer`와 `senior-generalist-reviewer`는 `grok-4.5`에 남긴다.
 
 **Claude의 쓰기 역할 둘은 T1 모델을 T2 effort로 돌린다.** `implementer`·`fixer`는 `sonnet`이 아니라 `opus` / `medium`이다 — 이 하네스에서 재보니 Sonnet은 같은 작업에 턴을 더 써서 1.67배 가격 차를 그대로(그 이상) 반납했고, 그 턴마다 플랜과 repo slice를 다시 읽었다. 티어는 여전히 T2이고 그걸 표현하는 건 effort다. T2의 나머지(`tester`·`maintainability-reviewer`·`senior-generalist-reviewer`)는 출력이 한정되고 재검증되므로 `sonnet`에 남는다.
 
 **Codex 전용.** `model_reasoning_effort = "ultra"`는 쓰지 않는다 — 자동 태스크 위임이 이 하네스의 dispatch와 충돌한다. `implementer`·`fixer`에 Luna를 두지 않는다(긴 컨텍스트 절벽). Codex 기본 루프는 **`dev-loop-light`**(not `dev-loop-noreview`)다 — Luna 덕분에 마지막 2축 리뷰 비용이 거의 않아서, light가 이미 noreview 절감분의 ~95%를 담는다.
 
-**Grok Build 전용.** 모델은 `grok-4.5` 단일(SuperGrok 구독 쿼터). effort는 `low|medium|high`뿐. 서브에이전트 깊이 1이라 design-bearing은 Dispatcher가 `plan-consultant`를 부른다. 기본 루프는 **`dev-loop-noreview`**. `[compat.claude]`·`[compat.cursor]`를 끈다.
+**Grok Build 전용.** 카탈로그는 `grok-4.6`(기본) + `grok-4.5`(SuperGrok 구독 쿼터). 4.6 effort는 `low|medium|high|xhigh`. 서브에이전트 깊이 1이라 design-bearing은 Dispatcher가 `plan-consultant`를 부른다. 기본 루프는 **`dev-loop-noreview`**. `[compat.claude]`·`[compat.cursor]`를 끈다.
 
-**Cursor의 effort 값은 Claude 값이 아니다.** Grok 4.5는 `low/medium/high` 3단뿐이고 기본이 `high`라, 위의 `xhigh`·`max`를 전제한 "최상단은 사지 않는다"가 적용되지 않는다 — 리뷰어는 `high`다. Composer는 effort를 아예 받지 않고 그 자리에 `[fast=false]`가 들어가는데, **이건 선택이 아니다**: Fast가 Cursor IDE 기본값이고 지능은 Standard와 같은데 약 6배 비싸며 T1인 Grok보다도 비싸서, 빠뜨리면 티어가 조용히 역전된다.
+**Cursor의 effort 값은 Claude 값이 아니다.** Grok 4.6은 `low/medium/high/xhigh`(기본 `high`)다. 리뷰어는 `high` — 예약된 `xhigh` 바로 아래이며 Claude/Codex T1 리뷰어와 같은 모양이다. Composer는 effort를 아예 받지 않고 그 자리에 `[fast=false]`가 들어가는데, **이건 선택이 아니다**: Fast가 Cursor IDE 기본값이고 지능은 Standard와 같은데 약 6배 비싸며 T1인 Grok보다도 비싸서, 빠뜨리면 티어가 조용히 역전된다.
 
 `implementer`만 Cursor에서 T1 **모델**을 유지한다. 두 모델의 agentic 격차가 정확히 이 일에 떨어지고, plan+research+컨벤션+코드를 함께 싣는 역할에 200K 창은 맞지 않는다 — 그래서 모델 대신 effort를 내렸다.
 
@@ -299,8 +299,8 @@ Claude는 `model`·`effort` 두 필드를 쓴다. **Codex**는 TOML `model` + `m
 
 | 세션 | Claude | Codex | Cursor | Grok Build | 근거 |
 | --- | --- | --- | --- | --- | --- |
-| `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.5** high | **Grok 4.5 / high** | 방향·경계·AC는 되돌릴 수 없음 |
-| **모든 `dev-loop*` 실행** | **Sonnet** | **Luna / medium** | **Composer 2.5 Standard** | **Grok 4.5 / medium** | 컨트롤러 = 전이표 + LOOP append. T1은 역할 핀 |
+| `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.6** xhigh | **Grok 4.6 / xhigh** | 방향·경계·AC는 되돌릴 수 없음 |
+| **모든 `dev-loop*` 실행** | **Sonnet** | **Luna / medium** | **Composer 2.5 Standard** | **Grok 4.6 / medium** | 컨트롤러 = 전이표 + LOOP append. T1은 역할 핀 |
 
 4축을 도는 `dev-loop`도 예외가 아니다 — 리뷰어 4종의 모델이 전부 파일에 명시돼 있으므로 세션 모델이 어떤 에이전트의 티어도 바꾸지 못한다.
 

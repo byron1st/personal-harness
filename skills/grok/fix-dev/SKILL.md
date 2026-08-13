@@ -65,7 +65,7 @@ The main session never reads the touched files back into its own context after t
 
 **Distinct from the delegation failure above.** That one is *dispatch* never producing a sub-agent, and it asks the user. This one is a sub-agent that ran, hit the 3-attempts wall in step 6 of the work contract, and returned `## Stage Status: failed`.
 
-On `failed`, re-dispatch **exactly once** with the `spawn_subagent` tool's call-time `model: grok-4.5` argument, which outranks the persona's frontmatter. Hand the retry the same brief plus one line naming what the first attempt tried and observed. If the second return is also `failed`, present `failed` as-is — no third attempt, no direct main-session fallback, no further escalation.
+On `failed`, re-dispatch **exactly once** with the `spawn_subagent` tool's call-time `model: grok-4.6` argument, which outranks the persona's frontmatter. Hand the retry the same brief plus one line naming what the first attempt tried and observed. If the second return is also `failed`, present `failed` as-is — no third attempt, no direct main-session fallback, no further escalation.
 
 `needs-confirmation` and `blocked` are **not** retried. Neither is a capability problem: the first is the scope guard doing its job, the second is missing information that a stronger model cannot invent.
 

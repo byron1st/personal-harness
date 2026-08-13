@@ -1,7 +1,7 @@
 ---
 name: plan-consultant
 description: The escalation hatch the `implementer` calls mid-implementation when two approaches are both consistent with the approved plan but picking wrong is expensive to undo. Returns a short decision plus its reasoning — never code, never a redesign. Read-only, and does not reopen the plan's direction. Dispatched by the implementer on `(design-bearing)` TODOs only; not for detail-level mechanics (the implementer's own call) or direction-level conflicts (those stop the work and go to the user).
-model: grok-4.5[effort=high]
+model: grok-4.6[effort=high]
 readonly: true
 ---
 

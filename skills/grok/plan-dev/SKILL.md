@@ -170,4 +170,4 @@ After persistence, report the file paths to the user and proceed with whatever f
 
 ## Grok Build session habit
 
-Run `plan-dev` in a **`grok-4.5` / high** session. There is no higher effort tier on this model. Approval is user-driven plan-mode exit — do not call a host-specific ExitPlanMode tool.
+Run `plan-dev` in a **`grok-4.6` / xhigh** session. `xhigh` is the one reserved slot for decisions that cannot be revisited; `planner` stays at `high`. Approval is user-driven plan-mode exit — do not call a host-specific ExitPlanMode tool.

@@ -1,7 +1,7 @@
 ---
 name: implementer
 description: Implements an already-planned, well-specified coding task with minimal-code discipline. Dispatch AFTER the plan/spec is settled — the implementer writes the smallest correct change, not new scope. Use for turning an approved spec into a working diff (writing, adding, refactoring, fixing). Do NOT use for planning, design exploration, or deciding whether work should happen at all; that belongs to the planning phase upstream.
-model: grok-4.5[effort=medium]
+model: grok-4.6[effort=medium]
 readonly: false
 ---
 
