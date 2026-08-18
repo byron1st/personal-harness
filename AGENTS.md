@@ -143,10 +143,10 @@ The tier of a role is a property of the work, not of the model generation. Each 
 | Tier | Definition | Claude | Codex | Cursor | Grok Build |
 | --- | --- | --- | --- | --- | --- |
 | **T1 judgment** | Irreversible decisions that cannot be machine-verified | `opus` | `gpt-5.6-sol` | `grok-4.6` | `grok-4.6` |
-| **T2 execution** | Specified work whose result is machine-checkable | `sonnet`, except the two write-heavy roles (`opus` / `medium`) | **Terra** (long-context) or **Luna** (small context) | `composer-2.5`, except the agentic role | `grok-4.6` for write + tester; T2 reviewers stay on `grok-4.5` |
+| **T2 execution** | Specified work whose result is machine-checkable | `sonnet`, except the two write-heavy roles (`opus` / `medium`) | **Terra** (long-context) or **Luna** (small context) | `grok-4.6` (effort distinguishes T1 vs T2) | `grok-4.6` (effort distinguishes T1 vs T2) |
 | **T3 mechanical** | Transformation and aggregation with no real judgement | *(unused — see below)* | *(unused)* | *(unused)* | *(unused)* |
 
-**T3 is empty on purpose.** Haiku's 200K context, 4096-token minimum cache prefix, and lack of model-level effort make it a poor fit for this harness, whose T2 work is mostly repo-slice reasoning — the thing the smallest tier is worst at. Composer 2.5's 200K context and Luna's long-context cliff (MRCR 41.3%) put those platforms' lowest tiers out for the same reason. **Grok Build's catalog is `grok-4.6` (default) plus `grok-4.5`.** T1 and the write/test roles sit on 4.6; the two T2 reviewers stay on 4.5. Genuinely mechanical work goes to the shell (Runtime Scripts above), not to a smaller model.
+**T3 is empty on purpose.** Haiku's 200K context, 4096-token minimum cache prefix, and lack of model-level effort make it a poor fit for this harness, whose T2 work is mostly repo-slice reasoning — the thing the smallest tier is worst at. Luna's long-context cliff (MRCR 41.3%) puts Codex's lowest tier out for the same reason. **Cursor and Grok Build use `grok-4.6` only.** `grok-4.5` is unused — it has no meaningful price advantage over 4.6. Composer 2.5 is unused. Tiers are effort, not model. Genuinely mechanical work goes to the shell (Runtime Scripts above), not to a smaller model.
 
 ### Agent placement
 
@@ -159,10 +159,10 @@ Claude keeps `model` and `effort` as two fields. **Codex** uses TOML `model` + `
 | `security-reviewer` | `opus` / `medium` | `gpt-5.6-sol` / `medium` | `grok-4.6[effort=high]` | `grok-4.6` / `high` (plan) | Missed authz bypass is unrecoverable |
 | `reliability-reviewer` | `opus` / `medium` | `gpt-5.6-sol` / `medium` | `grok-4.6[effort=high]` | `grok-4.6` / `high` (plan) | Counterfactual simulation is the first thing weaker models lose |
 | `implementer` | **`opus` / `medium`** | **`gpt-5.6-terra` / `high`** | `grok-4.6[effort=medium]` | `grok-4.6` / **`medium`** (default) | Long-context agentic role; T1 model at T2 effort |
-| `tester` | `sonnet` / `medium` | `gpt-5.6-luna` / `high` | `composer-2.5[fast=false]` | `grok-4.6` / `medium` | Mutation score ≥80%; barred from production code; on Grok this is the noreview quality gate |
+| `tester` | `sonnet` / `medium` | `gpt-5.6-luna` / `high` | `grok-4.6[effort=medium]` | `grok-4.6` / `medium` | Mutation score ≥80%; barred from production code; on Cursor and Grok this is the noreview quality gate |
 | `fixer` | **`opus` / `medium`** | **`gpt-5.6-terra` / `high`** | **`grok-4.6[effort=medium]`** | `grok-4.6` / `medium` | Finding is the spec; re-test verifies — but matched to `implementer` on every platform |
-| `maintainability-reviewer` | `sonnet` / `medium` | `gpt-5.6-luna` / `high` | `composer-2.5[fast=false]` | `grok-4.5` / `medium` (plan) | Specified pattern matching |
-| `senior-generalist-reviewer` | `sonnet` / `medium` | `gpt-5.6-luna` / `high` | `composer-2.5[fast=false]` | `grok-4.5` / `medium` (plan) | Calibrated catch-all, lowest miss cost |
+| `maintainability-reviewer` | `sonnet` / `medium` | `gpt-5.6-luna` / `high` | `grok-4.6[effort=medium]` | `grok-4.6` / `medium` (plan) | Specified pattern matching |
+| `senior-generalist-reviewer` | `sonnet` / `medium` | `gpt-5.6-luna` / `high` | `grok-4.6[effort=medium]` | `grok-4.6` / `medium` (plan) | Calibrated catch-all, lowest miss cost |
 
 **effort follows two rules.** Do not buy the top of the scale — the jump from a model's default effort to `max` is worth a couple of points across the board, so `xhigh` is reserved for decisions that cannot be revisited. And when a model comes down a tier, effort does not follow it down: Codex T2 rows use `high` on Luna/Terra for exactly that reason (cheap model, high effort).
 
@@ -170,15 +170,15 @@ Claude keeps `model` and `effort` as two fields. **Codex** uses TOML `model` + `
 
 **Codex-specific:** never set `model_reasoning_effort = "ultra"` — it adds automatic task delegation that collides with this harness's own dispatch. Never put Luna on `implementer` or `fixer` (long-context cliff). Codex's default loop is **`dev-loop-light`** (not `dev-loop-noreview`): Luna makes the last two review axes nearly free, so light already captures ~95% of noreview's savings.
 
-**Cursor's effort values are not the Claude ones.** Grok 4.6 has `low/medium/high/xhigh` (default `high`). Reviewers sit at `high` — one step below the reserved `xhigh` slot, same shape as Claude/Codex T1 reviewers sitting below plan-dev. Composer takes no effort at all; `[fast=false]` occupies that slot instead, and **it is not optional**: Fast is the Cursor IDE default, has the same intelligence as Standard at roughly 6× the price, and is dearer than Grok itself, so omitting it inverts the tiers silently.
+**Cursor's effort values are not the Claude ones.** Grok 4.6 has `low/medium/high/xhigh` (default `high`). T1 reviewers sit at `high` — one step below the reserved `xhigh` slot, same shape as Claude/Codex T1 reviewers sitting below plan-dev. Cursor T2 matches Grok Build: every role on `grok-4.6`, T2 at `[effort=medium]`. Composer 2.5 and `grok-4.5` are unused.
 
 `implementer` and `fixer` are the rows where Cursor, like Claude, keeps the T1 *model*. The agentic gap between the two models lands exactly on those jobs, and a role that loads a plan (or a defect brief and its report), the conventions, and the code together is the wrong place for a 200K window — so the effort comes down instead.
 
-**`fixer` tracks `implementer` on every platform, not the T2 bulk.** Writing a fix reads the same shape of input as writing the change — brief, report, surrounding code — and the cheaper model spent its price advantage on extra turns. So Codex puts it on Terra, Cursor on Grok 4.6, and Claude on Opus. On Grok Build, `tester` also sits on 4.6 medium because noreview has no reviewer and tester is the only machine quality gate; `maintainability-reviewer` and `senior-generalist-reviewer` stay on `grok-4.5`.
+**`fixer` tracks `implementer` on every platform, not the T2 bulk.** Writing a fix reads the same shape of input as writing the change — brief, report, surrounding code — and the cheaper model spent its price advantage on extra turns. So Codex puts it on Terra, Cursor on Grok 4.6, and Claude on Opus. On Cursor and Grok Build, `tester` also sits on 4.6 medium because both default to noreview (tester is the only machine quality gate) and Composer dropped instructions too often; `maintainability-reviewer` and `senior-generalist-reviewer` sit on 4.6 medium too — `grok-4.5` has no meaningful price advantage.
 
 **The Cursor table rows and `hooks/cursor/hooks/model-pin-guard.sh` are one fact in two files.** Change a Cursor row and change the guard's `case` statement with it, or the guard starts rejecting healthy dispatches.
 
-**Grok Build-specific:** catalog is **`grok-4.6` (default) plus `grok-4.5`** (SuperGrok subscription quota). Effort menu on 4.6 is `low|medium|high|xhigh`; 4.5 stays `low|medium|high`. Subagent nesting depth is **1** — the implementer must not spawn `plan-consultant`; the Dispatcher returns on `needs-design-decision` and spawns the consultant. No multi-model cascade and no `implementer-strict`. Default loop is **`dev-loop-noreview`**. Turn off Grok `[compat.claude]` / `[compat.cursor]` so pure `~/.grok/{agents,skills,hooks,scripts,rules}` paths win. Global instructions install to **`~/.grok/rules/AGENTS.md`**.
+**Grok Build-specific:** catalog in use is **`grok-4.6` only** (SuperGrok subscription quota). `grok-4.5` is unused. Effort menu is `low|medium|high|xhigh`. Subagent nesting depth is **1** — the implementer must not spawn `plan-consultant`; the Dispatcher returns on `needs-design-decision` and spawns the consultant. No multi-model cascade and no `implementer-strict`. Default loop is **`dev-loop-noreview`**. Turn off Grok `[compat.claude]` / `[compat.cursor]` so pure `~/.grok/{agents,skills,hooks,scripts,rules}` paths win. Global instructions install to **`~/.grok/rules/AGENTS.md`**.
 
 ### Session operating rules
 
@@ -187,7 +187,7 @@ A skill's `model:` frontmatter applies **only to the current turn** and reverts 
 | Session | Claude | Codex | Cursor | Grok Build | Why |
 | --- | --- | --- | --- | --- | --- |
 | `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.6** (effort xhigh) | **Grok 4.6 / xhigh** | Direction, boundaries, and ACs are irreversible |
-| **every `dev-loop*` run** | **Sonnet** | **Luna / medium** | **Composer 2.5 Standard** | **Grok 4.6 / medium** | Controller reads a transition table and appends to a LOOP file; T1 agents stay pinned |
+| **every `dev-loop*` run** | **Sonnet** | **Luna / medium** | **Grok 4.6 / medium** | **Grok 4.6 / medium** | Controller reads a transition table and appends to a LOOP file; T1 agents stay pinned |
 
 This applies to `dev-loop` too, four axes and all — every reviewer's model is pinned on the agent file, so the session model no longer decides any agent's tier.
 

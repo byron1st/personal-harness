@@ -10,6 +10,8 @@
 >
 > **2026-08-13 개정**: Grok 4.6 출시 후 현행 핀은 `AGENTS.md` Model Tier가 권위다. 카탈로그는 `grok-4.6`(기본) + `grok-4.5`. T1·implementer/fixer/tester는 4.6, T2 리뷰어는 4.5. `plan-dev` 세션은 4.6 / **xhigh**. 이 문서 본문의 “단일 모델·effort 3단”은 초판 시점의 기록이다.
 >
+> **2026-08-18 개정**: `grok-4.5`는 4.6 대비 가격 메리트가 없어 전 역할 `grok-4.6`. T1/T2는 effort만. `AGENTS.md` Model Tier가 권위다.
+>
 > **참조 표기**: `§N`은 상위 문서 [ANALYSIS_AND_PROPOSAL.md](ANALYSIS_AND_PROPOSAL.md)의 절, `PLAN_CLAUDE` · `PLAN_CURSOR` · `PLAN_CODEX`는 각 계획서, 그 외 `§N`이 이 문서 자신을 가리킬 때는 "이 문서 §N"으로 적는다.
 
 ## 요약 (결론 먼저)

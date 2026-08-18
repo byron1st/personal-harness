@@ -8,6 +8,10 @@
 >
 > **2026-08-13 개정**: Grok 4.6 출시 후 현행 핀은 `AGENTS.md` Model Tier가 권위다. T1·implementer/fixer는 `grok-4.6`, T2 bulk(tester·maintainability·senior-generalist)는 Composer 유지. `plan-dev` 세션은 Grok 4.6 / **xhigh**. 이 문서 본문의 `grok-4.5[effort=…]` 예시는 초판 시점의 기록이다.
 >
+> **2026-08-18 개정**: Composer 2.5는 루프 컨트롤러와 T2에서 지시를 자주 무시해서 퇴출. 현행 Cursor 핀은 Grok Build와 같다 — tester `grok-4.6[effort=medium]`, T2 리뷰어 `grok-4.5[effort=medium]`, `dev-loop*` 세션 Grok 4.6 / medium. `AGENTS.md` Model Tier가 권위다. 이 문서 본문의 Composer 배치는 초판~2026-08-13 시점의 기록이다.
+>
+> **2026-08-18 (2) 개정**: `grok-4.5`는 4.6 대비 가격 메리트가 없어 전 역할 `grok-4.6`. T2는 effort `medium`으로만 구분. `AGENTS.md` Model Tier가 권위다.
+>
 > **참조 표기**: `§N`은 상위 문서 [ANALYSIS_AND_PROPOSAL.md](ANALYSIS_AND_PROPOSAL.md)의 절, `PLAN_CLAUDE §N`은 Claude 계획서의 절, 그 외 `§N`이 이 문서 자신을 가리킬 때는 "이 문서 §N"으로 적는다.
 
 ## 요약 (결론 먼저)

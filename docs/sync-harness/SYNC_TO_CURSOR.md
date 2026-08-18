@@ -104,13 +104,13 @@ readonly: true
 ---
 ```
 
-`model` 문자열의 파라미터 문법: `composer-2.5[]` · `composer-2.5[fast=false]` · `grok-4.6[effort=high]` · `claude-opus-5[effort=high,context=300k]`.
+`model` 문자열의 파라미터 문법: `grok-4.6[effort=high]` · `grok-4.6[effort=medium]` · `composer-2.5[fast=false]` · `claude-opus-5[effort=high,context=300k]`.
 
-**`[fast=false]`를 Composer 전 행에 반드시 붙인다.** 빠뜨리면 조용히 Fast로 돌아간다 — 지능은 같은데 약 6배 비싸고, **T1인 Grok보다도 비싸서 티어가 역전되며**, first-party 풀을 3.6배 빨리 태운다. Cursor 변형에서 가장 자주·가장 조용히 틀릴 수 있는 한 토큰이다.
+**Composer와 `grok-4.5`는 현행 배치에서 쓰지 않는다.** Cursor T2는 Grok Build와 같다 — 전 역할 `grok-4.6`, T2는 `[effort=medium]`. `[fast=false]`는 Composer를 다시 쓸 때만 붙인다. 빠뜨리면 조용히 Fast로 돌아간다 — 지능은 같은데 약 6배 비싸고, **T1인 Grok보다도 비싸서 티어가 역전되며**, first-party 풀을 3.6배 빨리 태운다.
 
 **`[context=300k]`는 쓰지 않는다.** Grok은 200K 프롬프트 토큰을 넘기면 요청 **전체**가 2배 요금이 되므로, 컨텍스트를 키우는 파라미터는 정확히 반대 방향이다.
 
-**effort 값을 Claude에서 그대로 옮기지 않는다.** Grok 4.6은 `low/medium/high/xhigh`이고 기본값이 `high`다. T1 리뷰어는 `high`(예약된 `xhigh` 바로 아래). Composer는 effort를 받지 않으므로 그 자리에 `[fast=false]`가 들어간다.
+**effort 값을 Claude에서 그대로 옮기지 않는다.** Grok 4.6은 `low/medium/high/xhigh`이고 기본값이 `high`다. T1 리뷰어는 `high`(예약된 `xhigh` 바로 아래). T2는 `medium`.
 
 현행 배치는 `AGENTS.md`의 Model Tier 절이 source of truth다. 표를 고치면 `hooks/cursor/hooks/model-pin-guard.sh`의 `case` 문도 함께 고친다 — **두 곳이 갈라지면 가드가 정상 dispatch를 거부한다.**
 
