@@ -45,7 +45,7 @@ input=$(cat)
 subagent_type=$(echo "$input" | jq -r '.subagent_type // ""')
 subagent_model=$(echo "$input" | jq -r '.subagent_model // ""')
 
-# Expected base model per agent, mirroring the Model Tier table in AGENTS.md.
+# Expected base model per agent, mirroring the placement table in agents/AGENTS.md.
 case "$subagent_type" in
   planner|plan-consultant|security-reviewer|reliability-reviewer)
     expected="grok-4.6"; tier="T1" ;;

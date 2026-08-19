@@ -8,19 +8,6 @@ A harness of Agent Skills, global instructions, and install scripts for personal
 
 Per-stage conversion rules are defined in `docs/sync-harness/` (`SYNC_TO_CODEX.md`, `SYNC_TO_CLAUDE.md`, `SYNC_TO_CURSOR.md`, and `SYNC_TO_GROK.md`).
 
-## Folder Structure
-
-```
-personal-harness/
-├── skills/           # Per-platform Agent Skills (claude/ · codex/ · cursor/ · grok/; one folder per skill)
-├── agents/           # Persona sub-agent definitions (claude/*.md · codex/*.toml · cursor/*.md · grok/*.md)
-├── hooks/            # Per-platform hooks (claude: settings.json + *.sh · codex/cursor/grok: hooks.json + *.sh)
-├── instructions/     # Distribution source of the global AGENTS.md instructions
-├── scripts/          # Install/sync scripts (apply-to.sh · apply-to-{claude,codex,cursor,grok}.sh · apply-to-all.sh · setup-ctx7.sh) + runtime/: platform-neutral runtime scripts installed to ~/.claude/scripts/, ~/.cursor/scripts/, ~/.codex/scripts/, and ~/.grok/scripts/
-├── docs/             # Harness docs (sync-harness/: SYNC_TO_* conversion rules · loop-engineering/: loop-engineering plan & research docs · cost-effective/: model-tiering cost analysis)
-└── .agents/skills/   # Meta-skills for the harness itself (sync-harness; mirrored in .claude/skills/)
-```
-
 ## Development
 
 The default flow can run in two modes. Both share the same skill set and artifact formats, so you can switch between them mid-flow.
@@ -75,18 +62,6 @@ Each skill under `skills/<platform>/` is managed in its own folder. See each ski
 | `dev-loop-noreview` | Same controller with no review and no mutation; the TESTING Fix/Accept gate remains (**Claude / Cursor / Grok Build default**) | Main session | LOOP file (append-only) |
 | `commit-code` | Creates a commit; runs a read-only documentation-drift check afterward | Main session | Commit |
 | `request-merge` | Creates/updates a PR (`gh`, personal) or MR (`glab`, work) | Main session | PR/MR |
-
-**Misc:**
-
-| Skill | Description |
-| --- | --- |
-| `spec-creator` | Organizes requirements for a new project into a Korean SPEC.md |
-| `setup-initial-repo` | Bootstraps a new repository from a SPEC.md (instruction files, build scripts, .gitignore, git identity, remote origin) |
-| `application-research-sync` | Analyzes code changes and batch-updates Research files under `docs/agents/research` |
-| `learn-from-manual-edits` | Infers preferences from the user's manual edits on agent-written code and records them as conventions |
-| `chat-summary` | Turns the conversation into a self-contained Obsidian note (YAML frontmatter + body) reusing the vault's category/tag vocabulary |
-| `find-docs` | Fetches official library/framework documentation via Context7 (`ctx7`). Third-party skill auto-installed by Context7, not authored by this harness |
-| `loki-log-search` | Queries Grafana Loki logs via `gcx api` |
 
 ### Custom Agents
 
@@ -150,35 +125,9 @@ The tier of a role is a property of the work, not of the model generation. Each 
 
 ### Agent placement
 
-Claude keeps `model` and `effort` as two fields. **Codex** uses TOML `model` + `model_reasoning_effort` (+ `sandbox_mode` for read-only). **Cursor** has neither `effort` nor `tools`: effort folds into the model string, and read-only is a single `readonly` boolean. **Grok Build** uses `model` + `effort` + `permission_mode` (plan = read-only edits blocked, read shell allowed); spawn may also pass `capability_mode: read-only`.
+Which `model` / `effort` each role gets on each platform, and why, lives in [`agents/AGENTS.md`](agents/AGENTS.md) — it loads automatically when working with files under `agents/`, so it is not resident in every session. Read it before adding an agent, changing a pin, or syncing agent definitions to another platform.
 
-| Agent | Claude | Codex | Cursor | Grok Build `model` / `effort` | Why this tier |
-| --- | --- | --- | --- | --- | --- |
-| `planner` | `opus` / `high` | `gpt-5.6-sol` / `high` | `grok-4.6[effort=high]` | `grok-4.6` / `high` (plan) | Architecture calls are irreversible and unverifiable |
-| `plan-consultant` | `opus` / `high` | `gpt-5.6-sol` / `high` | `grok-4.6[effort=high]` | `grok-4.6` / `high` (plan) | Exists for calls the executor cannot verify; **on Grok the main session spawns it** (depth 1) |
-| `security-reviewer` | `opus` / `medium` | `gpt-5.6-sol` / `medium` | `grok-4.6[effort=high]` | `grok-4.6` / `high` (plan) | Missed authz bypass is unrecoverable |
-| `reliability-reviewer` | `opus` / `medium` | `gpt-5.6-sol` / `medium` | `grok-4.6[effort=high]` | `grok-4.6` / `high` (plan) | Counterfactual simulation is the first thing weaker models lose |
-| `implementer` | **`opus` / `medium`** | **`gpt-5.6-terra` / `high`** | `grok-4.6[effort=medium]` | `grok-4.6` / **`medium`** (default) | Long-context agentic role; T1 model at T2 effort |
-| `tester` | `sonnet` / `medium` | `gpt-5.6-luna` / `high` | `grok-4.6[effort=medium]` | `grok-4.6` / `medium` | Mutation score ≥80%; barred from production code; on Cursor and Grok this is the noreview quality gate |
-| `fixer` | **`opus` / `medium`** | **`gpt-5.6-terra` / `high`** | **`grok-4.6[effort=medium]`** | `grok-4.6` / `medium` | Finding is the spec; re-test verifies — but matched to `implementer` on every platform |
-| `maintainability-reviewer` | `sonnet` / `medium` | `gpt-5.6-luna` / `high` | `grok-4.6[effort=medium]` | `grok-4.6` / `medium` (plan) | Specified pattern matching |
-| `senior-generalist-reviewer` | `sonnet` / `medium` | `gpt-5.6-luna` / `high` | `grok-4.6[effort=medium]` | `grok-4.6` / `medium` (plan) | Calibrated catch-all, lowest miss cost |
-
-**effort follows two rules.** Do not buy the top of the scale — the jump from a model's default effort to `max` is worth a couple of points across the board, so `xhigh` is reserved for decisions that cannot be revisited. And when a model comes down a tier, effort does not follow it down: Codex T2 rows use `high` on Luna/Terra for exactly that reason (cheap model, high effort).
-
-**Claude's two write-heavy T2 roles run the T1 model at T2 effort.** `implementer` and `fixer` are `opus` / `medium`, not `sonnet`: measured on this harness, Sonnet needed enough extra turns per task to hand back the 1.67x price gap and then some, and each of those turns re-read the plan and the repo slice. The tier is still T2 — the *effort* is what encodes that, and everything else in the T2 block stays on `sonnet` (`tester`, `maintainability-reviewer`, `senior-generalist-reviewer`), where the output is bounded and re-verified.
-
-**Codex-specific:** never set `model_reasoning_effort = "ultra"` — it adds automatic task delegation that collides with this harness's own dispatch. Never put Luna on `implementer` or `fixer` (long-context cliff). Codex's default loop is **`dev-loop-light`** (not `dev-loop-noreview`): Luna makes the last two review axes nearly free, so light already captures ~95% of noreview's savings.
-
-**Cursor's effort values are not the Claude ones.** Grok 4.6 has `low/medium/high/xhigh` (default `high`). T1 reviewers sit at `high` — one step below the reserved `xhigh` slot, same shape as Claude/Codex T1 reviewers sitting below plan-dev. Cursor T2 matches Grok Build: every role on `grok-4.6`, T2 at `[effort=medium]`. Composer 2.5 and `grok-4.5` are unused.
-
-`implementer` and `fixer` are the rows where Cursor, like Claude, keeps the T1 *model*. The agentic gap between the two models lands exactly on those jobs, and a role that loads a plan (or a defect brief and its report), the conventions, and the code together is the wrong place for a 200K window — so the effort comes down instead.
-
-**`fixer` tracks `implementer` on every platform, not the T2 bulk.** Writing a fix reads the same shape of input as writing the change — brief, report, surrounding code — and the cheaper model spent its price advantage on extra turns. So Codex puts it on Terra, Cursor on Grok 4.6, and Claude on Opus. On Cursor and Grok Build, `tester` also sits on 4.6 medium because both default to noreview (tester is the only machine quality gate) and Composer dropped instructions too often; `maintainability-reviewer` and `senior-generalist-reviewer` sit on 4.6 medium too — `grok-4.5` has no meaningful price advantage.
-
-**The Cursor table rows and `hooks/cursor/hooks/model-pin-guard.sh` are one fact in two files.** Change a Cursor row and change the guard's `case` statement with it, or the guard starts rejecting healthy dispatches.
-
-**Grok Build-specific:** catalog in use is **`grok-4.6` only** (SuperGrok subscription quota). `grok-4.5` is unused. Effort menu is `low|medium|high|xhigh`. Subagent nesting depth is **1** — the implementer must not spawn `plan-consultant`; the Dispatcher returns on `needs-design-decision` and spawns the consultant. No multi-model cascade and no `implementer-strict`. Default loop is **`dev-loop-noreview`**. Turn off Grok `[compat.claude]` / `[compat.cursor]` so pure `~/.grok/{agents,skills,hooks,scripts,rules}` paths win. Global instructions install to **`~/.grok/rules/AGENTS.md`**.
+**The Cursor table rows and `hooks/cursor/hooks/model-pin-guard.sh` are one fact in two files.** Change a Cursor row and change the guard's `case` statement with it, or the guard starts rejecting healthy dispatches. That coupling is repeated here because editing the guard does not load `agents/AGENTS.md`.
 
 ### Session operating rules
 

@@ -112,7 +112,7 @@ readonly: true
 
 **effort 값을 Claude에서 그대로 옮기지 않는다.** Grok 4.6은 `low/medium/high/xhigh`이고 기본값이 `high`다. T1 리뷰어는 `high`(예약된 `xhigh` 바로 아래). T2는 `medium`.
 
-현행 배치는 `AGENTS.md`의 Model Tier 절이 source of truth다. 표를 고치면 `hooks/cursor/hooks/model-pin-guard.sh`의 `case` 문도 함께 고친다 — **두 곳이 갈라지면 가드가 정상 dispatch를 거부한다.**
+현행 배치는 `agents/AGENTS.md`가 source of truth다 (티어 정의 자체는 루트 `AGENTS.md`의 `## Model Tier`). 표를 고치면 `hooks/cursor/hooks/model-pin-guard.sh`의 `case` 문도 함께 고친다 — **두 곳이 갈라지면 가드가 정상 dispatch를 거부한다.**
 
 ### Convert `tools:` to `readonly:` and record the loss
 
@@ -185,7 +185,7 @@ Claude의 `tools: Read, Grep, Glob, Bash`는 Cursor에서 `readonly: true` 하�
 - **T1은 거부, T2는 로그 후 허용.** `subagentStart`의 출력은 `allow`/`deny` 둘뿐이라 "경고"가 없다. 전부 거부하면 폴백 한 번에 루프가 멈춘다.
 - **비교는 base 모델 ID로 한다.** `subagent_model`은 해석된 모델(`grok-4.6`)을 주고 `[effort=…]` 파라미터는 돌아오지 않는다. 전체 문자열을 비교하면 매 dispatch마다 발화한다.
 - **모르는 `subagent_type`은 항상 허용한다.** Cursor 빌트인(`generalPurpose`·`explore`·`shell`)과 하네스 소유가 아닌 에이전트를 막지 않기 위해서다.
-- 에이전트 배치를 바꾸면 이 스크립트의 `case` 문과 `AGENTS.md` Model Tier 표를 **함께** 고친다.
+- 에이전트 배치를 바꾸면 이 스크립트의 `case` 문과 `agents/AGENTS.md`의 배치표를 **함께** 고친다.
 
 **이 훅은 단계 전이를 결정하지 않는다.** *"Hooks are guardrails; they take no part in `dev-loop` stage transitions or completion decisions"* 불변식과 충돌하지 않으며, 잘못된 모델로의 실행을 거부할 뿐이다.
 

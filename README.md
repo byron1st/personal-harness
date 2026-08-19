@@ -198,7 +198,6 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 | `application-research-sync` | 코드 변경을 분석해 Research 파일 일괄 갱신 (index 먼저, 필요한 본문만) | `docs/agents/research/*` |
 | `learn-from-manual-edits` | 에이전트 작성 코드 위의 사용자 수동 편집에서 일반 선호를 추론해 컨벤션으로 기록 | CLAUDE.md/AGENTS.md 컨벤션 섹션 |
 | `chat-summary` | 대화 내용을 vault 기존 category/tag 어휘로 정리한 자기완결 Obsidian 노트(YAML frontmatter + 본문)로 작성 | Obsidian 노트 (.md) |
-| `find-docs` | 라이브러리/프레임워크 공식 문서를 Context7(`ctx7`)로 조회. Context7이 자동 설치하는 서드파티 스킬(이 harness가 직접 작성한 것이 아님) | 없음 (채팅 보고) |
 | `loki-log-search` | Grafana Loki 로그를 `gcx api` 경유로 조회 | 없음 (채팅 보고) |
 
 ### Custom Agents
@@ -375,10 +374,10 @@ Grok Build 전용 변형 설치 스크립트다(Claude/Cursor compat 경로를 �
 
 ### setup-ctx7.sh
 
-Context7이 배포하는 서드파티 `find-docs` 스킬과 context7 지침 블록을 최신 버전으로 재생성해 레포 소스에 반영한다. 설치 환경(`~/.claude` 등)이 아니라 레포 안의 소스를 갱신하는 스크립트이며, 갱신 결과는 이후 `apply-to-*.sh` 실행 시 배포된다 (`ctx7` CLI 필요).
+Context7이 배포하는 context7 지침 블록을 최신 버전으로 재생성해 레포 소스에 반영한다. 설치 환경(`~/.claude` 등)이 아니라 레포 안의 소스를 갱신하는 스크립트이며, 갱신 결과는 이후 `apply-to-*.sh` 실행 시 배포된다 (`ctx7` CLI 필요).
 
 - `ctx7 upgrade`로 CLI 업데이트 여부를 먼저 확인한다 (업데이트가 있으면 안내만 출력하고 자동 설치하지는 않는다).
-- 임시 디렉토리에서 `ctx7 setup --cli --claude|--codex -y -p`를 실행해 Claude·Codex 전용 `find-docs` 스킬을 생성한다. 생성물은 플랫폼마다 다르다 (예: Codex 변형에는 샌드박스 밖에서 네트워크 요청을 재시도하라는 지침이 포함된다).
+- 임시 디렉토리에서 `ctx7 setup --cli --claude -y -p`를 실행해 context7 룰을 생성한다. `ctx7`은 `find-docs` 스킬도 함께 내놓지만 이 harness는 그것을 벤더링하지 않는다 — 같은 지침이 `instructions/AGENTS.md`의 context7 블록에 이미 들어 있어, 스킬까지 설치하면 네 플랫폼 모두에서 스킬 목록 예산만 중복으로 소모한다.
 - 생성물의 `npx ctx7@latest` 호출을 전역 설치된 `ctx7` 명령으로 치환한다.
-- 두 변형이 모두 정상 생성된 것을 확인한 뒤 각 생성물을 대응하는 `skills/<platform>/find-docs`로 복사한다 (부분 갱신 방지를 위해 생성·검증 완료 후 일괄 복사). `ctx7`에 Cursor·Grok 타겟이 없고 둘 다 Claude 형식 스킬을 읽으므로, `skills/cursor/find-docs`와 `skills/grok/find-docs`에는 Claude 생성물을 같이 복사한다.
+- `ctx7`이 내보내는 `## Steps` 헤딩을 `### Context7 Steps`로 강등한다. AGENTS.md에 붙으면 H2가 `## Key Principles` 등과 동급 최상위 섹션이 되어 ctx7 전용 단계로 읽히지 않기 때문이다.
 - `instructions/AGENTS.md`의 `<!-- context7 -->` 블록을 Claude 룰 내용으로 교체한다 (네 플랫폼이 공유하는 지침 파일이므로 플랫폼 중립적인 Claude 룰을 쓴다).

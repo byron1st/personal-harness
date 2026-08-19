@@ -44,7 +44,7 @@ Use the `ctx7` CLI to fetch current documentation whenever the user asks about a
 
 Do not use for: refactoring, writing scripts from scratch, debugging business logic, code review, or general programming concepts.
 
-## Steps
+### Context7 Steps
 
 1. Resolve library: `ctx7 library <name> "<user's question>"` — use the official library name with proper punctuation (e.g., "Next.js" not "nextjs", "Customer.io" not "customerio", "Three.js" not "threejs")
 2. Pick the best match (ID format: `/org/project`) by: exact name match, description relevance, code snippet count, source reputation (High/Medium preferred), and benchmark score (higher is better). If results don't look right, try alternate names or queries (e.g., "next.js" not "nextjs", or rephrase the question)

@@ -10,28 +10,13 @@ trap 'rm -rf "${TMP_DIR}"' EXIT
 echo "Check if there is any update for ctx7"
 ctx7 upgrade
 
-PLATFORMS=(claude codex)
+# Only the context7 rule is consumed; the find-docs skill ctx7 also emits is
+# deliberately not vendored — instructions/AGENTS.md carries the same guidance.
+WORKDIR="${TMP_DIR}/claude"
+mkdir -p "${WORKDIR}"
+(cd "${WORKDIR}" && ctx7 setup --cli --claude -y -p)
 
-# Phase 1: generate both platform variants in tmp and validate before touching the repo.
-for platform in "${PLATFORMS[@]}"; do
-  workdir="${TMP_DIR}/${platform}"
-  mkdir -p "${workdir}"
-  (cd "${workdir}" && ctx7 setup --cli "--${platform}" -y -p)
-
-  case "${platform}" in
-    claude) skill_src="${workdir}/.claude/skills/find-docs" ;;
-    *)      skill_src="${workdir}/.agents/skills/find-docs" ;;
-  esac
-
-  if [[ ! -d "${skill_src}" ]]; then
-    echo "Error: find-docs skill for ${platform} not found at ${skill_src}" >&2
-    exit 1
-  fi
-
-  find "${skill_src}" -type f -exec sed -i '' 's/npx ctx7@latest/ctx7/g' {} +
-done
-
-CONTEXT7_RULE_SRC="${TMP_DIR}/claude/.claude/rules/context7.md"
+CONTEXT7_RULE_SRC="${WORKDIR}/.claude/rules/context7.md"
 
 if [[ ! -f "${CONTEXT7_RULE_SRC}" ]]; then
   echo "Error: context7 rule not found at ${CONTEXT7_RULE_SRC}" >&2
@@ -40,29 +25,10 @@ fi
 
 sed -i '' 's/npx ctx7@latest/ctx7/g' "${CONTEXT7_RULE_SRC}"
 
-# Phase 2: copy both platform variants into the repo.
-for platform in "${PLATFORMS[@]}"; do
-  case "${platform}" in
-    claude) skill_src="${TMP_DIR}/${platform}/.claude/skills/find-docs" ;;
-    *)      skill_src="${TMP_DIR}/${platform}/.agents/skills/find-docs" ;;
-  esac
-
-  dest="${REPO_ROOT}/skills/${platform}/find-docs"
-  rm -rf "${dest}"
-  cp -r "${skill_src}" "${dest}"
-  echo "  find-docs (${platform}) -> skills/${platform}/find-docs"
-
-  # ctx7 has no Cursor/Grok targets. Both platforms read Claude-shaped skills,
-  # so copy the Claude variant rather than leaving them to drift.
-  if [[ "${platform}" == "claude" ]]; then
-    for mirror in cursor grok; do
-      mirror_dest="${REPO_ROOT}/skills/${mirror}/find-docs"
-      rm -rf "${mirror_dest}"
-      cp -r "${skill_src}" "${mirror_dest}"
-      echo "  find-docs (${mirror})  -> skills/${mirror}/find-docs"
-    done
-  fi
-done
+# ctx7 emits a bare `## Steps`, which lands as a top-level sibling of the
+# harness's own H2 sections once the block is appended to AGENTS.md. Demote it
+# so the steps stay visibly scoped to Context7.
+sed -i '' 's/^## Steps$/### Context7 Steps/' "${CONTEXT7_RULE_SRC}"
 
 AGENTS_MD="${REPO_ROOT}/instructions/AGENTS.md"
 
