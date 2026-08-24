@@ -1,5 +1,7 @@
 # Global Instructions
 
+ALWAYS respond in English.
+
 ## Key Principles
 
 ### Simplicity First
