@@ -1,5 +1,7 @@
 # My personal harness
 
+[English](README.md) | **한국어**
+
 개인 사용 목적의 Agent Skills · 전역 지침 · 설치 스크립트 하네스.
 
 회사 업무는 쿼터를 **Cursor → Claude → Codex** 순으로 소진한다(승인 마찰이 가벼운 풀부터; 근거는 [docs/cost-effective/ANALYSIS_AND_PROPOSAL.md](docs/cost-effective/ANALYSIS_AND_PROPOSAL.md) §9.8). 개인 프로젝트는 **Grok Build**(SuperGrok 구독 쿼터)를 쓴다.
