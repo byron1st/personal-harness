@@ -15,7 +15,7 @@ The default flow can run in two modes. Both share the same skill set and artifac
 ### Loop Engineering
 
 ```
-plan-dev → dev-loop( implement-dev → test-dev → [review-code] → (fix-dev → test-dev → [review-code])* ) → commit-code → request-merge
+plan-dev → dev-loop( implement-dev → test-dev → [review-code] → (fix-dev → test-dev → [review-code])* ) → commit-code
 ```
 
 A loop drives one approved single-step plan (its `Acceptance Contract` / `Authority Boundaries` are required at preflight) through the cycle until every termination predicate holds, then stops at READY_TO_COMMIT. State is checkpointed append-only to a LOOP file under `docs/agents/dev` (one shared format across all platform variants); triage (Fix/Accept), AR approval, and commits stay human-owned.
@@ -37,7 +37,7 @@ A loop drives one approved single-step plan (its `Acceptance Contract` / `Author
 ### Manual Development
 
 ```
-plan-dev → implement-dev → (fix-dev loop on issues) → test-dev → review-code → (fix-dev loop on issues) → commit-code → request-merge
+plan-dev → implement-dev → (fix-dev loop on issues) → test-dev → review-code → (fix-dev loop on issues) → commit-code
 ```
 
 Each skill can be used standalone; typically the output of the previous skill (plan / implementation report / review findings) becomes the input for the next.
@@ -58,8 +58,7 @@ Each skill under `skills/<platform>/` is managed in its own folder. See each ski
 | `test-dev` | Fills unit/e2e gaps and removes LIVED mutants over a git scope (default: diff vs `main`); never modifies production code; the caller may put mutation out of scope | Dispatcher → `tester` Worker | Test code (no file artifact) |
 | `review-code` | Dispatches reviewer personas in parallel (4 by default, or a caller-named subset) and aggregates findings; reviewers report everything with a `Confidence` tag and **this skill filters**; HIGH/CRITICAL go through user Fix/Accept triage, accepted items recorded as AR and waived in later reviews | Dispatcher → reviewers | Findings, `Accepted Review Exceptions` |
 | `dev-loop` | Thin controller repeating implement→test→[review]→fix until termination predicates hold; stops at READY_TO_COMMIT. Modes: `light` (default, 2 axes, no mutation), `full` (4 axes + mutation), `noreview` (no review, no mutation). Triage, AR approval, and commits stay human-owned | Main session (invokes each stage skill's Dispatcher flow) | LOOP file (append-only) |
-| `commit-code` | Creates a commit; runs a read-only documentation-drift check afterward | Main session | Commit |
-| `request-merge` | Creates/updates a PR (`gh`, personal) or MR (`glab`, work) | Main session | PR/MR |
+| `commit-code` | Creates a commit; runs a read-only documentation-drift check afterward. Opens a PR (`gh`, personal) or MR (`glab`, work) only when the prompt asks (`request-merge` is a routing alias). Dirty tree + PR request: commit first | Main session | Commit · (optional) PR/MR |
 
 ### Custom Agents
 

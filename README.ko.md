@@ -11,7 +11,7 @@
 일상 흐름은 **계획 → 사람 검토·승인 → 루프 실행** 이다.
 
 ```
-plan-dev → (플랜 검토·승인) → dev-loop → commit-code → request-merge
+plan-dev → (플랜 검토·승인) → dev-loop → commit-code
 ```
 
 1. **`plan-dev`**: 인터뷰로 플랜을 세우고 `Acceptance Contract`·`Authority Boundaries`를 잠근다. 산출물은 `docs/agents/` 아래 PLAN·RESEARCH.
@@ -68,8 +68,8 @@ personal-harness/
 | `rg` (ripgrep) | 전체 `enforce-rg` hook + AGENTS.md | 재귀 `grep` 대신 코드 검색 강제 | `brew install ripgrep` |
 | `fd` | 전체 `enforce-fd` hook + AGENTS.md | 파일명/경로 검색용 `find` 대체 강제 | `brew install fd` |
 | `ctx7` | AGENTS.md context7 룰 + `scripts/setup-ctx7.sh` | 라이브러리/프레임워크 공식 문서 fetch | `npm install -g ctx7` 후 `ctx7 login`(또는 `CONTEXT7_API_KEY` 설정) |
-| `gh` | `request-merge`(personal), `setup-initial-repo`(personal 원격 생성) | GitHub PR 생성/업데이트, 개인 private repo 자동 생성 | `brew install gh` 후 `gh auth login` |
-| `glab` | `request-merge`(work) | GitLab MR 생성/업데이트 | `brew install glab` 후 `glab auth login` |
+| `gh` | `commit-code`(personal PR 경로), `setup-initial-repo`(personal 원격 생성) | GitHub PR 생성/업데이트, 개인 private repo 자동 생성 | `brew install gh` 후 `gh auth login` |
+| `glab` | `commit-code`(work MR 경로) | GitLab MR 생성/업데이트 | `brew install glab` 후 `glab auth login` |
 | `gcx` | `loki-log-search` | Grafana Loki 로그 조회용 `gcx api` passthrough | `gcx` 배포본 설치 후 `gcx config current-context`로 컨텍스트 구성 |
 | Cursor 2.4+ | Cursor 변형 전체 | 서브에이전트 `model`·`readonly` 프론트매터, Agent Skills, `hooks.json`(`subagentStart` 포함) | Cursor 앱 업데이트 |
 | `grok` (Grok Build 0.2+) | Grok 변형 전체 | `~/.grok/{agents,skills,hooks,scripts,rules}`, SuperGrok 구독 권장 | [Grok Build CLI 설치](https://x.ai/cli) 후 `grok login` |
@@ -133,7 +133,7 @@ Skills 실행에 필요한 환경변수 목록. 각 Agent 의 환경변수 설�
 ### Loop Engineering
 
 ```
-plan-dev → dev-loop( implement-dev → test-dev → [review-code] → (fix-dev → test-dev → [review-code])* ) → commit-code → request-merge
+plan-dev → dev-loop( implement-dev → test-dev → [review-code] → (fix-dev → test-dev → [review-code])* ) → commit-code
 ```
 
 **스킬은 하나, 모드는 셋.** `light`(기본값), `full`, `noreview`. preflight에서 고정되며 도중에 바꾸지 않는다.
@@ -151,7 +151,7 @@ plan-dev → dev-loop( implement-dev → test-dev → [review-code] → (fix-dev
 1. **계획 수립**: `plan-dev` 스킬을 호출해 인터뷰로 계획을 수립한다. 완료 조건 라운드에서 TODO별 완료 조건·증거(`Acceptance Contract`)와 권한 경계·루프 예산(`Authority Boundaries`)을 함께 확정하고, 계획을 승인하면 PLAN/RESEARCH 파일이 `docs/agents/` 아래에 저장된다. **`plan-dev` 세션 모델은 플랫폼별로 다르다** — Claude Opus · Codex Sol/xhigh · Cursor Grok 4.6 xhigh · Grok Build Grok 4.6 xhigh([Model Tier](#model-tier)).
 2. **루프 실행**: 위 표의 모드로 `dev-loop`를 호출한다(기본값 `light`). 이후 종료 술어(TODO 완료 ∧ AC 증거 충족 ∧ 검증 green ∧ 차단 finding 0)를 만족할 때까지 자율 반복된다. 멀티스텝 플랜은 sub-plan(`-STEP-N`) 단위로 호출한다. **루프 실행 세션도 플랫폼별** — Claude Sonnet · Codex Luna/medium · Cursor Grok 4.6 medium · Grok Build Grok 4.6 medium. T1 에이전트는 역할 핀으로 T1에서 돈다.
 3. **중간 개입은 두 경우뿐**: (a) 리뷰(있는 모드만) 또는 TESTING 게이트에서 finding이 나오면 항목별 Fix/Accept 분류 질문에 답한다 — Accept 항목은 `AGENTS.md`의 `Accepted Review Exceptions`에 기록되어 다음 리뷰부터 Waived(`Applied Exceptions`)로 강등 표시되고 차단 finding으로 계산되지 않는다. (b) blocked·예산 소진·no-progress로 에스컬레이션되면 지시를 내린다 — 방향 문제면 `plan-dev`로 재진입한다.
-4. **완료 확인과 커밋**: 루프는 READY_TO_COMMIT에서 멈춘다. Implementation Report와 LOOP 상태 파일을 확인한 뒤 `commit-code`, 필요 시 `request-merge`를 직접 호출한다 — 커밋·푸시·PR/MR 생성은 루프 권한 밖이다. **`noreview`에서는 리뷰어가 아무도 변경을 읽지 않았으므로**, IMPL 리포트의 `## TODO Fulfillment`와 AC 증거를 직접 본다 — 4축 리뷰가 잡아주던 instruction drift가 여기서는 사람 몫이다.
+4. **완료 확인과 커밋**: 루프는 READY_TO_COMMIT에서 멈춘다. Implementation Report와 LOOP 상태 파일을 확인한 뒤 `commit-code`를 직접 호출한다(같은 호출에서 PR/MR을 원하면 말하면 된다 — `request-merge`는 라우팅 별칭). 커밋·푸시·PR/MR 생성은 루프 권한 밖이다. **`noreview`에서는 리뷰어가 아무도 변경을 읽지 않았으므로**, IMPL 리포트의 `## TODO Fulfillment`와 AC 증거를 직접 본다 — 4축 리뷰가 잡아주던 instruction drift가 여기서는 사람 몫이다.
 5. **중단·재개**: 루프가 중간에 끊겨도 상태는 `docs/agents/dev/*_LOOP_*.md`에 남으므로(LOOP 포맷은 공유, `Mode:`는 프론트매터에 고정), 같은 플랜으로 `dev-loop`를 다시 호출하면 그 모드의 마지막 라운드에서 이어서 진행한다.
 
 ### Manual Development
@@ -159,14 +159,14 @@ plan-dev → dev-loop( implement-dev → test-dev → [review-code] → (fix-dev
 `dev-loop` 없이 각 스킬을 단계마다 직접 호출하는 방식이다. 각 스킬은 단독 사용도 가능하지만, 보통 앞 스킬이 만든 산출물(플랜 / 구현 결과 / 리뷰 코멘트 등)을 다음 스킬이 입력으로 받는다.
 
 ```
-plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev → review-code → (이슈 발견 시 fix-dev 반복) → commit-code → request-merge
+plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev → review-code → (이슈 발견 시 fix-dev 반복) → commit-code
 ```
 
 1. `plan-dev`로 계획을 수립하고 승인한다.
 2. `implement-dev`에 승인된 플랜 경로를 넘겨 구현한다.
 3. `test-dev`로 변경 범위의 테스트를 보강한다.
 4. `review-code`로 리뷰하고, 발견된 결함은 `fix-dev`로 하나씩 수정한 뒤 필요한 범위를 재검증한다.
-5. `commit-code`로 커밋하고, 필요 시 `request-merge`로 PR/MR을 생성한다.
+5. `commit-code`로 커밋한다. 같은 호출에서 PR/MR을 원하면 말한다(`request-merge`는 라우팅 별칭).
 
 리뷰의 HIGH/CRITICAL 트리아지(Fix/Accept 분류)와 `Accepted Review Exceptions` 기록은 단독 `review-code` 호출에서도 동일하게 동작한다. 어느 단계를 건너뛰거나 반복할지는 사용자가 결정한다.
 
@@ -186,8 +186,7 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 | `test-dev` | git scope(기본: `main` 대비 diff) 기준으로 유닛/E2E 갭 채움과 mutation LIVED 제거. production 코드는 불변. 호출자가 mutation을 범위 밖으로 지정할 수 있다 | Dispatcher → `tester` Worker | 테스트 코드 (파일 아티팩트 없음) |
 | `review-code` | 리뷰 페르소나 병렬 dispatch(기본 4축, 호출자가 부분집합 지정 가능) 후 finding 종합. 리뷰어는 `Confidence`를 달아 전부 보고하고 **필터링은 이 스킬의 집계 단계**가 한다. HIGH/CRITICAL은 사용자 Fix/Accept 트리아지, Accept는 AR로 기록해 이후 리뷰에서 Waived 강등 | Dispatcher → reviewers | finding 리포트, `Accepted Review Exceptions` |
 | `dev-loop` | 승인된 플랜(AC·AB 필수)으로 구현→테스트→[리뷰]→fix 사이클을 종료 술어 충족까지 자율 반복, READY_TO_COMMIT에서 정지. 모드: `light`(기본값, 2축, mutation 제외), `full`(4축 + mutation), `noreview`(리뷰 없음, mutation 제외). 트리아지·AR 승인·커밋은 사람 몫 | 메인 세션 (각 단계 스킬의 Dispatcher 흐름 호출) | LOOP 파일 (append-only) |
-| `commit-code` | 수정된 파일 기반 커밋 생성 + 커밋 후 문서 드리프트 검사(읽기 전용 보고) | 메인 세션 | 커밋 |
-| `request-merge` | `gh`(personal) / `glab`(work)로 PR/MR 생성·업데이트 | 메인 세션 | PR/MR |
+| `commit-code` | 수정된 파일 기반 커밋 생성 + 커밋 후 문서 드리프트 검사(읽기 전용 보고). 프롬프트가 요청할 때만 PR/MR 생성(`gh` personal / `glab` work; `request-merge`는 라우팅 별칭). dirty tree + PR 요청이면 먼저 커밋 | 메인 세션 | 커밋 · (선택) PR/MR |
 
 **Misc:**
 

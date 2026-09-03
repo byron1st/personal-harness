@@ -11,7 +11,7 @@ Work usage burns quota in **Cursor → Claude → Codex** order (cheapest-approv
 The everyday flow is **plan → human review and approval → run the loop**.
 
 ```
-plan-dev → (plan review and approval) → dev-loop → commit-code → request-merge
+plan-dev → (plan review and approval) → dev-loop → commit-code
 ```
 
 1. **`plan-dev`**: Interviews to draft a plan and lock `Acceptance Contract` and `Authority Boundaries`. Artifacts land under `docs/agents/` as PLAN and RESEARCH.
@@ -68,8 +68,8 @@ These CLI tools must be on PATH for this harness's skills, hooks, and install sc
 | `rg` (ripgrep) | all `enforce-rg` hook + AGENTS.md | force `rg` instead of recursive `grep` | `brew install ripgrep` |
 | `fd` | all `enforce-fd` hook + AGENTS.md | force `fd` instead of `find` for file/path search | `brew install fd` |
 | `ctx7` | AGENTS.md context7 rule + `scripts/setup-ctx7.sh` | fetch official library/framework docs | `npm install -g ctx7` then `ctx7 login` (or set `CONTEXT7_API_KEY`) |
-| `gh` | `request-merge` (personal), `setup-initial-repo` (personal remote create) | create/update GitHub PRs, auto-create personal private repos | `brew install gh` then `gh auth login` |
-| `glab` | `request-merge` (work) | create/update GitLab MRs | `brew install glab` then `glab auth login` |
+| `gh` | `commit-code` (personal PR path), `setup-initial-repo` (personal remote create) | create/update GitHub PRs, auto-create personal private repos | `brew install gh` then `gh auth login` |
+| `glab` | `commit-code` (work MR path) | create/update GitLab MRs | `brew install glab` then `glab auth login` |
 | `gcx` | `loki-log-search` | Grafana Loki log lookup via `gcx api` passthrough | install a `gcx` distribution, then configure context with `gcx config current-context` |
 | Cursor 2.4+ | entire Cursor variant | subagent `model`/`readonly` frontmatter, Agent Skills, `hooks.json` (including `subagentStart`) | update the Cursor app |
 | `grok` (Grok Build 0.2+) | entire Grok variant | `~/.grok/{agents,skills,hooks,scripts,rules}`; SuperGrok subscription recommended | [install Grok Build CLI](https://x.ai/cli) then `grok login` |
@@ -133,7 +133,7 @@ The default development flow can run in two modes: **Loop Engineering**, which h
 ### Loop Engineering
 
 ```
-plan-dev → dev-loop( implement-dev → test-dev → [review-code] → (fix-dev → test-dev → [review-code])* ) → commit-code → request-merge
+plan-dev → dev-loop( implement-dev → test-dev → [review-code] → (fix-dev → test-dev → [review-code])* ) → commit-code
 ```
 
 **One skill, three modes.** Pass `light` (default), `full`, or `noreview`. Frozen at preflight; do not switch mid-run.
@@ -151,7 +151,7 @@ The two axes `light` drops (`security` and `reliability`) are the ones whose mis
 1. **Plan**: Call `plan-dev` and interview a plan. In the completion-conditions round, lock per-TODO completion conditions and evidence (`Acceptance Contract`) together with authority boundaries and loop budget (`Authority Boundaries`). Approving the plan writes PLAN/RESEARCH files under `docs/agents/`. **The `plan-dev` session model differs by platform** — Claude Opus · Codex Sol/xhigh · Cursor Grok 4.6 xhigh · Grok Build Grok 4.6 xhigh ([Model Tier](#model-tier)).
 2. **Run the loop**: Call `dev-loop` with the approved plan path and a mode from the table above (default `light`). It then repeats autonomously until the termination predicates hold (TODOs done ∧ AC evidence met ∧ verification green ∧ blocking findings 0). Multi-step plans are invoked per sub-plan (`-STEP-N`). **The loop-run session is also per-platform** — Claude Sonnet · Codex Luna/medium · Cursor Grok 4.6 medium · Grok Build Grok 4.6 medium. T1 agents stay T1 via role pins.
 3. **Mid-run intervention in two cases only**: (a) If a finding appears at review (modes that have it) or the TESTING gate, answer the per-item Fix/Accept question — Accepted items are recorded in `AGENTS.md`'s `Accepted Review Exceptions`, shown as Waived (`Applied Exceptions`) from the next review, and do not count as blocking findings. (b) If it escalates on blocked, budget exhaustion, or no-progress, give instructions — if the problem is direction, re-enter `plan-dev`.
-4. **Confirm and commit**: The loop stops at READY_TO_COMMIT. Check the Implementation Report and LOOP state file, then call `commit-code` and, if needed, `request-merge` yourself — commit, push, and PR/MR creation are outside the loop's authority. **Under `noreview` no reviewer has read the change**, so read the IMPL report's `## TODO Fulfillment` and AC evidence yourself — the instruction drift four-axis review used to catch is now the human's job.
+4. **Confirm and commit**: The loop stops at READY_TO_COMMIT. Check the Implementation Report and LOOP state file, then call `commit-code` yourself (name a PR/MR in that invocation if you want one — `request-merge` is a routing alias). Commit, push, and PR/MR creation are outside the loop's authority. **Under `noreview` no reviewer has read the change**, so read the IMPL report's `## TODO Fulfillment` and AC evidence yourself — the instruction drift four-axis review used to catch is now the human's job.
 5. **Interrupt and resume**: If the loop dies mid-run, state remains in `docs/agents/dev/*_LOOP_*.md` (LOOP format is shared; `Mode:` is frozen in frontmatter). Calling `dev-loop` on the same plan continues from the last round in that mode.
 
 ### Manual Development
@@ -159,14 +159,14 @@ The two axes `light` drops (`security` and `reliability`) are the ones whose mis
 Call each skill stage by stage without `dev-loop`. Each skill can be used standalone; typically the previous skill's artifact (plan / implementation result / review comments) becomes the next skill's input.
 
 ```
-plan-dev → implement-dev → (fix-dev loop on issues) → test-dev → review-code → (fix-dev loop on issues) → commit-code → request-merge
+plan-dev → implement-dev → (fix-dev loop on issues) → test-dev → review-code → (fix-dev loop on issues) → commit-code
 ```
 
 1. Draft and approve a plan with `plan-dev`.
 2. Pass the approved plan path to `implement-dev`.
 3. Strengthen tests for the change scope with `test-dev`.
 4. Review with `review-code`; fix each defect with `fix-dev` and re-verify the needed scope.
-5. Commit with `commit-code`, and create a PR/MR with `request-merge` if needed.
+5. Commit with `commit-code`. Name a PR/MR in that invocation if you want one (`request-merge` is a routing alias).
 
 HIGH/CRITICAL review triage (Fix/Accept) and recording `Accepted Review Exceptions` work the same on a standalone `review-code` call. Which stages to skip or repeat is the user's call.
 
@@ -186,8 +186,7 @@ Each skill is managed as a platform variant under `skills/<platform>/` (claude/c
 | `test-dev` | Fills unit/e2e gaps and removes mutation LIVED survivors over a git scope (default: diff vs `main`). Production code is unchanged. The caller may put mutation out of scope | Dispatcher → `tester` Worker | Test code (no file artifact) |
 | `review-code` | Dispatches reviewer personas in parallel (4 axes by default; the caller may name a subset) and aggregates findings. Reviewers report everything with a `Confidence` tag; **this skill's aggregation step filters**. HIGH/CRITICAL go through user Fix/Accept triage; Accept is recorded as AR and waived in later reviews | Dispatcher → reviewers | Findings report, `Accepted Review Exceptions` |
 | `dev-loop` | Autonomously repeats implement → test → [review] → fix on an approved plan (AC · AB required) until termination predicates hold; stops at READY_TO_COMMIT. Modes: `light` (default, 2 axes, no mutation), `full` (4 axes + mutation), `noreview` (no review, no mutation). Triage, AR approval, and commits stay human-owned | Main session (invokes each stage skill's Dispatcher flow) | LOOP file (append-only) |
-| `commit-code` | Creates a commit from modified files, then a read-only docs-drift check | Main session | Commit |
-| `request-merge` | Creates/updates a PR/MR with `gh` (personal) / `glab` (work) | Main session | PR/MR |
+| `commit-code` | Creates a commit from modified files, then a read-only docs-drift check. Opens a PR/MR (`gh` personal / `glab` work) only when the prompt asks (`request-merge` is a routing alias). Dirty tree + PR request: commit first | Main session | Commit · (optional) PR/MR |
 
 **Misc:**
 
