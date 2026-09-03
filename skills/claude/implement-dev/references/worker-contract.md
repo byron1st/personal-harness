@@ -100,7 +100,7 @@ When the Worker returns `failed`, the Dispatcher re-dispatches **exactly once** 
 
 **Always report that it happened.** The Dispatcher's chat summary (③) carries one line: that a T1 retry fired, and whether it succeeded. This line is the only signal that the T2 implementer is under-powered for this class of work — without it there is no way to tell a working tier assignment from a wrong one that keeps getting bailed out.
 
-A loop controller never sees the first `failed`: the retry completes inside the Dispatcher, so `dev-loop*` observes only the final status. The loop's own rule — it never retries a `failed` stage — stays true, and no loop file changes.
+A loop controller never sees the first `failed`: the retry completes inside the Dispatcher, so `dev-loop` observes only the final status. The loop's own rule — it never retries a `failed` stage — stays true, and no loop file changes.
 
 ## E. Delegation failure
 

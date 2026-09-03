@@ -83,7 +83,7 @@ If an `implement-dev` report exists for the change, the Dispatcher may pass its 
 2. **E2E layout**: locate where e2e tests live (see [references/e2e-gap-analysis.md](references/e2e-gap-analysis.md) for common conventions). If the project has no e2e suite at all, note this and skip Phase 2 with a single-line justification in the final summary.
 3. **Mutation tooling**: find the project's mutation target (typical: `make test-mutation`). If no tooling is configured, the Dispatcher decides before dispatch; a Worker returns `blocked` with the options (skip Phase 3 / nominate a command / install a standard tool), and interactive execution asks the user with `ask_user_question`.
 
-**Caller opt-out**: when the invocation explicitly places mutation out of scope for this run — `dev-loop-light` and `dev-loop-noreview` always do — skip step 3 and Phase 3 entirely, pass `mutation: out of scope` in the dispatch prompt, and **do not treat a missing mutation command as `blocked`**. Record the skip as `out of scope (caller)` in the `## Mutation` section of the return. This opt-out covers mutation only; a missing lint/unit/e2e command is still resolved before dispatch or returned as `blocked`.
+**Caller opt-out**: when the invocation explicitly places mutation out of scope for this run — `dev-loop` modes `light` and `noreview` always do — skip step 3 and Phase 3 entirely., pass `mutation: out of scope` in the dispatch prompt, and **do not treat a missing mutation command as `blocked`**. Record the skip as `out of scope (caller)` in the `## Mutation` section of the return. This opt-out covers mutation only; a missing lint/unit/e2e command is still resolved before dispatch or returned as `blocked`.
 
 ## Phase 1 — Unit test gaps
 

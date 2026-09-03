@@ -15,24 +15,24 @@ The default flow can run in two modes. Both share the same skill set and artifac
 ### Loop Engineering
 
 ```
-plan-dev → dev-loop*( implement-dev → test-dev → [review-code] → (fix-dev → test-dev → [review-code])* ) → commit-code → request-merge
+plan-dev → dev-loop( implement-dev → test-dev → [review-code] → (fix-dev → test-dev → [review-code])* ) → commit-code → request-merge
 ```
 
 A loop drives one approved single-step plan (its `Acceptance Contract` / `Authority Boundaries` are required at preflight) through the cycle until every termination predicate holds, then stops at READY_TO_COMMIT. State is checkpointed append-only to a LOOP file under `docs/agents/dev` (one shared format across all platform variants); triage (Fix/Accept), AR approval, and commits stay human-owned.
 
-**Three variants coexist — pick before starting, the loop does not switch mid-run:**
+**One skill, three modes.** Pass `light` (default), `full`, or `noreview`. Mode is frozen in the LOOP file at preflight; the loop does not switch mid-run.
 
-| Skill | Review | Mutation | Use for |
+| Mode | Review | Mutation | Use for |
 | --- | --- | --- | --- |
-| `dev-loop-noreview` | none | no | **Claude / Cursor / Grok Build default.** Ordinary everyday work |
-| `dev-loop-light` | `maintainability` + `senior-generalist` | no | **Codex default.** Wants a review, but not all four axes |
-| `dev-loop` | all four axes | yes | Genuinely serious or large work, or anything touching security-/reliability-sensitive paths |
+| `light` (default) | `maintainability` + `senior-generalist` | no | Everyday work that wants a review without four axes |
+| `full` | all four axes | yes | Genuinely serious or large work, or anything touching security-/reliability-sensitive paths |
+| `noreview` | none | no | Cheapest path; no reviewer reads the change |
 
-`dev-loop-light` deliberately omits the two axes whose misses are unrecoverable. A change touching authn/authz, secrets, concurrency, or partial-failure paths belongs in `dev-loop`.
+`light` deliberately omits the two axes whose misses are unrecoverable. A change touching authn/authz, secrets, concurrency, or partial-failure paths belongs in `full`.
 
-**No variant is gate-free.** All three keep the same two human gates: the TESTING suspected-defect gate (**Fix / Accept**, with an Accept recorded as an AR entry) and READY_TO_COMMIT. Dropping review drops the reviewers, not the human's judgement.
+**No mode is gate-free.** All three keep the same two human gates: the TESTING suspected-defect gate (**Fix / Accept**, with an Accept recorded as an AR entry) and READY_TO_COMMIT. Dropping review drops the reviewers, not the human's judgement.
 
-**`dev-loop-noreview` has no reviewer reading the change**, so the IMPL report is the only record of what the implementer did. Read its `## TODO Fulfillment` and AC evidence yourself at READY_TO_COMMIT — instruction drift is exactly what the four-axis review used to catch.
+**`noreview` has no reviewer reading the change**, so the IMPL report is the only record of what the implementer did. Read its `## TODO Fulfillment` and AC evidence yourself at READY_TO_COMMIT — instruction drift is exactly what the four-axis review used to catch.
 
 ### Manual Development
 
@@ -57,9 +57,7 @@ Each skill under `skills/<platform>/` is managed in its own folder. See each ski
 | `fix-dev` | Fixes one reviewed defect at a time (root cause → fix → verify); never commits | Dispatcher → `fixer` Worker | `## Fix` entries appended to the IMPL report |
 | `test-dev` | Fills unit/e2e gaps and removes LIVED mutants over a git scope (default: diff vs `main`); never modifies production code; the caller may put mutation out of scope | Dispatcher → `tester` Worker | Test code (no file artifact) |
 | `review-code` | Dispatches reviewer personas in parallel (4 by default, or a caller-named subset) and aggregates findings; reviewers report everything with a `Confidence` tag and **this skill filters**; HIGH/CRITICAL go through user Fix/Accept triage, accepted items recorded as AR and waived in later reviews | Dispatcher → reviewers | Findings, `Accepted Review Exceptions` |
-| `dev-loop` | Thin controller repeating implement→test→review(4축)→fix until termination predicates hold; stops at READY_TO_COMMIT. **Heavy — serious or large work only** | Main session (invokes each stage skill's Dispatcher flow) | LOOP file (append-only) |
-| `dev-loop-light` | Same controller with review narrowed to 2 axes and no mutation (**Codex default**) | Main session | LOOP file (append-only) |
-| `dev-loop-noreview` | Same controller with no review and no mutation; the TESTING Fix/Accept gate remains (**Claude / Cursor / Grok Build default**) | Main session | LOOP file (append-only) |
+| `dev-loop` | Thin controller repeating implement→test→[review]→fix until termination predicates hold; stops at READY_TO_COMMIT. Modes: `light` (default, 2 axes, no mutation), `full` (4 axes + mutation), `noreview` (no review, no mutation). Triage, AR approval, and commits stay human-owned | Main session (invokes each stage skill's Dispatcher flow) | LOOP file (append-only) |
 | `commit-code` | Creates a commit; runs a read-only documentation-drift check afterward | Main session | Commit |
 | `request-merge` | Creates/updates a PR (`gh`, personal) or MR (`glab`, work) | Main session | PR/MR |
 
@@ -136,9 +134,9 @@ A skill's `model:` frontmatter applies **only to the current turn** and reverts 
 | Session | Claude | Codex | Cursor | Grok Build | Why |
 | --- | --- | --- | --- | --- | --- |
 | `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.6** (effort xhigh) | **Grok 4.6 / xhigh** | Direction, boundaries, and ACs are irreversible |
-| **every `dev-loop*` run** | **Sonnet** | **Luna / medium** | **Grok 4.6 / medium** | **Grok 4.6 / medium** | Controller reads a transition table and appends to a LOOP file; T1 agents stay pinned |
+| **every `dev-loop` run** | **Sonnet** | **Luna / medium** | **Grok 4.6 / medium** | **Grok 4.6 / medium** | Controller reads a transition table and appends to a LOOP file; T1 agents stay pinned |
 
-This applies to `dev-loop` too, four axes and all — every reviewer's model is pinned on the agent file, so the session model no longer decides any agent's tier.
+This applies to `full` too, four axes and all — every reviewer's model is pinned on the agent file, so the session model no longer decides any agent's tier.
 
 **This part is a habit, not a file.** It takes effect when you start the session, and nothing in the repo enforces it.
 

@@ -11,18 +11,18 @@ Work usage burns quota in **Cursor → Claude → Codex** order (cheapest-approv
 The everyday flow is **plan → human review and approval → run the loop**.
 
 ```
-plan-dev → (plan review and approval) → dev-loop | dev-loop-light | dev-loop-noreview → commit-code → request-merge
+plan-dev → (plan review and approval) → dev-loop → commit-code → request-merge
 ```
 
 1. **`plan-dev`**: Interviews to draft a plan and lock `Acceptance Contract` and `Authority Boundaries`. Artifacts land under `docs/agents/` as PLAN and RESEARCH.
 2. **Review**: A human reads the saved plan and approves it. If the direction is wrong, do not put it in a loop — recapture it with `plan-dev`.
-3. **Pick and run a loop**: Pass the approved plan path and choose a variant. Pick before starting; do not switch mid-run.
+3. **Run the loop**: Pass the approved plan path to `dev-loop`. Mode is `light` (default), `full`, or `noreview`. Frozen at preflight; do not switch mid-run.
 
-| Loop | Review | mutation | Default platform |
+| Mode | Review | mutation | Use for |
 | --- | --- | --- | --- |
-| `dev-loop-noreview` | none | no | **Claude / Cursor / Grok Build** (everyday) |
-| `dev-loop-light` | maintainability + senior-generalist | no | **Codex** (review wanted, four axes overkill) |
-| `dev-loop` | all four axes | yes | Serious or large work, or security-/reliability-sensitive paths |
+| `light` (default) | maintainability + senior-generalist | no | Everyday work that wants a review without four axes |
+| `full` | all four axes | yes | Serious or large work, or security-/reliability-sensitive paths |
+| `noreview` | none | no | Cheapest path; no reviewer reads the change |
 
 See [Development](#development) for the full cycle, gates, and resume rules.
 
@@ -33,10 +33,10 @@ A skill frontmatter `model:` applies **only to that turn**. `plan-dev` and the l
 | Invocation | Claude | Codex | Cursor | Grok Build |
 | --- | --- | --- | --- | --- |
 | `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.6** (effort xhigh) | **Grok 4.6 / xhigh** |
-| `dev-loop` · `dev-loop-light` · `dev-loop-noreview` | **Sonnet** | **Luna / medium** | **Grok 4.6 / medium** | **Grok 4.6 / medium** |
+| `dev-loop` | **Sonnet** | **Luna / medium** | **Grok 4.6 / medium** | **Grok 4.6 / medium** |
 
 - Even a cheap loop session still runs T1 roles (planner, plan-consultant, security/reliability reviewers) at T1 via file pins.
-- `dev-loop-noreview` has no reviewer reading the change, so at READY_TO_COMMIT read the IMPL report's `## TODO Fulfillment` and AC evidence yourself.
+- `noreview` has no reviewer reading the change, so at READY_TO_COMMIT read the IMPL report's `## TODO Fulfillment` and AC evidence yourself.
 - This session rule is not enforced by a file — it is a habit of how you open a session.
 
 ## Layout
@@ -133,26 +133,26 @@ The default development flow can run in two modes: **Loop Engineering**, which h
 ### Loop Engineering
 
 ```
-plan-dev → dev-loop*( implement-dev → test-dev → [review-code] → (fix-dev → test-dev → [review-code])* ) → commit-code → request-merge
+plan-dev → dev-loop( implement-dev → test-dev → [review-code] → (fix-dev → test-dev → [review-code])* ) → commit-code → request-merge
 ```
 
-**Three variants coexist. Pick before starting; do not switch mid-run.**
+**One skill, three modes.** Pass `light` (default), `full`, or `noreview`. Frozen at preflight; do not switch mid-run.
 
-| Skill | Review | mutation | Use for |
+| Mode | Review | mutation | Use for |
 | --- | --- | --- | --- |
-| `dev-loop-noreview` | none | no | **Claude / Cursor / Grok Build default.** Ordinary everyday work |
-| `dev-loop-light` | `maintainability` + `senior-generalist` (2 axes) | no | **Codex default.** Wants a review, but four axes would be overkill |
-| `dev-loop` | all four axes | yes | Genuinely serious or large feature work, or anything touching security-/reliability-sensitive paths |
+| `light` (default) | `maintainability` + `senior-generalist` (2 axes) | no | Everyday work that wants a review without four axes |
+| `full` | all four axes | yes | Genuinely serious or large feature work, or anything touching security-/reliability-sensitive paths |
+| `noreview` | none | no | Cheapest path; no reviewer reads the change |
 
-The two axes `dev-loop-light` drops (`security` and `reliability`) are the ones whose misses are unrecoverable. A change that touches authn/authz, secrets, concurrency, or partial-failure paths belongs in `dev-loop`, not `light`.
+The two axes `light` drops (`security` and `reliability`) are the ones whose misses are unrecoverable. A change that touches authn/authz, secrets, concurrency, or partial-failure paths belongs in `full`, not `light`.
 
-**No variant is gate-free.** All three keep the same two human gates: TESTING's suspected-defect **Fix/Accept** triage, and READY_TO_COMMIT. Dropping review drops the four reviewers, not the human's judgement.
+**No mode is gate-free.** All three keep the same two human gates: TESTING's suspected-defect **Fix/Accept** triage, and READY_TO_COMMIT. Dropping review drops the four reviewers, not the human's judgement.
 
 1. **Plan**: Call `plan-dev` and interview a plan. In the completion-conditions round, lock per-TODO completion conditions and evidence (`Acceptance Contract`) together with authority boundaries and loop budget (`Authority Boundaries`). Approving the plan writes PLAN/RESEARCH files under `docs/agents/`. **The `plan-dev` session model differs by platform** — Claude Opus · Codex Sol/xhigh · Cursor Grok 4.6 xhigh · Grok Build Grok 4.6 xhigh ([Model Tier](#model-tier)).
-2. **Run the loop**: Pick a variant from the table above and call it explicitly with the approved plan path. It then repeats autonomously until the termination predicates hold (TODOs done ∧ AC evidence met ∧ verification green ∧ blocking findings 0). Multi-step plans are invoked per sub-plan (`-STEP-N`). **The loop-run session is also per-platform** — Claude Sonnet · Codex Luna/medium · Cursor Grok 4.6 medium · Grok Build Grok 4.6 medium. T1 agents stay T1 via role pins.
-3. **Mid-run intervention in two cases only**: (a) If a finding appears at review (variants that have it) or the TESTING gate, answer the per-item Fix/Accept question — Accepted items are recorded in `AGENTS.md`'s `Accepted Review Exceptions`, shown as Waived (`Applied Exceptions`) from the next review, and do not count as blocking findings. (b) If it escalates on blocked, budget exhaustion, or no-progress, give instructions — if the problem is direction, re-enter `plan-dev`.
-4. **Confirm and commit**: The loop stops at READY_TO_COMMIT. Check the Implementation Report and LOOP state file, then call `commit-code` and, if needed, `request-merge` yourself — commit, push, and PR/MR creation are outside the loop's authority. **Under `dev-loop-noreview` no reviewer has read the change**, so read the IMPL report's `## TODO Fulfillment` and AC evidence yourself — the instruction drift four-axis review used to catch is now the human's job.
-5. **Interrupt and resume**: If the loop dies mid-run, state remains in `docs/agents/dev/*_LOOP_*.md` (LOOP format is shared across the three variants). Calling the same variant on the same plan continues from the last round.
+2. **Run the loop**: Call `dev-loop` with the approved plan path and a mode from the table above (default `light`). It then repeats autonomously until the termination predicates hold (TODOs done ∧ AC evidence met ∧ verification green ∧ blocking findings 0). Multi-step plans are invoked per sub-plan (`-STEP-N`). **The loop-run session is also per-platform** — Claude Sonnet · Codex Luna/medium · Cursor Grok 4.6 medium · Grok Build Grok 4.6 medium. T1 agents stay T1 via role pins.
+3. **Mid-run intervention in two cases only**: (a) If a finding appears at review (modes that have it) or the TESTING gate, answer the per-item Fix/Accept question — Accepted items are recorded in `AGENTS.md`'s `Accepted Review Exceptions`, shown as Waived (`Applied Exceptions`) from the next review, and do not count as blocking findings. (b) If it escalates on blocked, budget exhaustion, or no-progress, give instructions — if the problem is direction, re-enter `plan-dev`.
+4. **Confirm and commit**: The loop stops at READY_TO_COMMIT. Check the Implementation Report and LOOP state file, then call `commit-code` and, if needed, `request-merge` yourself — commit, push, and PR/MR creation are outside the loop's authority. **Under `noreview` no reviewer has read the change**, so read the IMPL report's `## TODO Fulfillment` and AC evidence yourself — the instruction drift four-axis review used to catch is now the human's job.
+5. **Interrupt and resume**: If the loop dies mid-run, state remains in `docs/agents/dev/*_LOOP_*.md` (LOOP format is shared; `Mode:` is frozen in frontmatter). Calling `dev-loop` on the same plan continues from the last round in that mode.
 
 ### Manual Development
 
@@ -185,9 +185,7 @@ Each skill is managed as a platform variant under `skills/<platform>/` (claude/c
 | `fix-dev` | Root-causes, fixes, and verifies one reviewed/verified defect at a time. Does not commit | Dispatcher → `fixer` Worker | Appends `## Fix` entries to the IMPL report |
 | `test-dev` | Fills unit/e2e gaps and removes mutation LIVED survivors over a git scope (default: diff vs `main`). Production code is unchanged. The caller may put mutation out of scope | Dispatcher → `tester` Worker | Test code (no file artifact) |
 | `review-code` | Dispatches reviewer personas in parallel (4 axes by default; the caller may name a subset) and aggregates findings. Reviewers report everything with a `Confidence` tag; **this skill's aggregation step filters**. HIGH/CRITICAL go through user Fix/Accept triage; Accept is recorded as AR and waived in later reviews | Dispatcher → reviewers | Findings report, `Accepted Review Exceptions` |
-| `dev-loop` | Autonomously repeats implement → test → review (4 axes) → fix on an approved plan (AC · AB required) until termination predicates hold; stops at READY_TO_COMMIT. Triage, AR approval, and commits stay human-owned. **Heavy — serious or large work only** | Main session (invokes each stage skill's Dispatcher flow) | LOOP file (append-only) |
-| `dev-loop-light` | Same controller, review narrowed to 2 axes (`maintainability` · `senior-generalist`) and mutation out of scope. **Codex default** | Main session | LOOP file (append-only) |
-| `dev-loop-noreview` | **Claude / Cursor / Grok Build default.** Same controller, no review and mutation out of scope. The TESTING Fix/Accept gate remains | Main session | LOOP file (append-only) |
+| `dev-loop` | Autonomously repeats implement → test → [review] → fix on an approved plan (AC · AB required) until termination predicates hold; stops at READY_TO_COMMIT. Modes: `light` (default, 2 axes, no mutation), `full` (4 axes + mutation), `noreview` (no review, no mutation). Triage, AR approval, and commits stay human-owned | Main session (invokes each stage skill's Dispatcher flow) | LOOP file (append-only) |
 | `commit-code` | Creates a commit from modified files, then a read-only docs-drift check | Main session | Commit |
 | `request-merge` | Creates/updates a PR/MR with `gh` (personal) / `glab` (work) | Main session | PR/MR |
 
@@ -273,20 +271,20 @@ Claude uses the two fields `model` and `effort`. **Codex** uses TOML `model` + `
 | `security-reviewer` | `opus` / `medium` | Sol / medium | `grok-4.6[effort=high]` | `grok-4.6` / high (plan) | Highest miss cost |
 | `reliability-reviewer` | `opus` / `medium` | Sol / medium | `grok-4.6[effort=high]` | `grok-4.6` / high (plan) | Counterfactual simulation |
 | `implementer` | **`opus` / `medium`** | **Terra / high** | `grok-4.6[effort=medium]` | `grok-4.6` / **medium** | Long context; T1 model + T2 effort |
-| `tester` | `sonnet` / `medium` | Luna / high | `grok-4.6[effort=medium]` | `grok-4.6` / medium | Machine-checkable goal; quality gate for Cursor/Grok noreview |
+| `tester` | `sonnet` / `medium` | Luna / high | `grok-4.6[effort=medium]` | `grok-4.6` / medium | Machine-checkable goal; quality gate alongside `light`'s two T2 reviewers |
 | `fixer` | **`opus` / `medium`** | **Terra / high** | **`grok-4.6[effort=medium]`** | `grok-4.6` / medium | A finding is a spec; same tier as `implementer` on every platform |
 | `maintainability-reviewer` | `sonnet` / `medium` | Luna / high | `grok-4.6[effort=medium]` | `grok-4.6` / medium (plan) | Pattern matching |
 | `senior-generalist-reviewer` | `sonnet` / `medium` | Luna / high | `grok-4.6[effort=medium]` | `grok-4.6` / medium (plan) | Catch-all |
 
 **Two effort rules.** Do not buy the top of the ladder — even raising default effort to `max` is only a few points across tiers, so `xhigh` is reserved for irreversible decisions. And when you drop the model, do not drop effort with it: that is why Codex T2 rows put `high` on Luna/Terra (cheap model, high effort).
 
-**`fixer` follows `implementer` on every platform, not T2 bulk.** Writing a fix has the same input shape as writing a change (brief · report · surrounding code), and cheaper models gave the price advantage back in extra turns. So Codex uses Terra, Cursor uses Grok 4.6, Claude uses Opus. Cursor and Grok Build `tester` is also 4.6 medium — both default loops are noreview, so tester is the only machine quality gate, and Composer often ignored instructions. `maintainability-reviewer` and `senior-generalist-reviewer` are 4.6 medium too — `grok-4.5` has no price advantage.
+**`fixer` follows `implementer` on every platform, not T2 bulk.** Writing a fix has the same input shape as writing a change (brief · report · surrounding code), and cheaper models gave the price advantage back in extra turns. So Codex uses Terra, Cursor uses Grok 4.6, Claude uses Opus. Cursor and Grok Build `tester` is also 4.6 medium — default loop mode is `light`, so tester sits next to the two T2 reviewers, and Composer often ignored instructions. `maintainability-reviewer` and `senior-generalist-reviewer` are 4.6 medium too — `grok-4.5` has no price advantage.
 
 **Claude's two write roles run a T1 model at T2 effort.** `implementer` and `fixer` are `opus` / `medium`, not `sonnet` — re-running this harness, Sonnet spent extra turns on the same work and gave back (or more than) the 1.67× price gap, rereading the plan and repo slice on every one of those turns. The tier is still T2; effort is what expresses that. The rest of T2 (`tester` · `maintainability-reviewer` · `senior-generalist-reviewer`) stays on `sonnet` because output is bounded and re-verified.
 
-**Codex-only.** Do not use `model_reasoning_effort = "ultra"` — automatic task delegation collides with this harness's dispatch. Do not put Luna on `implementer` or `fixer` (long-context cliff). Codex's default loop is **`dev-loop-light`** (not `dev-loop-noreview`) — Luna makes the last two review axes almost free, so light already captures ~95% of noreview's savings.
+**Codex-only.** Do not use `model_reasoning_effort = "ultra"` — automatic task delegation collides with this harness's dispatch. Do not put Luna on `implementer` or `fixer` (long-context cliff). The shared default loop mode is **`light`** — Luna makes the last two review axes almost free, so `light` already captures ~95% of `noreview`'s savings.
 
-**Grok Build-only.** The catalog in use is `grok-4.6` only (SuperGrok subscription quota). `grok-4.5` is unused. 4.6 effort is `low|medium|high|xhigh`. Subagent depth is 1, so design-bearing work has the Dispatcher call `plan-consultant`. Default loop is **`dev-loop-noreview`**. Turn off `[compat.claude]` and `[compat.cursor]`.
+**Grok Build-only.** The catalog in use is `grok-4.6` only (SuperGrok subscription quota). `grok-4.5` is unused. 4.6 effort is `low|medium|high|xhigh`. Subagent depth is 1, so design-bearing work has the Dispatcher call `plan-consultant`. Default loop mode is **`light`**. Turn off `[compat.claude]` and `[compat.cursor]`.
 
 **Cursor's effort values are not Claude's.** Grok 4.6 is `low/medium/high/xhigh` (default `high`). T1 reviewers use `high` — one step below reserved `xhigh`, the same shape as Claude/Codex T1 reviewers. Cursor T2 matches Grok Build: every role `grok-4.6`, T2 is `[effort=medium]`. Composer 2.5 and `grok-4.5` are unused.
 
@@ -301,9 +299,9 @@ A skill frontmatter `model:` applies **only to that turn** and reverts to the se
 | Session | Claude | Codex | Cursor | Grok Build | Why |
 | --- | --- | --- | --- | --- | --- |
 | `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.6** xhigh | **Grok 4.6 / xhigh** | Direction, boundaries, and ACs are irreversible |
-| **every `dev-loop*` run** | **Sonnet** | **Luna / medium** | **Grok 4.6 / medium** | **Grok 4.6 / medium** | Controller = transition table + LOOP append. T1 stays on role pins |
+| **every `dev-loop` run** | **Sonnet** | **Luna / medium** | **Grok 4.6 / medium** | **Grok 4.6 / medium** | Controller = transition table + LOOP append. T1 stays on role pins |
 
-This applies to four-axis `dev-loop` too — every reviewer's model is pinned on the agent file, so the session model no longer decides any agent's tier.
+This applies to `full` too — every reviewer's model is pinned on the agent file, so the session model no longer decides any agent's tier.
 
 **This part is a habit, not a file.** It takes effect when you start the session, and nothing in the repo enforces it.
 

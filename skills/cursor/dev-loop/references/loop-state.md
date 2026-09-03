@@ -16,15 +16,16 @@ Timestamp: {plan timestamp — shared stem, not a fresh one}
 Title: {title}
 Plan: {plan filename}
 Report: {IMPL filename, or "none" until implement-dev writes it}
+Mode: light | full | noreview
 Started: {YYYY-MM-DD HH:MM}
 ---
 ```
 
-Update `Report:` exactly once, when the IMPL report appears. Everything else in frontmatter is immutable after creation.
+`Mode:` is the run's frozen mode, written at creation. Update `Report:` exactly once, when the IMPL report appears. Everything else in frontmatter is immutable after creation.
 
 ## 3. Round log (append-only)
 
-One `## Round N` section per round. **Round 0** is the initial IMPLEMENTING → TESTING → REVIEWING pass; each remediation cycle (FIXING → TESTING(reduced) → REVIEWING) is the next round number. Prior round sections are **never edited**; the current round's section gains one line per stage return, appended immediately after that stage returns (checkpoint before transition).
+One `## Round N` section per round. **Round 0** is the initial IMPLEMENTING → TESTING → REVIEWING pass (`light` / `full`) or IMPLEMENTING → TESTING (`noreview`); each remediation cycle is the next round number. Prior round sections are **never edited**; the current round's section gains one line per stage return, appended immediately after that stage returns (checkpoint before transition). `noreview` never logs a `review-code` stage line.
 
 ```markdown
 ## Round 0 — started {YYYY-MM-DD HH:MM}
@@ -53,8 +54,11 @@ Fields (append only lines that have content, except the required ones which writ
 
 ## 4. Final entry
 
-When the loop ends — READY_TO_COMMIT or an abort — append a `## Result` section: final state, the 9-item termination-predicate summary (`①…⑨` each `✓`/`✗`), Markdown links to the plan and IMPL report, and for aborts the escalation reason. This is the section a resumed session or the human reads first.
+When the loop ends — READY_TO_COMMIT or an abort — append a `## Result` section: final state, the Mode that ran, the 9-item termination-predicate summary (`①…⑨` each `✓`/`✗`), Markdown links to the plan and IMPL report, and for aborts the escalation reason. This is the section a resumed session or the human reads first.
 
 ## 5. Resume
 
-On invocation with an existing LOOP file: **trust the file over memory**. Continue from the last round's `Next`. Never rewrite history — corrections happen by appending. If the working tree contradicts what the rounds imply (e.g. expected changes missing), stop and surface the mismatch instead of guessing.
+On invocation with an existing LOOP file: **trust the file over memory**. Continue from the last round's `Next` in the file's `Mode:`. Never rewrite history — corrections happen by appending. If the working tree contradicts what the rounds imply (e.g. expected changes missing), stop and surface the mismatch instead of guessing.
+
+- File has `Mode:` and the new utterance names a different mode → refuse and ask; do not switch.
+- File has no `Mode:` (legacy) → ask which mode this resume is; do not default to `light`.

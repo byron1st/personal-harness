@@ -11,18 +11,18 @@
 일상 흐름은 **계획 → 사람 검토·승인 → 루프 실행** 이다.
 
 ```
-plan-dev → (플랜 검토·승인) → dev-loop | dev-loop-light | dev-loop-noreview → commit-code → request-merge
+plan-dev → (플랜 검토·승인) → dev-loop → commit-code → request-merge
 ```
 
 1. **`plan-dev`**: 인터뷰로 플랜을 세우고 `Acceptance Contract`·`Authority Boundaries`를 잠근다. 산출물은 `docs/agents/` 아래 PLAN·RESEARCH.
 2. **검토**: 저장된 플랜을 사람이 읽고 승인한다. 방향이 틀리면 루프에 넣지 말고 `plan-dev`로 다시 잡는다.
-3. **루프 선택·실행**: 승인된 플랜 경로를 넘겨 변형을 고른다. 시작 전에 고르고 도중에 바꾸지 않는다.
+3. **루프 실행**: 승인된 플랜 경로를 `dev-loop`에 넘긴다. 모드는 `light`(기본값), `full`, `noreview`. preflight에서 고정되며 도중에 바꾸지 않는다.
 
-| 루프 | 리뷰 | mutation | 기본으로 쓰는 플랫폼 |
+| 모드 | 리뷰 | mutation | 용도 |
 | --- | --- | --- | --- |
-| `dev-loop-noreview` | 없음 | 안 함 | **Claude / Cursor / Grok Build** (일상) |
-| `dev-loop-light` | maintainability + senior-generalist | 안 함 | **Codex** (리뷰는 필요, 4축은 과한 때) |
-| `dev-loop` | 4축 전부 | 함 | 심각·대형 작업, 또는 보안·신뢰성 민감 경로 |
+| `light` (기본값) | maintainability + senior-generalist | 안 함 | 리뷰는 필요하지만 4축은 과한 일상 작업 |
+| `full` | 4축 전부 | 함 | 심각·대형 작업, 또는 보안·신뢰성 민감 경로 |
+| `noreview` | 없음 | 안 함 | 가장 싼 경로; 리뷰어가 변경을 읽지 않음 |
 
 상세 사이클·게이트·중단 재개는 [Development](#development)를 본다.
 
@@ -33,10 +33,10 @@ plan-dev → (플랜 검토·승인) → dev-loop | dev-loop-light | dev-loop-no
 | 호출 | Claude | Codex | Cursor | Grok Build |
 | --- | --- | --- | --- | --- |
 | `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.6** (effort xhigh) | **Grok 4.6 / xhigh** |
-| `dev-loop` · `dev-loop-light` · `dev-loop-noreview` | **Sonnet** | **Luna / medium** | **Grok 4.6 / medium** | **Grok 4.6 / medium** |
+| `dev-loop` | **Sonnet** | **Luna / medium** | **Grok 4.6 / medium** | **Grok 4.6 / medium** |
 
 - 루프 세션을 싸게 두어도 T1 역할(planner·plan-consultant·security/reliability 리뷰어)은 파일 핀으로 T1에서 돈다.
-- `dev-loop-noreview`는 리뷰어가 변경을 읽지 않으므로, READY_TO_COMMIT에서 IMPL 리포트의 `## TODO Fulfillment`와 AC 증거를 직접 확인한다.
+- `noreview`는 리뷰어가 변경을 읽지 않으므로, READY_TO_COMMIT에서 IMPL 리포트의 `## TODO Fulfillment`와 AC 증거를 직접 확인한다.
 - 이 세션 규칙은 파일로 강제되지 않는다 — 세션을 여는 습관이다.
 
 ## 폴더 구조
@@ -133,26 +133,26 @@ Skills 실행에 필요한 환경변수 목록. 각 Agent 의 환경변수 설�
 ### Loop Engineering
 
 ```
-plan-dev → dev-loop*( implement-dev → test-dev → [review-code] → (fix-dev → test-dev → [review-code])* ) → commit-code → request-merge
+plan-dev → dev-loop( implement-dev → test-dev → [review-code] → (fix-dev → test-dev → [review-code])* ) → commit-code → request-merge
 ```
 
-**루프는 세 변형이 병존한다. 시작 전에 고르며, 도중에 바꾸지 않는다.**
+**스킬은 하나, 모드는 셋.** `light`(기본값), `full`, `noreview`. preflight에서 고정되며 도중에 바꾸지 않는다.
 
-| 스킬 | 리뷰 | mutation | 용도 |
+| 모드 | 리뷰 | mutation | 용도 |
 | --- | --- | --- | --- |
-| `dev-loop-noreview` | 없음 | 안 함 | **Claude / Cursor / Grok Build 기본값.** 대부분의 일상 작업 |
-| `dev-loop-light` | `maintainability` + `senior-generalist` 2축 | 안 함 | **Codex 기본값.** 리뷰는 필요하지만 4축까지는 과한 작업 |
-| `dev-loop` | 4축 전부 | 함 | 진짜 심각하거나 거대한 기능 개발, 또는 보안·신뢰성 민감 경로를 건드리는 변경 |
+| `light` (기본값) | `maintainability` + `senior-generalist` 2축 | 안 함 | 리뷰는 필요하지만 4축까지는 과한 일상 작업 |
+| `full` | 4축 전부 | 함 | 진짜 심각하거나 거대한 기능 개발, 또는 보안·신뢰성 민감 경로를 건드리는 변경 |
+| `noreview` | 없음 | 안 함 | 가장 싼 경로; 리뷰어가 변경을 읽지 않음 |
 
-`dev-loop-light`이 버리는 두 축(`security`·`reliability`)은 miss 비용이 회복 불가능한 쪽이다. authn/authz·비밀·동시성·부분 실패 경로를 건드리면 `light`이 아니라 `dev-loop`다.
+`light`이 버리는 두 축(`security`·`reliability`)은 miss 비용이 회복 불가능한 쪽이다. authn/authz·비밀·동시성·부분 실패 경로를 건드리면 `light`이 아니라 `full`이다.
 
-**어느 변형도 게이트가 없지는 않다.** 셋 다 사람 게이트 2개(TESTING의 suspected-defect **Fix/Accept** 분류, READY_TO_COMMIT)를 그대로 갖는다. 리뷰를 끄면 사라지는 것은 리뷰어 4종이지 사람의 판단이 아니다.
+**어느 모드도 게이트가 없지는 않다.** 셋 다 사람 게이트 2개(TESTING의 suspected-defect **Fix/Accept** 분류, READY_TO_COMMIT)를 그대로 갖는다. 리뷰를 끄면 사라지는 것은 리뷰어 4종이지 사람의 판단이 아니다.
 
 1. **계획 수립**: `plan-dev` 스킬을 호출해 인터뷰로 계획을 수립한다. 완료 조건 라운드에서 TODO별 완료 조건·증거(`Acceptance Contract`)와 권한 경계·루프 예산(`Authority Boundaries`)을 함께 확정하고, 계획을 승인하면 PLAN/RESEARCH 파일이 `docs/agents/` 아래에 저장된다. **`plan-dev` 세션 모델은 플랫폼별로 다르다** — Claude Opus · Codex Sol/xhigh · Cursor Grok 4.6 xhigh · Grok Build Grok 4.6 xhigh([Model Tier](#model-tier)).
-2. **루프 실행**: 위 표에서 변형을 고른 뒤 승인된 플랜 경로를 지정해 명시적으로 호출한다. 이후 종료 술어(TODO 완료 ∧ AC 증거 충족 ∧ 검증 green ∧ 차단 finding 0)를 만족할 때까지 자율 반복된다. 멀티스텝 플랜은 sub-plan(`-STEP-N`) 단위로 호출한다. **루프 실행 세션도 플랫폼별** — Claude Sonnet · Codex Luna/medium · Cursor Grok 4.6 medium · Grok Build Grok 4.6 medium. T1 에이전트는 역할 핀으로 T1에서 돈다.
-3. **중간 개입은 두 경우뿐**: (a) 리뷰(있는 변형만) 또는 TESTING 게이트에서 finding이 나오면 항목별 Fix/Accept 분류 질문에 답한다 — Accept 항목은 `AGENTS.md`의 `Accepted Review Exceptions`에 기록되어 다음 리뷰부터 Waived(`Applied Exceptions`)로 강등 표시되고 차단 finding으로 계산되지 않는다. (b) blocked·예산 소진·no-progress로 에스컬레이션되면 지시를 내린다 — 방향 문제면 `plan-dev`로 재진입한다.
-4. **완료 확인과 커밋**: 루프는 READY_TO_COMMIT에서 멈춘다. Implementation Report와 LOOP 상태 파일을 확인한 뒤 `commit-code`, 필요 시 `request-merge`를 직접 호출한다 — 커밋·푸시·PR/MR 생성은 루프 권한 밖이다. **`dev-loop-noreview`에서는 리뷰어가 아무도 변경을 읽지 않았으므로**, IMPL 리포트의 `## TODO Fulfillment`와 AC 증거를 직접 본다 — 4축 리뷰가 잡아주던 instruction drift가 여기서는 사람 몫이다.
-5. **중단·재개**: 루프가 중간에 끊겨도 상태는 `docs/agents/dev/*_LOOP_*.md`에 남으므로(LOOP 포맷은 세 변형 공통), 같은 플랜으로 같은 변형을 다시 호출하면 마지막 라운드에서 이어서 진행한다.
+2. **루프 실행**: 위 표의 모드로 `dev-loop`를 호출한다(기본값 `light`). 이후 종료 술어(TODO 완료 ∧ AC 증거 충족 ∧ 검증 green ∧ 차단 finding 0)를 만족할 때까지 자율 반복된다. 멀티스텝 플랜은 sub-plan(`-STEP-N`) 단위로 호출한다. **루프 실행 세션도 플랫폼별** — Claude Sonnet · Codex Luna/medium · Cursor Grok 4.6 medium · Grok Build Grok 4.6 medium. T1 에이전트는 역할 핀으로 T1에서 돈다.
+3. **중간 개입은 두 경우뿐**: (a) 리뷰(있는 모드만) 또는 TESTING 게이트에서 finding이 나오면 항목별 Fix/Accept 분류 질문에 답한다 — Accept 항목은 `AGENTS.md`의 `Accepted Review Exceptions`에 기록되어 다음 리뷰부터 Waived(`Applied Exceptions`)로 강등 표시되고 차단 finding으로 계산되지 않는다. (b) blocked·예산 소진·no-progress로 에스컬레이션되면 지시를 내린다 — 방향 문제면 `plan-dev`로 재진입한다.
+4. **완료 확인과 커밋**: 루프는 READY_TO_COMMIT에서 멈춘다. Implementation Report와 LOOP 상태 파일을 확인한 뒤 `commit-code`, 필요 시 `request-merge`를 직접 호출한다 — 커밋·푸시·PR/MR 생성은 루프 권한 밖이다. **`noreview`에서는 리뷰어가 아무도 변경을 읽지 않았으므로**, IMPL 리포트의 `## TODO Fulfillment`와 AC 증거를 직접 본다 — 4축 리뷰가 잡아주던 instruction drift가 여기서는 사람 몫이다.
+5. **중단·재개**: 루프가 중간에 끊겨도 상태는 `docs/agents/dev/*_LOOP_*.md`에 남으므로(LOOP 포맷은 공유, `Mode:`는 프론트매터에 고정), 같은 플랜으로 `dev-loop`를 다시 호출하면 그 모드의 마지막 라운드에서 이어서 진행한다.
 
 ### Manual Development
 
@@ -185,9 +185,7 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 | `fix-dev` | 리뷰·검증에서 발견된 결함을 한 건씩 원인 분석·수정·검증. 커밋하지 않음 | Dispatcher → `fixer` Worker | IMPL 리포트에 `## Fix` 누적 |
 | `test-dev` | git scope(기본: `main` 대비 diff) 기준으로 유닛/E2E 갭 채움과 mutation LIVED 제거. production 코드는 불변. 호출자가 mutation을 범위 밖으로 지정할 수 있다 | Dispatcher → `tester` Worker | 테스트 코드 (파일 아티팩트 없음) |
 | `review-code` | 리뷰 페르소나 병렬 dispatch(기본 4축, 호출자가 부분집합 지정 가능) 후 finding 종합. 리뷰어는 `Confidence`를 달아 전부 보고하고 **필터링은 이 스킬의 집계 단계**가 한다. HIGH/CRITICAL은 사용자 Fix/Accept 트리아지, Accept는 AR로 기록해 이후 리뷰에서 Waived 강등 | Dispatcher → reviewers | finding 리포트, `Accepted Review Exceptions` |
-| `dev-loop` | 승인된 플랜(AC·AB 필수)으로 구현→테스트→리뷰(4축)→fix 사이클을 종료 술어 충족까지 자율 반복, READY_TO_COMMIT에서 정지. 트리아지·AR 승인·커밋은 사람 몫. **무겁다 — 심각하거나 거대한 작업 전용** | 메인 세션 (각 단계 스킬의 Dispatcher 흐름 호출) | LOOP 파일 (append-only) |
-| `dev-loop-light` | 같은 컨트롤러, 리뷰 2축(`maintainability`·`senior-generalist`) + mutation 제외. **Codex 기본값** | 메인 세션 | LOOP 파일 (append-only) |
-| `dev-loop-noreview` | **Claude / Cursor / Grok Build 기본값.** 같은 컨트롤러, 리뷰 없음 + mutation 제외. TESTING의 Fix/Accept 게이트는 그대로 남는다 | 메인 세션 | LOOP 파일 (append-only) |
+| `dev-loop` | 승인된 플랜(AC·AB 필수)으로 구현→테스트→[리뷰]→fix 사이클을 종료 술어 충족까지 자율 반복, READY_TO_COMMIT에서 정지. 모드: `light`(기본값, 2축, mutation 제외), `full`(4축 + mutation), `noreview`(리뷰 없음, mutation 제외). 트리아지·AR 승인·커밋은 사람 몫 | 메인 세션 (각 단계 스킬의 Dispatcher 흐름 호출) | LOOP 파일 (append-only) |
 | `commit-code` | 수정된 파일 기반 커밋 생성 + 커밋 후 문서 드리프트 검사(읽기 전용 보고) | 메인 세션 | 커밋 |
 | `request-merge` | `gh`(personal) / `glab`(work)로 PR/MR 생성·업데이트 | 메인 세션 | PR/MR |
 
@@ -280,13 +278,13 @@ Claude는 `model`·`effort` 두 필드를 쓴다. **Codex**는 TOML `model` + `m
 
 **effort 규칙 둘.** 최상단은 사지 않는다 — 기본 effort에서 `max`까지 올려도 티어 전반에서 몇 점 차이라, `xhigh`는 되돌릴 수 없는 결정에만 쓴다. 그리고 모델을 내릴 때 effort까지 같이 내리지 않는다: Codex T2 행이 Luna/Terra에 `high`를 쓰는 이유가 그것이다(싼 모델, 높은 effort).
 
-**`fixer`는 전 플랫폼에서 T2 bulk가 아니라 `implementer`를 따라간다.** 수정을 쓰는 일은 변경을 쓰는 일과 입력 모양이 같다(브리프 · 리포트 · 주변 코드), 그리고 싼 모델은 그 가격 이점을 턴 수로 반납했다. 그래서 Codex는 Terra, Cursor는 Grok 4.6, Claude는 Opus에 둔다. Cursor와 Grok Build의 `tester`도 4.6 medium이다 — 둘 다 기본 루프가 noreview라 tester가 유일한 기계 품질 게이트이고, Composer는 지시를 자주 무시했다. `maintainability-reviewer`와 `senior-generalist-reviewer`도 4.6 medium이다 — `grok-4.5`는 가격 메리트가 없다.
+**`fixer`는 전 플랫폼에서 T2 bulk가 아니라 `implementer`를 따라간다.** 수정을 쓰는 일은 변경을 쓰는 일과 입력 모양이 같다(브리프 · 리포트 · 주변 코드), 그리고 싼 모델은 그 가격 이점을 턴 수로 반납했다. 그래서 Codex는 Terra, Cursor는 Grok 4.6, Claude는 Opus에 둔다. Cursor와 Grok Build의 `tester`도 4.6 medium이다 — 기본 루프 모드는 `light`이라 tester가 T2 리뷰어 2종 옆에 있고, Composer는 지시를 자주 무시했다. `maintainability-reviewer`와 `senior-generalist-reviewer`도 4.6 medium이다 — `grok-4.5`는 가격 메리트가 없다.
 
 **Claude의 쓰기 역할 둘은 T1 모델을 T2 effort로 돌린다.** `implementer`·`fixer`는 `sonnet`이 아니라 `opus` / `medium`이다 — 이 하네스에서 재보니 Sonnet은 같은 작업에 턴을 더 써서 1.67배 가격 차를 그대로(그 이상) 반납했고, 그 턴마다 플랜과 repo slice를 다시 읽었다. 티어는 여전히 T2이고 그걸 표현하는 건 effort다. T2의 나머지(`tester`·`maintainability-reviewer`·`senior-generalist-reviewer`)는 출력이 한정되고 재검증되므로 `sonnet`에 남는다.
 
-**Codex 전용.** `model_reasoning_effort = "ultra"`는 쓰지 않는다 — 자동 태스크 위임이 이 하네스의 dispatch와 충돌한다. `implementer`·`fixer`에 Luna를 두지 않는다(긴 컨텍스트 절벽). Codex 기본 루프는 **`dev-loop-light`**(not `dev-loop-noreview`)다 — Luna 덕분에 마지막 2축 리뷰 비용이 거의 않아서, light가 이미 noreview 절감분의 ~95%를 담는다.
+**Codex 전용.** `model_reasoning_effort = "ultra"`는 쓰지 않는다 — 자동 태스크 위임이 이 하네스의 dispatch와 충돌한다. `implementer`·`fixer`에 Luna를 두지 않는다(긴 컨텍스트 절벽). 공유 기본 루프 모드는 **`light`**다 — Luna 덕분에 마지막 2축 리뷰 비용이 거의 없어서, `light`가 이미 `noreview` 절감분의 ~95%를 담는다.
 
-**Grok Build 전용.** 쓰는 카탈로그는 `grok-4.6`만(SuperGrok 구독 쿼터). `grok-4.5`는 쓰지 않는다. 4.6 effort는 `low|medium|high|xhigh`. 서브에이전트 깊이 1이라 design-bearing은 Dispatcher가 `plan-consultant`를 부른다. 기본 루프는 **`dev-loop-noreview`**. `[compat.claude]`·`[compat.cursor]`를 끈다.
+**Grok Build 전용.** 쓰는 카탈로그는 `grok-4.6`만(SuperGrok 구독 쿼터). `grok-4.5`는 쓰지 않는다. 4.6 effort는 `low|medium|high|xhigh`. 서브에이전트 깊이 1이라 design-bearing은 Dispatcher가 `plan-consultant`를 부른다. 기본 루프 모드는 **`light`**. `[compat.claude]`·`[compat.cursor]`를 끈다.
 
 **Cursor의 effort 값은 Claude 값이 아니다.** Grok 4.6은 `low/medium/high/xhigh`(기본 `high`)다. T1 리뷰어는 `high` — 예약된 `xhigh` 바로 아래이며 Claude/Codex T1 리뷰어와 같은 모양이다. Cursor T2는 Grok Build와 같다: 전 역할 `grok-4.6`, T2는 `[effort=medium]`. Composer 2.5와 `grok-4.5`는 쓰지 않는다.
 
@@ -301,9 +299,9 @@ Claude는 `model`·`effort` 두 필드를 쓴다. **Codex**는 TOML `model` + `m
 | 세션 | Claude | Codex | Cursor | Grok Build | 근거 |
 | --- | --- | --- | --- | --- | --- |
 | `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.6** xhigh | **Grok 4.6 / xhigh** | 방향·경계·AC는 되돌릴 수 없음 |
-| **모든 `dev-loop*` 실행** | **Sonnet** | **Luna / medium** | **Grok 4.6 / medium** | **Grok 4.6 / medium** | 컨트롤러 = 전이표 + LOOP append. T1은 역할 핀 |
+| **모든 `dev-loop` 실행** | **Sonnet** | **Luna / medium** | **Grok 4.6 / medium** | **Grok 4.6 / medium** | 컨트롤러 = 전이표 + LOOP append. T1은 역할 핀 |
 
-4축을 도는 `dev-loop`도 예외가 아니다 — 리뷰어 4종의 모델이 전부 파일에 명시돼 있으므로 세션 모델이 어떤 에이전트의 티어도 바꾸지 못한다.
+`full`(4축)도 예외가 아니다 — 리뷰어 4종의 모델이 전부 파일에 명시돼 있으므로 세션 모델이 어떤 에이전트의 티어도 바꾸지 못한다.
 
 **이 항목만 파일이 아니라 습관이다.** 세션을 시작하는 순간 발효되고, 레포 안에 이를 강제하는 장치는 없다.
 

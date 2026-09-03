@@ -99,7 +99,7 @@ When the Worker returns `failed`, the Dispatcher re-dispatches **exactly once** 
 
 **Always report that it happened.** The Dispatcher's chat summary (③) carries one line: that a retry fired, and whether it succeeded. On Grok Build the model does not change — the line still matters so failures are not silent.
 
-A loop controller never sees the first `failed`: the retry completes inside the Dispatcher, so `dev-loop*` observes only the final status. The loop's own rule — it never retries a `failed` stage — stays true, and no loop file changes.
+A loop controller never sees the first `failed`: the retry completes inside the Dispatcher, so `dev-loop` observes only the final status. The loop's own rule — it never retries a `failed` stage — stays true, and no loop file changes.
 
 ## E. Delegation failure
 

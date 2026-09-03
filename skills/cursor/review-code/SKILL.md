@@ -18,7 +18,7 @@ Four review axes. Dispatch one Cursor custom subagent per axis:
 
 Use the same value for `subagent_type` as the reviewer name. Each persona explicitly defers what the others cover, so duplicates should be rare. When they do overlap on the same `Location`, you deduplicate during aggregation.
 
-**Axis subset**: the caller may name a subset of these axes, and the default is **all four**. `dev-loop-light` names `maintainability-reviewer` + `senior-generalist-reviewer`; a user may ask for any subset directly. Dispatch exactly the named axes in parallel and run the rest of this skill unchanged — aggregation, triage, the AR registry, and Stage Status do not care how many axes reported. State which axes ran at the top of the final output: a clean verdict from a subset is a statement about what was looked at, not about the change, and the axes that did not run are exactly the ones nobody checked.
+**Axis subset**: the caller may name a subset of these axes, and the default is **all four**. `dev-loop` mode `light` names `maintainability-reviewer` + `senior-generalist-reviewer`; a user may ask for any subset directly. Dispatch exactly the named axes in parallel and run the rest of this skill unchanged — aggregation, triage, the AR registry, and Stage Status do not care how many axes reported. State which axes ran at the top of the final output: a clean verdict from a subset is a statement about what was looked at, not about the change, and the axes that did not run are exactly the ones nobody checked.
 
 ## Scope of the Review
 
@@ -87,7 +87,7 @@ When at least one non-waived `[CRITICAL]` / `[HIGH]` finding remains after aggre
 
 **Invariant — human-only acceptance**: an AR entry is written only on the user's explicit Accept answer in triage. The skill, its reviewers, and any loop controller never infer acceptance, never self-record an entry, and never accept on the user's behalf. Waiving instead of fixing is a human decision, in the same class as "never weaken tests to make them pass".
 
-**"Triage" here means both gates.** This registry is shared: `review-code`'s own triage of `REVIEW-NNN` findings, and the loops' TESTING gate where the user classifies `test-dev`'s suspected defects (`TEST-NNN`) as Fix or Accept. The mechanism is identical in both — only the id space and the severity value differ. All three loop variants use it.
+**"Triage" here means both gates.** This registry is shared: `review-code`'s own triage of `REVIEW-NNN` findings, and the loops' TESTING gate where the user classifies `test-dev`'s suspected defects (`TEST-NNN`) as Fix or Accept. The mechanism is identical in both — only the id space and the severity value differ. All three loop modes use it.
 
 **Location (single copy)**: record the entry in the instruction file closest to the affected code — a nested `AGENTS.md` in the touched directory tree first, else the repo-root `AGENTS.md`, else `CLAUDE.md`. One entry lives in exactly one file; never duplicate it. When neither `AGENTS.md` nor `CLAUDE.md` exists in the repo, do not create a file silently — confirm the location with the user (default suggestion: create a root `AGENTS.md`).
 

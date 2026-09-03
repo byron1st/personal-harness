@@ -23,7 +23,7 @@
 - **리뷰 섹션명**: `## Accepted Review Exceptions`, `## Applied Exceptions`.
 - **상태 어휘**: `pass | blocked | failed | needs-confirmation | needs-decision | changes-required` (+ `pass-with-suspected-defects`) + Grok 전용 **`needs-design-decision`**(depth-1 consultant 에스컬레이션).
 - **ID 규칙**: `AC-N`, `AR-NNN`, `TEST-NNN`, `REVIEW-NNN`.
-- **스킬·에이전트 이름**: 기존 목록 + `plan-consultant` · `tester` · `fixer` · `dev-loop`(+`-light`/`-noreview`).
+- **스킬·에이전트 이름**: 기존 목록 + `plan-consultant` · `tester` · `fixer` · `dev-loop` (modes `light`/`full`/`noreview`).
 - **파일명 규칙** · **AR 불변식** · **루프 상태 기계**: 플랫폼 무관 — 그대로.
 
 ## Skill migration
@@ -35,7 +35,7 @@
 Grok 스킬은 `name` · `description` · (선택) `model` · `effort` · `allowed-tools` · `disable-model-invocation` 등을 받는다.
 
 - Claude의 `allowed-tools`에 있던 Claude 툴 이름은 **삭제하거나** Grok 툴명으로 고친다. 1차 변형은 **name+description만 유지**해도 된다.
-- 메인 세션 스킬의 `model`/`effort`는 멀티턴에서 세션 습관이 권위이므로 **보통 비운다** (`plan-dev` high · `dev-loop*` medium은 문서 습관).
+- 메인 세션 스킬의 `model`/`effort`는 멀티턴에서 세션 습관이 권위이므로 **보통 비운다** (`plan-dev` high · `dev-loop` medium은 문서 습관).
 
 ### Tool names
 
@@ -68,7 +68,7 @@ Grok은 **탑레벨만** 서브에이전트를 낳는다. `implementer → plan-
 
 ### Default loop
 
-**`dev-loop-noreview`** (Claude/Cursor와 같음). Codex의 light 기본을 복사하지 않는다.
+**`dev-loop` mode `light`** (전 플랫폼 공통 기본값). `full`과 `noreview`는 같은 스킬의 모드다.
 
 ## Sub-agent migration
 
@@ -134,7 +134,7 @@ agents_md: true
 | Session | Model / effort |
 | --- | --- |
 | `plan-dev` | `grok-4.6` / **xhigh** |
-| every `dev-loop*` | `grok-4.6` / **medium** |
+| every `dev-loop` | `grok-4.6` / **medium** |
 
 ## Checklist (verifier)
 
@@ -142,7 +142,7 @@ agents_md: true
 - [ ] 9 agents under `agents/grok/` with explicit `model` + `effort`, no `inherit` (all `grok-4.6`; T1/T2 is effort)
 - [ ] read-only six use `permission_mode: plan`
 - [ ] implementer has Dispatcher escalation, not nested consultant
-- [ ] 17 skills; scripts path `$HOME/.grok/scripts`
+- [ ] skills tree matches Claude (one `dev-loop`, modes in SKILL.md); scripts path `$HOME/.grok/scripts`
 - [ ] no `ExitPlanMode` / Claude Agent tool leftovers
 - [ ] hooks harness.json + five scripts; SessionStart does not rely on stdout inject
 - [ ] `~/.grok/rules/AGENTS.md` and `~/.grok/scripts/*` install

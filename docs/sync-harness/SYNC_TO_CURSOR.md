@@ -8,7 +8,7 @@
 
 ## Install prerequisite (설치 전제)
 
-**Cursor의 `~/.claude/`·`~/.codex/` 호환 경로를 설정에서 꺼야 한다.** Cursor는 `~/.cursor/agents/`·`~/.cursor/skills/`뿐 아니라 `~/.claude/agents/`·`~/.claude/skills/`도 사용자 스코프로 읽는다. 두 플랫폼을 같은 머신에 설치하면 Cursor에게 같은 이름의 에이전트 9개·스킬 17개가 두 벌씩 보인다.
+**Cursor의 `~/.claude/`·`~/.codex/` 호환 경로를 설정에서 꺼야 한다.** Cursor는 `~/.cursor/agents/`·`~/.cursor/skills/`뿐 아니라 `~/.claude/agents/`·`~/.claude/skills/`도 사용자 스코프로 읽는다. 두 플랫폼을 같은 머신에 설치하면 Cursor에게 같은 이름의 에이전트 9개·스킬이 두 벌씩 보인다.
 
 `~/.cursor/`가 우선하므로 정상 상태에서는 문제가 없지만, **호환 경로 끄기는 UI 설정이라 설치 스크립트가 보장할 수 없다.** 새 머신·재설치·설정 초기화 때 되살아나고, 되살아나도 에러가 나지 않는다. Claude 판이 채택되면:
 
@@ -27,10 +27,10 @@
 - **리뷰 섹션명**: `## Accepted Review Exceptions`, `## Applied Exceptions`.
 - **상태 어휘**: `pass | blocked | failed | needs-confirmation | needs-decision | changes-required` (+ test-dev 전용 `pass-with-suspected-defects`). 번역·동의어 치환 금지.
 - **ID 규칙**: `AC-N`, `AR-NNN`, `TEST-NNN`(test Worker가 부여), `REVIEW-NNN`(aggregate 시 메인 세션이 부여 — reviewer 부여 금지).
-- **스킬·에이전트 이름**: `plan-dev`, `implement-dev`, `fix-dev`, `test-dev`, `review-code`, `commit-code`, `request-merge`, `dev-loop`(+`-light`/`-noreview`); persona `planner`, `plan-consultant`, `implementer`, `tester`, `fixer`, `security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`.
+- **스킬·에이전트 이름**: `plan-dev`, `implement-dev`, `fix-dev`, `test-dev`, `review-code`, `commit-code`, `request-merge`, `dev-loop` (modes `light`/`full`/`noreview`); persona `planner`, `plan-consultant`, `implementer`, `tester`, `fixer`, `security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`.
 - **파일명 규칙**: `{timestamp}_{Jira}_PLAN|IMPL|LOOP_{title}.md`와 `-STEP-N` 접미 규칙.
 - **AR 불변식**: AR 엔트리는 사용자의 명시적 Accept 응답이 있을 때만 기록한다. 어떤 플랫폼 변형에서도 이 규칙을 완화하거나 자동화하는 번역을 하지 않는다.
-- **루프 상태 기계**: 세 루프 변형의 전이표·종료 술어·휴먼 게이트(TESTING Fix/Accept, READY_TO_COMMIT)는 플랫폼 무관이다. 그대로 옮긴다.
+- **루프 상태 기계**: `dev-loop` 세 모드(`light`/`full`/`noreview`)의 전이표·종료 술어·휴먼 게이트(TESTING Fix/Accept, READY_TO_COMMIT)는 플랫폼 무관이다. 그대로 옮긴다.
 
 ## Skill migration
 
