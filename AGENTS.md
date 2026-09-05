@@ -1,8 +1,8 @@
 # personal-harness
 
-A harness of Agent Skills, global instructions, and install scripts for personal use. It supports four platforms — Claude Code, Codex, Cursor, and Grok Build — and migrates platform variants using the topology below.
+A harness of Agent Skills, global instructions, and install scripts for personal use. It supports four platforms — Claude Code, Codex, Cursor, and Grok Build. Product skills are shared (`skills/<name>/` → `~/.agents/skills`). Agents and hooks still migrate using the topology below.
 
-- Claude ↔ Codex (bidirectional)
+- Claude ↔ Codex (bidirectional; agents and hooks)
 - Claude → Cursor (one-way; a change that starts in Cursor lands in the Claude variant first)
 - Claude → Grok Build (one-way; pure Grok paths only — do not rely on Grok's Claude/Cursor compat scanners)
 
@@ -46,33 +46,33 @@ Each skill can be used standalone; typically the output of the previous skill (p
 
 ### Skills
 
-Each skill under `skills/<platform>/` is managed in its own folder. See each skill's `SKILL.md` for the full contract.
+Each skill under `skills/<name>/` is shared across hosts. See each skill's `SKILL.md` for the full contract. Install lives in `~/.agents/skills`; Claude uses per-skill symlinks from `~/.claude/skills`.
 
 **Core Development Process:**
 
 | Skill | Description | Execution | Artifacts |
 | --- | --- | --- | --- |
 | `plan-dev` | Drafts an implementation plan via Plan-mode interview; locks `Acceptance Contract` / `Authority Boundaries`; splits into multi-step when needed | Main session (conditionally delegates to `planner`) | PLAN·RESEARCH under `docs/agents/` |
-| `implement-dev` | Executes the approved plan with TDD and collects per-AC evidence; returns `blocked` on direction conflicts; consults `plan-consultant` on `(design-bearing)` TODOs | Dispatcher → `implementer` Worker | Code + IMPL report |
-| `fix-dev` | Fixes one reviewed defect at a time (root cause → fix → verify); never commits | Dispatcher → `fixer` Worker | `## Fix` entries appended to the IMPL report |
-| `test-dev` | Fills unit/e2e gaps and removes LIVED mutants over a git scope (default: diff vs `main`); never modifies production code; the caller may put mutation out of scope | Dispatcher → `tester` Worker | Test code (no file artifact) |
-| `review-code` | Dispatches reviewer personas in parallel (4 by default, or a caller-named subset) and aggregates findings; reviewers report everything with a `Confidence` tag and **this skill filters**; HIGH/CRITICAL go through user Fix/Accept triage, accepted items recorded as AR and waived in later reviews | Dispatcher → reviewers | Findings, `Accepted Review Exceptions` |
-| `dev-loop` | Thin controller repeating implement→test→[review]→fix until termination predicates hold; stops at READY_TO_COMMIT. Modes: `light` (default, 2 axes, no mutation), `full` (4 axes + mutation), `noreview` (no review, no mutation). Triage, AR approval, and commits stay human-owned | Main session (invokes each stage skill's Dispatcher flow) | LOOP file (append-only) |
+| `implement-dev` | Executes the approved plan with TDD and collects per-AC evidence; returns `blocked` on direction conflicts; returns `needs-design-decision` on `(design-bearing)` TODOs | Loop starts `implementer`; standalone runs in-place | Code + IMPL report |
+| `fix-dev` | Fixes one reviewed defect at a time (root cause → fix → verify); never commits | Loop starts `fixer`; standalone runs in-place | `## Fix` entries appended to the IMPL report |
+| `test-dev` | Fills unit/e2e gaps and removes LIVED mutants over a git scope (default: diff vs `main`); never modifies production code; the caller may put mutation out of scope | Loop starts `tester`; standalone runs in-place | Test code (no file artifact) |
+| `review-code` | Caller starts reviewer personas in parallel (4 by default, or a caller-named subset) and aggregates findings; reviewers report everything with a `Confidence` tag and **this skill filters**; HIGH/CRITICAL go through user Fix/Accept triage, accepted items recorded as AR and waived in later reviews | Loop or standalone is the caller | Findings, `Accepted Review Exceptions` |
+| `dev-loop` | Thin controller repeating implement→test→[review]→fix until termination predicates hold; stops at READY_TO_COMMIT. Modes: `light` (default, 2 axes, no mutation), `full` (4 axes + mutation), `noreview` (no review, no mutation). Starts each stage's persona. Triage, AR approval, and commits stay human-owned | Main session | LOOP file (append-only) |
 | `commit-code` | Creates a commit; runs a read-only documentation-drift check afterward. Opens a PR (`gh`, personal) or MR (`glab`, work) only when the prompt asks (`request-merge` is a routing alias). Dirty tree + PR request: commit first | Main session | Commit · (optional) PR/MR |
 
 ### Custom Agents
 
-Persona sub-agent definitions under `agents/<platform>/`. Formats differ by platform (Claude / Cursor / Grok: `.md`, Codex: `.toml`). Skills dispatch them; direct user invocation is not the norm.
+Persona sub-agent definitions under `agents/<platform>/`. Formats differ by platform (Claude / Cursor / Grok: `.md`, Codex: `.toml`). `dev-loop` starts them; standalone stage skills run in-place. Direct user invocation is not the norm.
 
 Every agent pins its own `model` and `effort` — see [Model Tier](#model-tier). `inherit` appears nowhere in this harness by design.
 
 | Agent | Persona · Scope | Dispatched by | Access |
 | --- | --- | --- | --- |
 | `planner` | Software architect — direction, boundaries, interfaces, risks; returns user-facing question lists; reviews plan drafts | `plan-dev` (conditional) | Read-only |
-| `plan-consultant` | Escalation hatch — decides a fork where two approaches both fit the plan but the wrong one is expensive to reverse; returns a short decision, never code | Claude/Codex/Cursor: `implementer` on `(design-bearing)` TODOs; **Grok: Dispatcher** (depth 1, `needs-design-decision`) | Read-only |
-| `implementer` | Minimal-code implementation Worker; does not relitigate scope | `implement-dev` | Write |
-| `tester` | Test-hardening Worker — unit/e2e gaps, LIVED mutants; test code only, records suspected defects as `TEST-NNN` findings | `test-dev` | Write |
-| `fixer` | Single-defect executor — smallest correct fix + regression coverage; `needs-confirmation` when the fix needs its own plan | `fix-dev` | Write |
+| `plan-consultant` | Escalation hatch — decides a fork where two approaches both fit the plan but the wrong one is expensive to reverse; returns a short decision, never code | `dev-loop` on `needs-design-decision` | Read-only |
+| `implementer` | Minimal-code implementation Worker; does not relitigate scope | `dev-loop` (IMPLEMENTING) | Write |
+| `tester` | Test-hardening Worker — unit/e2e gaps, LIVED mutants; test code only, records suspected defects as `TEST-NNN` findings | `dev-loop` (TESTING) | Write |
+| `fixer` | Single-defect executor — smallest correct fix + regression coverage; `needs-confirmation` when the fix needs its own plan | `dev-loop` (FIXING) | Write |
 | `security-reviewer` | Security axis — authn/authz, secrets, injection, crypto misuse, TOCTOU | `review-code` (parallel) | Read-only |
 | `reliability-reviewer` | Reliability axis — error handling, lifecycle, concurrency, timeouts, partial failure | `review-code` (parallel) | Read-only |
 | `maintainability-reviewer` | Maintainability axis — style consistency, abstractions, naming, module boundaries, dead code | `review-code` (parallel) | Read-only |
@@ -97,14 +97,14 @@ Platform-specific config files: Claude Code uses the `hooks` block in `settings.
 
 ### Runtime Scripts
 
-`scripts/runtime/*.sh` is installed to `~/.claude/scripts/` by `apply-to-claude.sh`, to `~/.cursor/scripts/` by `apply-to-cursor.sh`, to `~/.codex/scripts/` by `apply-to-codex.sh`, and to `~/.grok/scripts/` by `apply-to-grok.sh` (distinct from the repo's top-level `scripts/`, which is installer-only and never copied). The source is platform-neutral — it reads `Makefile`, `package.json`, and git, nothing else — so all four installers copy the same files rather than maintaining platform forks. Skills call these instead of re-deriving the same facts with an LLM on every cold Worker:
+`scripts/runtime/*.sh` is installed to `~/.agents/scripts/` by every `apply-to-*.sh` (distinct from the repo's top-level `scripts/`, which is installer-only and never copied). The source is platform-neutral — it reads `Makefile`, `package.json`, and git, nothing else. Skills call these instead of re-deriving the same facts with an LLM on every cold executor:
 
 | Script | Consumers | Returns |
 | --- | --- | --- |
 | `detect-commands.sh` | `implement-dev` · `test-dev` · `fix-dev` | lint/format/test/build/mutation/e2e commands from `Makefile` targets and `package.json` scripts, as JSON. `null` for anything only named in prose — the caller reads that itself |
 | `resolve-scope.sh` | `test-dev` · `review-code` | diff range, changed-file absolute paths, and languages involved, as JSON |
 
-Consumers call them by literal `$HOME/.claude/scripts/…` (Claude), `$HOME/.cursor/scripts/…` (Cursor), `$HOME/.codex/scripts/…` (Codex), or `$HOME/.grok/scripts/…` (Grok) path. `${CLAUDE_SKILL_DIR}` is unavailable here because the scripts live outside any skill folder; `$HOME` stays literal and the shell expands it at run time. Claude skills pre-approve the same literal in `allowed-tools`; Cursor, Codex, and Grok have no skill-level pre-approval, so the first call may prompt. A mismatch costs one permission prompt, nothing more.
+Consumers call them by literal `$HOME/.agents/scripts/…`. `${CLAUDE_SKILL_DIR}` is unavailable here because the scripts live outside any skill folder; `$HOME` stays literal and the shell expands it at run time. Claude's installer appends the two Bash allows to `~/.claude/settings.json` `permissions.allow` without replacing the array. `hooks/claude/settings.json` has no `permissions` key.
 
 ## Model Tier
 

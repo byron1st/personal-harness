@@ -1,5 +1,5 @@
 name = "plan-consultant"
-description = "Read-only escalation hatch for design-bearing forks mid-implementation; returns a short decision, never code."
+description = "Read-only escalation hatch the loop starts on needs-design-decision; returns a short decision, never code."
 sandbox_mode = "read-only"
 model = "gpt-5.6-sol"
 model_reasoning_effort = "high"

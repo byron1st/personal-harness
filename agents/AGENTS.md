@@ -7,7 +7,7 @@ Claude keeps `model` and `effort` as two fields. **Codex** uses TOML `model` + `
 | Agent | Claude | Codex | Cursor | Grok Build `model` / `effort` | Why this tier |
 | --- | --- | --- | --- | --- | --- |
 | `planner` | `opus` / `high` | `gpt-5.6-sol` / `high` | `grok-4.6[effort=high]` | `grok-4.6` / `high` (plan) | Architecture calls are irreversible and unverifiable |
-| `plan-consultant` | `opus` / `high` | `gpt-5.6-sol` / `high` | `grok-4.6[effort=high]` | `grok-4.6` / `high` (plan) | Exists for calls the executor cannot verify; **on Grok the main session spawns it** (depth 1) |
+| `plan-consultant` | `opus` / `high` | `gpt-5.6-sol` / `high` | `grok-4.6[effort=high]` | `grok-4.6` / `high` (plan) | Exists for calls the executor cannot verify; the loop starts it on `needs-design-decision` |
 | `security-reviewer` | `opus` / `medium` | `gpt-5.6-sol` / `medium` | `grok-4.6[effort=high]` | `grok-4.6` / `high` (plan) | Missed authz bypass is unrecoverable |
 | `reliability-reviewer` | `opus` / `medium` | `gpt-5.6-sol` / `medium` | `grok-4.6[effort=high]` | `grok-4.6` / `high` (plan) | Counterfactual simulation is the first thing weaker models lose |
 | `implementer` | **`opus` / `medium`** | **`gpt-5.6-terra` / `high`** | `grok-4.6[effort=medium]` | `grok-4.6` / **`medium`** (default) | Long-context agentic role; T1 model at T2 effort |
@@ -30,4 +30,4 @@ Claude keeps `model` and `effort` as two fields. **Codex** uses TOML `model` + `
 
 **The Cursor table rows and `hooks/cursor/hooks/model-pin-guard.sh` are one fact in two files.** Change a Cursor row and change the guard's `case` statement with it, or the guard starts rejecting healthy dispatches.
 
-**Grok Build-specific:** catalog in use is **`grok-4.6` only** (SuperGrok subscription quota). `grok-4.5` is unused. Effort menu is `low|medium|high|xhigh`. Subagent nesting depth is **1** — the implementer must not spawn `plan-consultant`; the Dispatcher returns on `needs-design-decision` and spawns the consultant. No multi-model cascade and no `implementer-strict`. Default loop mode is **`light`**. Turn off Grok `[compat.claude]` / `[compat.cursor]` so pure `~/.grok/{agents,skills,hooks,scripts,rules}` paths win. Global instructions install to **`~/.grok/rules/AGENTS.md`**.
+**Grok Build-specific:** catalog in use is **`grok-4.6` only** (SuperGrok subscription quota). `grok-4.5` is unused. Effort menu is `low|medium|high|xhigh`. Subagent nesting depth is **1** — the implementer must not start `plan-consultant`; the loop returns on `needs-design-decision` and starts the consultant. No multi-model cascade and no `implementer-strict`. Default loop mode is **`light`**. Turn off Grok `[compat.claude]` / `[compat.cursor]` so pure Grok agent/hook paths win and skills load from `~/.agents/skills`. Global instructions install to **`~/.grok/rules/AGENTS.md`**.

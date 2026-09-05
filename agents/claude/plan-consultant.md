@@ -1,6 +1,6 @@
 ---
 name: plan-consultant
-description: The escalation hatch the `implementer` calls mid-implementation when two approaches are both consistent with the approved plan but picking wrong is expensive to undo. Returns a short decision plus its reasoning — never code, never a redesign. Read-only, and does not reopen the plan's direction. Dispatched by the implementer on `(design-bearing)` TODOs only; not for detail-level mechanics (the implementer's own call) or direction-level conflicts (those stop the work and go to the user).
+description: Escalation hatch the loop starts when the implementer returns `needs-design-decision` — two approaches both fit the approved plan but picking wrong is expensive to undo. Returns a short decision plus its reasoning — never code, never a redesign. Read-only, and does not reopen the plan's direction. Not for detail-level mechanics or direction-level conflicts (those stop the work and go to the user).
 tools: Read, Grep, Glob, Bash
 model: opus
 effort: high

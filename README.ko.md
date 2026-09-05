@@ -43,18 +43,18 @@ plan-dev → (플랜 검토·승인) → dev-loop → commit-code
 
 ```
 personal-harness/
-├── skills/           # 플랫폼별 Agent Skills (claude/ · codex/ · cursor/ · grok/, 스킬마다 별도 폴더)
+├── skills/           # 공유 Agent Skills (스킬마다 별도 폴더; ~/.agents/skills 로 설치)
 ├── agents/           # persona 서브에이전트 정의 (claude/*.md · codex/*.toml · cursor/*.md · grok/*.md)
 ├── hooks/            # 플랫폼별 훅 (claude: settings.json + *.sh · codex/cursor/grok: hooks.json + *.sh)
 ├── instructions/     # 전역 지침 AGENTS.md 배포 소스
-├── scripts/          # 설치·동기화 스크립트 (apply-to.sh · apply-to-{claude,codex,cursor,grok}.sh · apply-to-all.sh · setup-ctx7.sh) + runtime/: ~/.claude/scripts/·~/.cursor/scripts/·~/.codex/scripts/·~/.grok/scripts/로 설치되는 플랫폼 무관 런타임 스크립트
+├── scripts/          # 설치·동기화 스크립트 (apply-to.sh · apply-to-{claude,codex,cursor,grok}.sh · apply-to-all.sh · setup-ctx7.sh) + runtime/: ~/.agents/scripts/로 설치되는 플랫폼 무관 런타임 스크립트
 ├── docs/             # 하네스 문서 (sync-harness/: SYNC_TO_* 변환 규칙 · loop-engineering/: 루프 엔지니어링 계획·조사 문서 · cost-effective/: 모델 티어링 비용 분석)
 └── .agents/skills/   # 하네스 자체용 메타 스킬 (sync-harness; .claude/skills/에 동일 사본)
 ```
 
 훅의 상세 동작은 [Harness > Hooks](#hooks) 참조. 훅이 `rg`/`fd` 사용을 강제하므로 [ripgrep](https://github.com/BurntSushi/ripgrep)과 [fd](https://github.com/sharkdp/fd) 설치가 필요하다(Prerequisites 참조).
 
-플랫폼 변형은 **Claude ↔ Codex**(양방향) + **Claude → Cursor**(단방향) + **Claude → Grok Build**(단방향, pure 경로) 토폴로지로 마이그레이션한다. Grok Build는 Claude 호환 경로를 쓰지 않고 `skills/grok` · `agents/grok` · `hooks/grok` 전용 변형을 설치한다. Cursor는 소스가 항상 Claude 변형이며, Cursor·Grok에서 시작한 변경도 Claude 변형에 먼저 반영한 뒤 내려보낸다. 변환 규칙은 [SYNC_TO_CODEX.md](docs/sync-harness/SYNC_TO_CODEX.md), [SYNC_TO_CLAUDE.md](docs/sync-harness/SYNC_TO_CLAUDE.md), [SYNC_TO_CURSOR.md](docs/sync-harness/SYNC_TO_CURSOR.md), [SYNC_TO_GROK.md](docs/sync-harness/SYNC_TO_GROK.md)에 정리되어 있다.
+제품 스킬은 공유한다 (`skills/<name>/` → `~/.agents/skills`). 에이전트·훅은 **Claude ↔ Codex**(양방향) + **Claude → Cursor**(단방향) + **Claude → Grok Build**(단방향, pure 경로)로 마이그레이션한다. Grok Build는 Claude 호환 경로를 쓰지 않는다. Cursor 에이전트·훅의 소스는 항상 Claude 변형이며, Cursor·Grok에서 시작한 변경도 Claude 변형에 먼저 반영한 뒤 내려보낸다. 변환 규칙은 [SYNC_TO_CODEX.md](docs/sync-harness/SYNC_TO_CODEX.md), [SYNC_TO_CLAUDE.md](docs/sync-harness/SYNC_TO_CLAUDE.md), [SYNC_TO_CURSOR.md](docs/sync-harness/SYNC_TO_CURSOR.md), [SYNC_TO_GROK.md](docs/sync-harness/SYNC_TO_GROK.md)에 정리되어 있다.
 
 ## Prerequisites
 
@@ -174,18 +174,18 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 
 ### Skills
 
-각 스킬은 `skills/<platform>/`(claude/codex/cursor/grok) 아래 플랫폼 변형으로 관리되며, 스킬마다 별도 폴더를 갖는다. 상세 계약은 각 스킬의 `SKILL.md` 참조.
+각 스킬은 `skills/<name>/` 한곳에 두고 `~/.agents/skills`로 설치한다. Claude만 `~/.claude/skills/<name>` 스킬 단위 심링크를 건다. 상세 계약은 각 스킬의 `SKILL.md` 참조.
 
 **Core Development Process:**
 
 | 스킬 | 설명 | 실행 방식 | 산출물 |
 | --- | --- | --- | --- |
 | `plan-dev` | 내장 Plan 모드의 인터뷰로 구현 플랜을 수립·승인. 완료 조건 라운드에서 `Acceptance Contract`·`Authority Boundaries` 확정, 필요 시 다단계(main + sub-plans) 분할 | 메인 세션 (`planner` 조건부 위임) | PLAN·RESEARCH (`docs/agents/`) |
-| `implement-dev` | 승인된 플랜을 TDD(Red-Green-Refactor)로 구현하고 AC별 증거를 수집. 방향 충돌 시 `blocked` 반환. `(design-bearing)` TODO에서만 `plan-consultant` 자문 | Dispatcher → `implementer` Worker | 코드 + IMPL 리포트 (`## TODO Fulfillment` 축) |
-| `fix-dev` | 리뷰·검증에서 발견된 결함을 한 건씩 원인 분석·수정·검증. 커밋하지 않음 | Dispatcher → `fixer` Worker | IMPL 리포트에 `## Fix` 누적 |
-| `test-dev` | git scope(기본: `main` 대비 diff) 기준으로 유닛/E2E 갭 채움과 mutation LIVED 제거. production 코드는 불변. 호출자가 mutation을 범위 밖으로 지정할 수 있다 | Dispatcher → `tester` Worker | 테스트 코드 (파일 아티팩트 없음) |
-| `review-code` | 리뷰 페르소나 병렬 dispatch(기본 4축, 호출자가 부분집합 지정 가능) 후 finding 종합. 리뷰어는 `Confidence`를 달아 전부 보고하고 **필터링은 이 스킬의 집계 단계**가 한다. HIGH/CRITICAL은 사용자 Fix/Accept 트리아지, Accept는 AR로 기록해 이후 리뷰에서 Waived 강등 | Dispatcher → reviewers | finding 리포트, `Accepted Review Exceptions` |
-| `dev-loop` | 승인된 플랜(AC·AB 필수)으로 구현→테스트→[리뷰]→fix 사이클을 종료 술어 충족까지 자율 반복, READY_TO_COMMIT에서 정지. 모드: `light`(기본값, 2축, mutation 제외), `full`(4축 + mutation), `noreview`(리뷰 없음, mutation 제외). 트리아지·AR 승인·커밋은 사람 몫 | 메인 세션 (각 단계 스킬의 Dispatcher 흐름 호출) | LOOP 파일 (append-only) |
+| `implement-dev` | 승인된 플랜을 TDD(Red-Green-Refactor)로 구현하고 AC별 증거를 수집. 방향 충돌 시 `blocked` 반환. `(design-bearing)` TODO에서는 `needs-design-decision` 반환 | 루프가 `implementer` 시작; standalone은 현재 세션 | 코드 + IMPL 리포트 (`## TODO Fulfillment` 축) |
+| `fix-dev` | 리뷰·검증에서 발견된 결함을 한 건씩 원인 분석·수정·검증. 커밋하지 않음 | 루프가 `fixer` 시작; standalone은 현재 세션 | IMPL 리포트에 `## Fix` 누적 |
+| `test-dev` | git scope(기본: `main` 대비 diff) 기준으로 유닛/E2E 갭 채움과 mutation LIVED 제거. production 코드는 불변. 호출자가 mutation을 범위 밖으로 지정할 수 있다 | 루프가 `tester` 시작; standalone은 현재 세션 | 테스트 코드 (파일 아티팩트 없음) |
+| `review-code` | 호출자가 리뷰 페르소나를 병렬로 시작(기본 4축, 호출자가 부분집합 지정 가능)한 뒤 finding 종합. 리뷰어는 `Confidence`를 달아 전부 보고하고 **필터링은 이 스킬의 집계 단계**가 한다. HIGH/CRITICAL은 사용자 Fix/Accept 트리아지, Accept는 AR로 기록해 이후 리뷰에서 Waived 강등 | 루프 또는 standalone이 caller | finding 리포트, `Accepted Review Exceptions` |
+| `dev-loop` | 승인된 플랜(AC·AB 필수)으로 구현→테스트→[리뷰]→fix 사이클을 종료 술어 충족까지 자율 반복, READY_TO_COMMIT에서 정지. 모드: `light`(기본값, 2축, mutation 제외), `full`(4축 + mutation), `noreview`(리뷰 없음, mutation 제외). 단계 persona를 띄운다. 트리아지·AR 승인·커밋은 사람 몫 | 메인 세션 | LOOP 파일 (append-only) |
 | `commit-code` | 수정된 파일 기반 커밋 생성 + 커밋 후 문서 드리프트 검사(읽기 전용 보고). 프롬프트가 요청할 때만 PR/MR 생성(`gh` personal / `glab` work; `request-merge`는 라우팅 별칭). dirty tree + PR 요청이면 먼저 커밋 | 메인 세션 | 커밋 · (선택) PR/MR |
 
 **Misc:**
@@ -201,17 +201,17 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 
 ### Custom Agents
 
-`agents/<platform>/`의 persona 서브에이전트 정의. 포맷은 Claude · Cursor · Grok이 Markdown(YAML frontmatter), Codex가 TOML이다. 사용자가 직접 호출하기보다 스킬이 위임(dispatch)하는 것이 기본이다.
+`agents/<platform>/`의 persona 서브에이전트 정의. 포맷은 Claude · Cursor · Grok이 Markdown(YAML frontmatter), Codex가 TOML이다. 사용자가 직접 호출하기보다 `dev-loop`가 시작하는 것이 기본이다.
 
 에이전트마다 모델을 프론트매터(또는 Codex TOML)에 직접 핀한다 — Claude는 `model`·`effort`, Codex는 `model`·`model_reasoning_effort`(+ 읽기 전용 `sandbox_mode`), Cursor는 effort를 접어 넣은 `model` 문자열 하나. 배치와 근거는 [Model Tier](#model-tier) 참조. `inherit`은 이 하네스 어디에도 없다.
 
 | 에이전트 | 페르소나 · 담당 | 호출 스킬 | 권한 |
 | --- | --- | --- | --- |
 | `planner` | 소프트웨어 아키텍트 — 방향·경계·인터페이스·리스크 검토, 사용자에게 물을 질문 목록 반환, 플랜 초안 리뷰 | `plan-dev` (모호·횡단·아키텍처 민감 작업에서 조건부) | 읽기 전용 |
-| `plan-consultant` | escalation hatch — 두 접근이 모두 플랜과 정합하지만 되돌리기 비싼 갈림길을 판정. 짧은 결정만 반환하고 코드는 쓰지 않음 | Claude/Codex/Cursor: `implementer` (`(design-bearing)` TODO); **Grok: Dispatcher**(depth 1, `needs-design-decision`) | 읽기 전용 |
-| `implementer` | 최소 코드 규율(minimal-code discipline)의 구현 Worker — 스코프 재논의 없음 | `implement-dev` | 편집 가능 |
-| `tester` | 테스트 보강 Worker — 유닛/E2E 갭, LIVED mutant. 테스트 코드 전용이며 의심 결함은 `TEST-NNN` finding으로 보고 | `test-dev` | 편집 가능 |
-| `fixer` | 단일 결함 실행자 — 최소 올바른 수정 + 회귀 테스트. 별도 플랜이 필요하면 `needs-confirmation` | `fix-dev` | 편집 가능 |
+| `plan-consultant` | escalation hatch — 두 접근이 모두 플랜과 정합하지만 되돌리기 비싼 갈림길을 판정. 짧은 결정만 반환하고 코드는 쓰지 않음 | `dev-loop`가 `needs-design-decision`일 때 | 읽기 전용 |
+| `implementer` | 최소 코드 규율(minimal-code discipline)의 구현 Worker — 스코프 재논의 없음 | `dev-loop` (IMPLEMENTING) | 편집 가능 |
+| `tester` | 테스트 보강 Worker — 유닛/E2E 갭, LIVED mutant. 테스트 코드 전용이며 의심 결함은 `TEST-NNN` finding으로 보고 | `dev-loop` (TESTING) | 편집 가능 |
+| `fixer` | 단일 결함 실행자 — 최소 올바른 수정 + 회귀 테스트. 별도 플랜이 필요하면 `needs-confirmation` | `dev-loop` (FIXING) | 편집 가능 |
 | `security-reviewer` | 보안 축 — authn/authz, 비밀 처리, 주입, 암호화 오용, TOCTOU | `review-code` (병렬) | 읽기 전용 |
 | `reliability-reviewer` | 신뢰성 축 — 오류 처리, 리소스 수명, 동시성, 타임아웃, 부분 실패 | `review-code` (병렬) | 읽기 전용 |
 | `maintainability-reviewer` | 유지보수성 축 — 스타일 일관성, 추상화 적정성, 네이밍, 모듈 경계, dead code | `review-code` (병렬) | 읽기 전용 |
@@ -236,14 +236,14 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 
 ### Runtime Scripts
 
-`scripts/runtime/*.sh`는 `apply-to-claude.sh`가 `~/.claude/scripts/`로, `apply-to-cursor.sh`가 `~/.cursor/scripts/`로, `apply-to-codex.sh`가 `~/.codex/scripts/`로, `apply-to-grok.sh`가 `~/.grok/scripts/`로 설치한다(레포 최상위 `scripts/`와 다르다 — 그쪽은 설치 스크립트 전용이며 홈으로 복사되지 않는다). 소스는 플랫폼 의존성이 없어서 — `Makefile`·`package.json`·git만 읽는다 — 네 설치 스크립트가 사본을 따로 두지 않고 같은 파일을 복사한다. 스킬이 매번 cold Worker에서 LLM으로 재도출하던 사실을 셸로 내린 것이다.
+`scripts/runtime/*.sh`는 모든 `apply-to-*.sh`가 `~/.agents/scripts/`로 설치한다(레포 최상위 `scripts/`와 다르다 — 그쪽은 설치 스크립트 전용이며 홈으로 복사되지 않는다). 소스는 플랫폼 의존성이 없어서 — `Makefile`·`package.json`·git만 읽는다. 스킬이 매번 cold executor에서 LLM으로 재도출하던 사실을 셸로 내린 것이다.
 
 | 스크립트 | 소비 스킬 | 반환 |
 | --- | --- | --- |
 | `detect-commands.sh` | `implement-dev` · `test-dev` · `fix-dev` | `Makefile` 타겟과 `package.json` 스크립트에서 lint/format/test/build/mutation/e2e 커맨드를 JSON으로. 산문에만 있는 것은 `null` — 그건 호출자가 직접 읽는다 |
 | `resolve-scope.sh` | `test-dev` · `review-code` | diff 범위, 변경 파일 절대경로, 관여 언어를 JSON 한 덩어리로 |
 
-소비 스킬은 `$HOME/.claude/scripts/…`(Claude), `$HOME/.cursor/scripts/…`(Cursor), `$HOME/.codex/scripts/…`(Codex), 또는 `$HOME/.grok/scripts/…`(Grok)를 문자 그대로 호출한다. 스크립트가 스킬 폴더 밖에 있어 `${CLAUDE_SKILL_DIR}` 치환을 쓸 수 없기 때문이며, `$HOME`은 리터럴로 남고 셸이 실행 시점에 확장한다. Claude 스킬은 `allowed-tools`에 같은 리터럴을 프리어프루브하지만 Cursor·Codex·Grok에는 스킬 단위 프리어프루브가 없어 첫 호출에 프롬프트가 뜰 수 있다. 어긋나도 대가는 권한 프롬프트 한 번뿐이다.
+소비 스킬은 `$HOME/.agents/scripts/…`를 문자 그대로 호출한다. 스크립트가 스킬 폴더 밖에 있어 `${CLAUDE_SKILL_DIR}` 치환을 쓸 수 없기 때문이며, `$HOME`은 리터럴로 남고 셸이 실행 시점에 확장한다. Claude 인스톨러는 두 Bash allow를 `~/.claude/settings.json` `permissions.allow`에 배열을 통째 교체하지 않고 append한다. `hooks/claude/settings.json`에는 `permissions`가 없다.
 
 ## Model Tier
 
@@ -266,7 +266,7 @@ Claude는 `model`·`effort` 두 필드를 쓴다. **Codex**는 TOML `model` + `m
 | 에이전트 | Claude | Codex | Cursor | Grok Build | 근거 |
 | --- | --- | --- | --- | --- | --- |
 | `planner` | `opus` / `high` | Sol / high | `grok-4.6[effort=high]` | `grok-4.6` / high (plan) | 아키텍처 판단 |
-| `plan-consultant` | `opus` / `high` | Sol / high | `grok-4.6[effort=high]` | `grok-4.6` / high (plan) | **Grok은 메인이 spawn**(depth 1) |
+| `plan-consultant` | `opus` / `high` | Sol / high | `grok-4.6[effort=high]` | `grok-4.6` / high (plan) | 루프가 `needs-design-decision`에서 시작 |
 | `security-reviewer` | `opus` / `medium` | Sol / medium | `grok-4.6[effort=high]` | `grok-4.6` / high (plan) | miss 비용 최대 |
 | `reliability-reviewer` | `opus` / `medium` | Sol / medium | `grok-4.6[effort=high]` | `grok-4.6` / high (plan) | 반사실 시뮬레이션 |
 | `implementer` | **`opus` / `medium`** | **Terra / high** | `grok-4.6[effort=medium]` | `grok-4.6` / **medium** | 장문맥; T1 모델 + T2 effort |
@@ -283,7 +283,7 @@ Claude는 `model`·`effort` 두 필드를 쓴다. **Codex**는 TOML `model` + `m
 
 **Codex 전용.** `model_reasoning_effort = "ultra"`는 쓰지 않는다 — 자동 태스크 위임이 이 하네스의 dispatch와 충돌한다. `implementer`·`fixer`에 Luna를 두지 않는다(긴 컨텍스트 절벽). 공유 기본 루프 모드는 **`light`**다 — Luna 덕분에 마지막 2축 리뷰 비용이 거의 없어서, `light`가 이미 `noreview` 절감분의 ~95%를 담는다.
 
-**Grok Build 전용.** 쓰는 카탈로그는 `grok-4.6`만(SuperGrok 구독 쿼터). `grok-4.5`는 쓰지 않는다. 4.6 effort는 `low|medium|high|xhigh`. 서브에이전트 깊이 1이라 design-bearing은 Dispatcher가 `plan-consultant`를 부른다. 기본 루프 모드는 **`light`**. `[compat.claude]`·`[compat.cursor]`를 끈다.
+**Grok Build 전용.** 쓰는 카탈로그는 `grok-4.6`만(SuperGrok 구독 쿼터). `grok-4.5`는 쓰지 않는다. 4.6 effort는 `low|medium|high|xhigh`. 서브에이전트 깊이 1이라 design-bearing은 루프가 `needs-design-decision`에서 `plan-consultant`를 시작한다. 기본 루프 모드는 **`light`**. `[compat.claude]`·`[compat.cursor]`를 끈다.
 
 **Cursor의 effort 값은 Claude 값이 아니다.** Grok 4.6은 `low/medium/high/xhigh`(기본 `high`)다. T1 리뷰어는 `high` — 예약된 `xhigh` 바로 아래이며 Claude/Codex T1 리뷰어와 같은 모양이다. Cursor T2는 Grok Build와 같다: 전 역할 `grok-4.6`, T2는 `[effort=medium]`. Composer 2.5와 `grok-4.5`는 쓰지 않는다.
 
@@ -332,8 +332,8 @@ scripts/apply-to.sh claude codex cursor grok
 
 Claude Code 설치 스크립트다.
 
-- Claude Code: `instructions/AGENTS.md`를 `~/.claude/CLAUDE.md`로 복사하고, `~/.claude/skills`·`~/.claude/agents`·`~/.claude/hooks`·`~/.claude/scripts`를 비운 뒤 각각 `skills/claude/`·`agents/claude/`·`hooks/claude/hooks/`·`scripts/runtime/`의 내용으로 다시 채운다. 훅과 런타임 스크립트는 `cp -rp`로 복사해 실행 권한을 보존한다.
-- Claude Code 설정: `hooks/claude/settings.json`의 `hooks` 블록을 `~/.claude/settings.json`에 `jq`로 머지한다. 사용자의 `permissions`/`model`/`env` 등 다른 설정은 보존되며, 대상 파일이 없으면 통째로 생성한다 (jq 필요).
+- Claude Code: `instructions/AGENTS.md`를 `~/.claude/CLAUDE.md`로 복사하고, 공유 스킬을 `~/.agents/skills`에, 런타임 스크립트를 `~/.agents/scripts`에 설치한 뒤 `~/.claude/skills/<name>` 스킬 단위 심링크를 건다. `~/.claude/agents`와 `~/.claude/hooks`는 `agents/claude/` · `hooks/claude/hooks/`로 다시 채운다.
+- Claude Code 설정: `hooks/claude/settings.json`의 `hooks` 블록을 `~/.claude/settings.json`에 `jq`로 머지한 뒤, 두 `~/.agents/scripts` Bash allow를 `permissions.allow`에 배열을 통째 교체하지 않고 append한다. 사용자의 다른 설정은 보존되며, 대상 파일이 없으면 통째로 생성한다 (jq 필요). `hooks/claude/settings.json`에는 `permissions`가 없다.
 - 마지막에 항목별 설치 개수와 상태 요약을 출력한다.
 
 ### apply-to-codex.sh
@@ -341,10 +341,9 @@ Claude Code 설치 스크립트다.
 Codex 설치 스크립트다.
 
 - `instructions/AGENTS.md`를 `~/.codex/AGENTS.md`로 복사한다.
-- `~/.codex/skills/`를 비운 뒤 `skills/codex/`의 스킬로 다시 채운다.
+- 공유 스킬을 `~/.agents/skills`에, 런타임 스크립트를 `~/.agents/scripts`에 설치하고 `~/.codex/skills`에서 harness 이름을 제거한다.
 - `~/.codex/agents/`를 비운 뒤 `agents/codex/*.toml`을 복사한다.
 - `~/.codex/hooks/`를 비운 뒤 `hooks/codex/hooks/*`를 복사하고, `hooks/codex/hooks.json`을 `~/.codex/hooks.json`으로 복사한다.
-- `~/.codex/scripts/`를 비운 뒤 `scripts/runtime/`의 내용을 `cp -rp`로 채운다(실행 권한 보존). Claude·Cursor와 같은 플랫폼 무관 소스다.
 - 마지막에 항목별 설치 개수와 상태 요약을 출력한다.
 
 ### apply-to-cursor.sh
@@ -352,7 +351,7 @@ Codex 설치 스크립트다.
 Cursor 설치 스크립트다.
 
 - `instructions/AGENTS.md`를 `~/.cursor/AGENTS.md`로 복사한다. **Cursor는 이 파일을 읽지 않는다** — `session-context.sh`가 읽어서 `additional_context`로 주입한다. Cursor에 사용자 전역 지침 파일이 없고 User Rules는 설치 스크립트가 쓸 수 없는 UI 상태이기 때문이다.
-- `~/.cursor/skills`·`~/.cursor/agents`·`~/.cursor/hooks`·`~/.cursor/scripts`를 비운 뒤 각각 `skills/cursor/`·`agents/cursor/`·`hooks/cursor/hooks/`·`scripts/runtime/`의 내용으로 다시 채운다. 훅과 런타임 스크립트는 `cp -rp`로 복사해 실행 권한을 보존한다.
+- 공유 스킬을 `~/.agents/skills`에, 런타임 스크립트를 `~/.agents/scripts`에 설치하고 `~/.cursor/skills`에서 harness 이름을 제거한다. `~/.cursor/agents`와 `~/.cursor/hooks`는 `agents/cursor/` · `hooks/cursor/hooks/`로 다시 채운다.
 - `hooks/cursor/hooks.json`을 `~/.cursor/hooks.json`으로 **머지가 아니라 교체**한다. Claude의 `settings.json`은 다른 설정과 파일을 공유하지만 Cursor의 `hooks.json`은 훅 전용이다.
 - 마지막에 설치 요약과 함께, 스크립트가 대신할 수 없는 1회성 수동 단계(`~/.claude` 호환 경로 끄기)를 안내한다.
 
@@ -361,10 +360,9 @@ Cursor 설치 스크립트다.
 Grok Build 전용 변형 설치 스크립트다(Claude/Cursor compat 경로를 쓰지 않는다).
 
 - `instructions/AGENTS.md`를 **`~/.grok/rules/AGENTS.md`**로 복사한다(SessionStart 주입이 아니라 네이티브 rules 로드).
-- `~/.grok/skills/`를 비운 뒤 `skills/grok/`로 채운다.
+- 공유 스킬을 `~/.agents/skills`에, 런타임 스크립트를 `~/.agents/scripts`에 설치하고 `~/.grok/skills`에서 harness 이름을 제거한다.
 - `~/.grok/agents/`를 비운 뒤 `agents/grok/*.md`를 복사한다.
 - 훅 스크립트를 `~/.grok/hooks/`에 두고, `hooks/grok/hooks.json`을 **`~/.grok/hooks/harness.json`**으로 복사한다(Grok은 `~/.grok/hooks/*.json`을 머지).
-- `~/.grok/scripts/`를 비운 뒤 `scripts/runtime/`을 `cp -rp`로 채운다.
 - 종료 시 **`[compat.claude]`·`[compat.cursor]` 끄기**와 세션 습관(plan-dev high / dev-loop medium)을 안내한다.
 
 ### apply-to-all.sh

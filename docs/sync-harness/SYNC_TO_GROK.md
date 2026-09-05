@@ -2,7 +2,7 @@
 
 이 문서는 **Claude Code → Grok Build** 마이그레이션 점검표다. 특정 스킬에 묶이지 않도록 작성하며, 새 스킬·서브에이전트·훅이 추가될 때도 같은 기준으로 검사한다.
 
-마이그레이션 토폴로지는 **Claude → Grok 단방향**이다. Grok 변형의 소스는 항상 Claude 변형(`skills/claude/`, `agents/claude/`, `hooks/claude/`)이고, 대상은 Grok 변형(`skills/grok/`, `agents/grok/`, `hooks/grok/`)이다. Grok에서 시작한 변경은 먼저 Claude 변형에 반영한 뒤 여기로 다시 내려보낸다 — Grok → Claude 역방향 문서는 없다.
+마이그레이션 토폴로지는 **Claude → Grok 단방향**(에이전트·훅)이다. Grok 변형의 소스는 항상 Claude 에이전트·훅(`agents/claude/`, `hooks/claude/`)이고, 대상은 `agents/grok/`, `hooks/grok/`이다. 제품 스킬은 공유 트리 `skills/<name>/`이며 변환하지 않는다. Grok에서 시작한 에이전트·훅 변경은 먼저 Claude 변형에 반영한 뒤 여기로 다시 내려보낸다.
 
 **의도적 비호환.** Grok Build는 `[compat.claude]` / `[compat.cursor]`로 다른 하네스 경로를 읽을 수 있다. 이 변형은 **그 경로를 쓰지 않는다.** 설치 후 compat 셀을 모두 `false`로 둔다 (`scripts/apply-to-grok.sh`가 안내). Claude 설정을 “그대로 가져오는” 운용은 범위 밖이다.
 
@@ -21,54 +21,29 @@
 - **공통 반환 섹션명**: `## Stage Status`, `## Evidence`, `## Findings`, `## Decision Needed` 및 스킬별 하위 헤딩.
 - **플랜 섹션명**: `## Acceptance Contract`, `## Authority Boundaries`, `## TODOs`, `## Non-goals`, `## Key decisions`.
 - **리뷰 섹션명**: `## Accepted Review Exceptions`, `## Applied Exceptions`.
-- **상태 어휘**: `pass | blocked | failed | needs-confirmation | needs-decision | changes-required` (+ `pass-with-suspected-defects`) + Grok 전용 **`needs-design-decision`**(depth-1 consultant 에스컬레이션).
+- **상태 어휘**: `pass | blocked | failed | needs-confirmation | needs-decision | changes-required | needs-design-decision` (+ `pass-with-suspected-defects`). `needs-design-decision`은 공통 어휘다.
 - **ID 규칙**: `AC-N`, `AR-NNN`, `TEST-NNN`, `REVIEW-NNN`.
 - **스킬·에이전트 이름**: 기존 목록 + `plan-consultant` · `tester` · `fixer` · `dev-loop` (modes `light`/`full`/`noreview`).
 - **파일명 규칙** · **AR 불변식** · **루프 상태 기계**: 플랫폼 무관 — 그대로.
 
-## Skill migration
+## Shared skills
 
-`skills/claude/<skill>` → `skills/grok/<skill>`.
+제품 스킬은 `skills/<name>/` 한 트리만 쓴다. `skills/{claude,codex,cursor,grok}/`를 만들지 않는다. 스킬은 플랫폼 변환 대상이 아니다. 에이전트·훅만 이 문서의 나머지 절을 따른다.
 
-### Frontmatter
+불변식 (스킬 본문·references):
 
-Grok 스킬은 `name` · `description` · (선택) `model` · `effort` · `allowed-tools` · `disable-model-invocation` 등을 받는다.
+- frontmatter는 `name` + `description`만. `allowed-tools` 금지.
+- description은 한두 문장, 대략 300자, 첫 문장에 trigger. Dispatcher/Worker 절차를 description에 넣지 않는다.
+- 호스트 툴 이름 금지: `Agent`, `Task`, `spawn_subagent`, `AskUserQuestion`, `AskQuestion`, `ask_user_question`, `ExitPlanMode`, `fork_turns`, `subagent_type`.
+- 질문은 "사용자에게 물어라". 객관식이면 선택지와 미응답=미분류만 적는다.
+- 런타임 스크립트는 `$HOME/.agents/scripts/detect-commands.sh` 와 `$HOME/.agents/scripts/resolve-scope.sh`만.
+- `agents/<platform>/` 경로를 스킬에 넣지 않는다. Reporting contract는 persona 본문의 `## Reporting contract`로 지칭한다.
+- 스테이지 스킬은 persona를 띄우지 않는다. `dev-loop`가 단계 persona를 띄운다. standalone implement/test/fix는 현재 세션 in-place.
+- `(design-bearing)` TODO는 `## Stage Status: needs-design-decision`을 반환한다. 실행자가 `plan-consultant`를 띄우지 않는다. `needs-design-decision`은 공통 상태 어휘이며 `blocked`와 섞지 않는다.
+- `failed` 재시도는 루프가 같은 persona를 한 번 더 띄운다. 스킬에 호스트 모델명을 적지 않는다.
 
-- Claude의 `allowed-tools`에 있던 Claude 툴 이름은 **삭제하거나** Grok 툴명으로 고친다. 1차 변형은 **name+description만 유지**해도 된다.
-- 메인 세션 스킬의 `model`/`effort`는 멀티턴에서 세션 습관이 권위이므로 **보통 비운다** (`plan-dev` high · `dev-loop` medium은 문서 습관).
-
-### Tool names
-
-| Claude | Grok Build |
-| --- | --- |
-| `Agent` | `spawn_subagent` |
-| `AskUserQuestion` | `ask_user_question` |
-| `Bash` | `run_terminal_command` |
-| `Read` | `read_file` |
-| `Edit` / `Write` | `search_replace` |
-| `Grep` | `grep` |
-| `Glob` | `list_dir` |
-| `$HOME/.claude/scripts/…` | **`$HOME/.grok/scripts/…`** |
-| `agents/claude/…` | `agents/grok/…` |
-
-### Depth 1 — design-bearing must leave the Worker
-
-Grok은 **탑레벨만** 서브에이전트를 낳는다. `implementer → plan-consultant`는 불가.
-
-- implementer 본문·`implement-flow`·`implement-dev` Dispatcher: Worker는 `status: needs-design-decision`을 반환하고, **메인이** `plan-consultant`를 `capability_mode: read-only`로 spawn한 뒤 implementer를 재dispatch/`resume_from`.
-- Claude/Cursor의 “Worker가 consultant를 부른다” 문장을 Grok에 남기지 않는다.
-
-### No multi-model cascade
-
-카탈로그는 `grok-4.6`만 쓴다. `grok-4.5`는 쓰지 않는다. Claude의 “failed → T1 opus 1회” cascade는 **같은 persona 1회 재시도**로 번역하고, 다른 `model:` 패밀리로 올리지 않는다. `implementer-strict` 파일을 만들지 않는다(현행 결정).
-
-### Plan-mode approval
-
-`ExitPlanMode` 등 호스트 전용 exit 툴을 남기지 않는다. 사용자가 plan mode를 벗어나는 것이 승인이다.
-
-### Default loop
-
-**`dev-loop` mode `light`** (전 플랫폼 공통 기본값). `full`과 `noreview`는 같은 스킬의 모드다.
+설치: `~/.agents/skills`가 유일 설치본. Claude만 스킬 단위 심링크 `~/.claude/skills/<name> → ~/.agents/skills/<name>`. Cursor/Codex/Grok 플랫폼 스킬 디렉터리에서 harness 이름은 제거한다. `sync-harness`는 `~/.agents/skills`에 설치하지 않는다.
+Cursor/Grok Claude-compat 스킬 스캔은 끈 채로 `~/.agents/skills`를 쓴다.
 
 ## Sub-agent migration
 
@@ -120,12 +95,13 @@ agents_md: true
 
 | 소스 | 대상 |
 | --- | --- |
-| `skills/grok/*` | `~/.grok/skills/` |
+| `skills/<name>/` | `~/.agents/skills/<name>/` (harness names only) |
+| (harness names) | removed from `~/.grok/skills/` |
 | `agents/grok/*.md` | `~/.grok/agents/` |
 | `hooks/grok/hooks/*` | `~/.grok/hooks/` |
 | `hooks/grok/hooks.json` | `~/.grok/hooks/harness.json` |
 | `instructions/AGENTS.md` | `~/.grok/rules/AGENTS.md` |
-| `scripts/runtime/*` | `~/.grok/scripts/` |
+| `scripts/runtime/*` | `~/.agents/scripts/` |
 
 설치 스크립트: `scripts/apply-to-grok.sh`.
 
@@ -141,8 +117,8 @@ agents_md: true
 - [ ] compat.claude / compat.cursor off
 - [ ] 9 agents under `agents/grok/` with explicit `model` + `effort`, no `inherit` (all `grok-4.6`; T1/T2 is effort)
 - [ ] read-only six use `permission_mode: plan`
-- [ ] implementer has Dispatcher escalation, not nested consultant
-- [ ] skills tree matches Claude (one `dev-loop`, modes in SKILL.md); scripts path `$HOME/.grok/scripts`
-- [ ] no `ExitPlanMode` / Claude Agent tool leftovers
+- [ ] implementer returns `needs-design-decision`; the loop starts `plan-consultant`
+- [ ] shared `skills/<name>/` (one `dev-loop`, modes in SKILL.md); scripts path `$HOME/.agents/scripts`
+- [ ] no `ExitPlanMode` / Claude Agent tool leftovers in skills
 - [ ] hooks harness.json + five scripts; SessionStart does not rely on stdout inject
-- [ ] `~/.grok/rules/AGENTS.md` and `~/.grok/scripts/*` install
+- [ ] `~/.grok/rules/AGENTS.md` and `~/.agents/scripts/*` install

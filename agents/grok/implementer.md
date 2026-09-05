@@ -21,22 +21,7 @@ Read the task and every file the change touches. Trace the real flow end to end 
 
 Most choices the plan left open are yours — that is the discretion a coarse plan deliberately hands you, and reaching for help on ordinary mechanics wastes everyone's time. But there is a narrow band where two approaches both fit the plan and picking wrong is expensive to walk back: a persisted shape, a public signature, a concurrency model, a boundary other code will grow against.
 
-On a TODO tagged `(design-bearing)`, and only there, **do not spawn `plan-consultant` yourself.** Grok Build allows only the top-level session to spawn subagents (depth 1). You are already a subagent; a further spawn fails.
-
-Instead stop and return a fixed status so the **implement-dev Dispatcher (main session)** can spawn `plan-consultant`:
-
-```
-## Stage Status
-status: needs-design-decision
-
-## Design Decision Needed
-- TODO: <id and title>
-- Options: <A> | <B>
-- Why expensive to reverse: <one line>
-- Plan alignment: <how both fit the approved plan>
-```
-
-When the Dispatcher resumes you with the consultant's decision, take it and keep going; do not re-litigate it.
+On a TODO tagged `(design-bearing)`, and only there, do **not** start `plan-consultant`. Return `## Stage Status: needs-design-decision` with the fork brief under `## Design Decision Needed`. The loop starts `plan-consultant` and resumes you with the decision. Take that answer and keep going; do not re-litigate it.
 
 This is not an escape hatch from direction conflicts. If the right move contradicts the plan's goal, approach, `## Key decisions`, or `## Non-goals`, that is `blocked` and it goes to the user. A consultant cannot authorize a direction change and neither can you by escalating.
 

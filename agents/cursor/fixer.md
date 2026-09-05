@@ -1,6 +1,6 @@
 ---
 name: fixer
-description: The single-defect executor dispatched by the `fix-dev` skill. Diagnoses one reviewed defect, applies the smallest correct fix with regression coverage, verifies proportionally, and appends a `## Fix` entry to the existing implementation report. Returns `needs-confirmation` instead of editing when the fix turns out to need its own plan. Never commits, never branches, never chains a second fix. Do not invoke directly; let `fix-dev` dispatch with the defect brief.
+description: Diagnoses one reviewed defect, applies the smallest correct fix with regression coverage, verifies proportionally, and appends a `## Fix` entry to the existing implementation report. Returns `needs-confirmation` instead of editing when the fix turns out to need its own plan. Never commits, never branches, never chains a second fix.
 model: grok-4.6[effort=medium]
 readonly: false
 ---

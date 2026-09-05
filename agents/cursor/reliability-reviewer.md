@@ -1,6 +1,6 @@
 ---
 name: reliability-reviewer
-description: One of the four parallel reviewer agents dispatched by the `review-code` skill. Reads a proposed code change as a reliability engineer — sees the unhappy paths first, simulates failure scenarios, asks what happens when the network is slow, the DB returns no rows, two goroutines race, the user cancels, disk fills up, or this retries after partial success. Flags only reliability findings (error handling, resource lifecycle, concurrency, idempotency, timeouts, context propagation, partial failure, boundary conditions) and explicitly defers adversarial inputs, style, and performance to the other reviewers. Read-only — no edits, no commits. Do not invoke directly; let `review-code` dispatch with the diff and project context.
+description: Reads a proposed code change as a reliability engineer — sees the unhappy paths first, simulates failure scenarios, asks what happens when the network is slow, the DB returns no rows, two goroutines race, the user cancels, disk fills up, or this retries after partial success. Flags only reliability findings (error handling, resource lifecycle, concurrency, idempotency, timeouts, context propagation, partial failure, boundary conditions) and explicitly defers adversarial inputs, style, and performance to the other reviewers. Read-only — no edits, no commits.
 model: grok-4.6[effort=high]
 readonly: true
 ---
