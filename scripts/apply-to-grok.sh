@@ -4,6 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=install-shared.sh
 source "${SCRIPT_DIR}/install-shared.sh"
+# shellcheck source=install-ponytail.sh
+source "${SCRIPT_DIR}/install-ponytail.sh"
 
 AGENTS_SOURCE_DIR="${SCRIPT_DIR}/../agents/grok"
 HOOKS_SOURCE_DIR="${SCRIPT_DIR}/../hooks/grok"
@@ -81,6 +83,8 @@ if command -v grok >/dev/null 2>&1; then
   fi
 fi
 
+ponytail_status=$(install_ponytail_grok)
+
 echo "Grok Build harness applied:"
 echo "  Shared skills:            ${skills_count} directories in ${HOME}/.agents/skills"
 echo "  Grok skills dir:          harness names removed from ${HOME}/.grok/skills (native ~/.agents/skills)"
@@ -90,9 +94,11 @@ echo "  Grok agents:            ${agents_count} files installed to ${AGENTS_DIR}
 echo "  Grok hook scripts:      ${hooks_count} files installed to ${HOOKS_DIR} (${hooks_status})"
 echo "  Grok hooks harness.json:${hooks_json_status}"
 echo "  Grok [skills] paths:    ${skills_paths_status}"
+echo "  Ponytail plugin:        ${ponytail_status}"
 echo ""
 echo "Required one-time config (installer cannot set this for you):"
 echo "  In ~/.grok/config.toml set [compat.claude] and [compat.cursor] cells to false"
 echo "  (skills, rules, agents, mcps, hooks, sessions) so pure Grok paths are used."
 echo "  Session habits: plan-dev → grok-4.6 / xhigh; dev-loop → grok-4.6 / medium."
+echo "  Ponytail: start a new session (or reload plugins) after install."
 echo ""

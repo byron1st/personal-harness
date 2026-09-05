@@ -4,6 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=install-shared.sh
 source "${SCRIPT_DIR}/install-shared.sh"
+# shellcheck source=install-ponytail.sh
+source "${SCRIPT_DIR}/install-ponytail.sh"
 
 AGENTS_SOURCE_DIR="${SCRIPT_DIR}/../agents/claude"
 HOOKS_SOURCE_DIR="${SCRIPT_DIR}/../hooks/claude"
@@ -66,6 +68,8 @@ if append_claude_script_allows; then
   allow_status="✓ appended"
 fi
 
+ponytail_status=$(install_ponytail_claude)
+
 echo "Claude harness applied:"
 echo "  Shared skills:            ${skills_count} directories in ${HOME}/.agents/skills"
 echo "  Claude skill symlinks:    per-skill links in ${CLAUDE_HOME}/skills → ~/.agents/skills"
@@ -75,4 +79,5 @@ echo "  Claude Code sub-agents:   ${agents_count} files installed to ${AGENTS_DI
 echo "  Claude Code hook scripts: ${hooks_count} files installed to ${HOOKS_DIR} (${hooks_status})"
 echo "  Claude Code settings:     ${settings_status}"
 echo "  Claude script allows:     ${allow_status}"
+echo "  Ponytail plugin:          ${ponytail_status}"
 echo ""

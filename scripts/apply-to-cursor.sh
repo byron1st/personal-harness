@@ -4,6 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=install-shared.sh
 source "${SCRIPT_DIR}/install-shared.sh"
+# shellcheck source=install-ponytail.sh
+source "${SCRIPT_DIR}/install-ponytail.sh"
 
 AGENTS_SOURCE_DIR="${SCRIPT_DIR}/../agents/cursor"
 HOOKS_SOURCE_DIR="${SCRIPT_DIR}/../hooks/cursor"
@@ -59,6 +61,8 @@ if [[ -f "${HOOKS_SOURCE_DIR}/hooks.json" ]]; then
   hooks_json_status="✓ installed"
 fi
 
+ponytail_status=$(install_ponytail_cursor)
+
 echo "Cursor harness applied:"
 echo "  Shared skills:            ${skills_count} directories in ${HOME}/.agents/skills"
 echo "  Cursor skills dir:        harness names removed from ${HOME}/.cursor/skills (native ~/.agents/skills)"
@@ -67,6 +71,7 @@ echo "  Cursor instructions:      ${instructions_md} to ${INSTRUCTIONS_FILE} (in
 echo "  Cursor sub-agents:        ${agents_count} files installed to ${AGENTS_DIR} (${agents_status})"
 echo "  Cursor hook scripts:      ${hooks_count} files installed to ${HOOKS_DIR} (${hooks_status})"
 echo "  Cursor hooks.json:        ${hooks_json_status}"
+echo "  Ponytail rule:            ${ponytail_status}"
 echo ""
 echo "One-time manual step (an installer cannot do this):"
 echo "  Turn OFF Cursor's ~/.claude and ~/.codex compatibility paths in Cursor settings."

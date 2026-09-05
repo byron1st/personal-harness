@@ -4,6 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=install-shared.sh
 source "${SCRIPT_DIR}/install-shared.sh"
+# shellcheck source=install-ponytail.sh
+source "${SCRIPT_DIR}/install-ponytail.sh"
 
 INSTRUCTIONS_SOURCE_DIR="${SCRIPT_DIR}/../instructions"
 CODEX_AGENTS_SOURCE_DIR="${SCRIPT_DIR}/../agents/codex"
@@ -54,6 +56,8 @@ if [[ -f "${CODEX_HOOKS_SOURCE_DIR}/hooks.json" ]]; then
   codex_hooks_json_status="✓ installed"
 fi
 
+ponytail_status=$(install_ponytail_codex)
+
 echo "Codex harness applied:"
 echo "  Shared skills:       ${skills_count} directories in ${HOME}/.agents/skills"
 echo "  Codex skills dir:    harness names removed from ${HOME}/.codex/skills (native ~/.agents/skills)"
@@ -62,4 +66,9 @@ echo "  Codex instructions: ${codex_md}"
 echo "  Codex custom agents: ${codex_agents_count} files installed to ${CODEX_AGENTS_DIR} (${codex_agents_status})"
 echo "  Codex hook scripts:  ${codex_hooks_count} files installed to ${CODEX_HOOKS_DIR} (${codex_hooks_status})"
 echo "  Codex hooks.json:    ${codex_hooks_json_status}"
+echo "  Ponytail plugin:     ${ponytail_status}"
+echo ""
+echo "Ponytail (one-time, installer cannot do this):"
+echo "  In Codex open /hooks, review and trust ponytail's two lifecycle hooks, then start a new thread."
+echo "  node must be on PATH for those hooks (skills still work without it)."
 echo ""

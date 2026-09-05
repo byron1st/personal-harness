@@ -73,13 +73,14 @@ These CLI tools must be on PATH for this harness's skills, hooks, and install sc
 | `gcx` | `loki-log-search` | Grafana Loki log lookup via `gcx api` passthrough | install a `gcx` distribution, then configure context with `gcx config current-context` |
 | Cursor 2.4+ | entire Cursor variant | subagent `model`/`readonly` frontmatter, Agent Skills, `hooks.json` (including `subagentStart`) | update the Cursor app |
 | `grok` (Grok Build 0.2+) | entire Grok variant | `~/.grok/{agents,skills,hooks,scripts,rules}`; SuperGrok subscription recommended | [install Grok Build CLI](https://x.ai/cli) then `grok login` |
+| `node` | Claude/Codex ponytail plugin | ponytail's two lifecycle hooks | already on PATH if you have a JS toolchain; otherwise `brew install node` |
 
 Notes:
 - `rg`/`fd` are required: as the layout section's `hooks` item already says, hooks enforce their use.
 - `gh` and `glab` are only called on personal and work repos respectively, so you can omit the tool for a repo type you never use.
 - Project templates (`skills/*/setup-initial-repo/references/{go-makefile.md,swift-makefile.md,ts-nextjs-packagejson.md}`) pull along `go`, `golangci-lint`, `mockery`, `gremlins`, `swag`, `swiftlint`, `swiftformat`, `eslint`, `vitest`, `playwright`, `stryker`, and so on when `setup-initial-repo` references them. Those are build tools of the generated project, not prerequisites of this harness.
 
-### One-time required setup (Cursor · Grok Build)
+### One-time required setup (Cursor · Grok Build · Codex ponytail)
 
 These are UI/config-file steps the install scripts cannot take for you. Recheck them on a new machine, a reinstall, or a settings reset.
 
@@ -113,6 +114,10 @@ mcps = false
 hooks = false
 sessions = false
 ```
+
+#### Codex — trust ponytail lifecycle hooks
+
+`apply-to-codex.sh` adds the [ponytail](https://github.com/DietrichGebert/ponytail) marketplace and plugin, but Codex will not run a plugin's hooks until you trust them. Open `/hooks` in Codex, review ponytail's two lifecycle hooks, trust them, and start a new thread. The same install covers the Codex desktop app: restart the app after installing.
 
 ### Environment variables
 
@@ -314,7 +319,7 @@ This applies to `full` too — every reviewer's model is pinned on the agent fil
 
 ## Scripts
 
-`scripts/` holds install and sync scripts. `apply-to-*.sh` deploys this repo's source variants into the real agent environment under the user's home; `setup-ctx7.sh` does the reverse, writing an external product back into the repo source. Install target directories are emptied then refilled, so skills, agents, and hooks edited directly under home are overwritten from source on the next run.
+`scripts/` holds install and sync scripts. `apply-to-*.sh` deploys this repo's source variants into the real agent environment under the user's home; `setup-ctx7.sh` does the reverse, writing an external product back into the repo source. Install target directories are emptied then refilled, so skills, agents, and hooks edited directly under home are overwritten from source on the next run. Each `apply-to-*.sh` also installs the external [ponytail](https://github.com/DietrichGebert/ponytail) plugin (Cursor: a user rule file — ponytail has no Cursor plugin). That install lives in the host's plugin store (or `~/.cursor/rules/`), not in the harness-owned dirs that get wiped.
 
 ### apply-to.sh
 
@@ -334,6 +339,7 @@ Claude Code install script.
 
 - Claude Code: copies `instructions/AGENTS.md` to `~/.claude/CLAUDE.md`, installs runtime scripts to `~/.agents/scripts`, and per-skill symlinks under `~/.claude/skills` → `~/.agents/skills`. Empties and refills `~/.claude/agents` and `~/.claude/hooks` from `agents/claude/` · `hooks/claude/hooks/`.
 - Claude Code settings: merges the `hooks` block from `hooks/claude/settings.json` into `~/.claude/settings.json` with `jq`. Then appends the two `~/.agents/scripts` Bash allows to `permissions.allow` without replacing the array. Other user settings (`permissions`/`model`/`env`, …) are preserved; if the target file is missing it is created whole (`jq` required). `hooks/claude/settings.json` has no `permissions` key.
+- Ponytail: `claude plugin marketplace add DietrichGebert/ponytail` then `claude plugin install ponytail@ponytail` (user scope). Skips if already installed. Requires the `claude` CLI. The plugin's lifecycle hooks need `node` on PATH (skills still work without it).
 - Prints a per-item install count and status summary at the end.
 
 ### apply-to-codex.sh
@@ -344,6 +350,7 @@ Codex install script.
 - Installs runtime scripts to `~/.agents/scripts`. Removes harness skill names from `~/.codex/skills`.
 - Empties `~/.codex/agents/` and copies `agents/codex/*.toml`.
 - Empties `~/.codex/hooks/`, copies `hooks/codex/hooks/*`, and copies `hooks/codex/hooks.json` to `~/.codex/hooks.json`.
+- Ponytail: `codex plugin marketplace add DietrichGebert/ponytail` then `codex plugin add ponytail@ponytail`. Skips if already installed. Requires the `codex` CLI. After install, open `/hooks` in Codex, review and trust its two lifecycle hooks, and start a new thread (`node` on PATH for those hooks).
 - Prints a per-item install count and status summary at the end.
 
 ### apply-to-cursor.sh
@@ -353,6 +360,7 @@ Cursor install script.
 - Copies `instructions/AGENTS.md` to `~/.cursor/AGENTS.md`. **Cursor does not read this file** — `session-context.sh` reads it and injects it as `additional_context`. Cursor has no user-global instructions file, and User Rules are UI state the install script cannot write.
 - Installs runtime scripts to `~/.agents/scripts`. Removes harness skill names from `~/.cursor/skills`. Empties and refills `~/.cursor/agents` and `~/.cursor/hooks` from `agents/cursor/` · `hooks/cursor/hooks/`.
 - Copies `hooks/cursor/hooks.json` to `~/.cursor/hooks.json` as a **replace, not a merge**. Claude's `settings.json` is shared with other settings; Cursor's `hooks.json` is hooks-only.
+- Ponytail: ponytail has no Cursor plugin. Downloads `.cursor/rules/ponytail.mdc` from the ponytail repo into `~/.cursor/rules/ponytail.mdc` (always-on user rule). Requires `curl`. Re-fetches on every apply so the rule stays current.
 - Prints an install summary and reminds you of the one-time manual step the script cannot take (turn off `~/.claude` compat paths).
 
 ### apply-to-grok.sh
@@ -363,11 +371,25 @@ Install script for the Grok Build-only variant (does not use Claude/Cursor compa
 - Installs runtime scripts to `~/.agents/scripts`. Removes harness skill names from `~/.grok/skills`.
 - Empties `~/.grok/agents/` and copies `agents/grok/*.md`.
 - Places hook scripts under `~/.grok/hooks/` and copies `hooks/grok/hooks.json` to **`~/.grok/hooks/harness.json`** (Grok merges `~/.grok/hooks/*.json`).
+- Ponytail: `grok plugin install DietrichGebert/ponytail --trust` then `grok plugin enable ponytail` (plugins stay off until enabled). Skips the install if already present. Requires the `grok` CLI. Start a new session (or reload plugins) after install.
 - On exit, reminds you to **turn off `[compat.claude]` · `[compat.cursor]`** and of the session habit (plan-dev high / dev-loop medium).
 
 ### apply-to-all.sh
 
 Wrapper that calls `apply-to.sh claude codex cursor grok` and runs all four agent installs in order. Runnable from anywhere (the script resolves paths from its own location).
+
+### Ponytail
+
+[ponytail](https://github.com/DietrichGebert/ponytail) is an external plugin (YAGNI / smallest working diff). It is not vendored in this repo. Each `apply-to-*.sh` installs it with the method that project's README documents:
+
+| Host | Method |
+| --- | --- |
+| Claude Code | `claude plugin marketplace add DietrichGebert/ponytail` then `claude plugin install ponytail@ponytail` |
+| Codex | `codex plugin marketplace add DietrichGebert/ponytail` then `codex plugin add ponytail@ponytail`; then trust hooks in `/hooks` |
+| Cursor | no plugin — copy `.cursor/rules/ponytail.mdc` to `~/.cursor/rules/ponytail.mdc` |
+| Grok Build | `grok plugin install DietrichGebert/ponytail --trust` then `grok plugin enable ponytail` |
+
+Re-running apply does not wipe it: an already-installed plugin is left as-is (Cursor re-fetches the rule file). Update a plugin with the host's own update command, not by re-applying the harness. After install, `/ponytail` (Codex: `@ponytail`) plus review/audit/debt/gain/help. Default mode is `full`; override with `PONYTAIL_DEFAULT_MODE` or `~/.config/ponytail/config.json`. A missing host CLI skips that platform's ponytail step and does not fail the rest of the harness apply.
 
 ### setup-ctx7.sh
 

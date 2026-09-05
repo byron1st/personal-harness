@@ -73,13 +73,14 @@ personal-harness/
 | `gcx` | `loki-log-search` | Grafana Loki 로그 조회용 `gcx api` passthrough | `gcx` 배포본 설치 후 `gcx config current-context`로 컨텍스트 구성 |
 | Cursor 2.4+ | Cursor 변형 전체 | 서브에이전트 `model`·`readonly` 프론트매터, Agent Skills, `hooks.json`(`subagentStart` 포함) | Cursor 앱 업데이트 |
 | `grok` (Grok Build 0.2+) | Grok 변형 전체 | `~/.grok/{agents,skills,hooks,scripts,rules}`, SuperGrok 구독 권장 | [Grok Build CLI 설치](https://x.ai/cli) 후 `grok login` |
+| `node` | Claude/Codex ponytail 플러그인 | ponytail 라이프사이클 훅 2개 | JS 툴체인이 있으면 이미 PATH에 있음. 없으면 `brew install node` |
 
 참고:
 - `rg`/`fd`는 이미 폴더 구조 설명의 `hooks` 항목에서 언급한 대로 hook이 사용을 강제하므로 반드시 설치해야 한다.
 - `gh`·`glab`는 각각 personal/work 저장소에서만 호출되므로, 사용하지 않는 저장소 유형의 도구는 생략 가능하다.
 - 프로젝트 템플릿(`skills/*/setup-initial-repo/references/{go-makefile.md,swift-makefile.md,ts-nextjs-packagejson.md}`)이 `setup-initial-repo`로 참조될 때 함께 따라가는 `go`, `golangci-lint`, `mockery`, `gremlins`, `swag`, `swiftlint`, `swiftformat`, `eslint`, `vitest`, `playwright`, `stryker` 등은 생성되는 프로젝트의 빌드 도구이지 이 harness 자체의 prerequisite은 아니다.
 
-### 1회성 필수 설정 (Cursor · Grok Build)
+### 1회성 필수 설정 (Cursor · Grok Build · Codex ponytail)
 
 설치 스크립트가 대신 쓸 수 없는 UI/설정 파일 단계다. 새 머신·재설치·설정 초기화 때마다 다시 확인한다.
 
@@ -113,6 +114,10 @@ mcps = false
 hooks = false
 sessions = false
 ```
+
+#### Codex — ponytail 라이프사이클 훅 신뢰
+
+`apply-to-codex.sh`가 [ponytail](https://github.com/DietrichGebert/ponytail) 마켓플레이스와 플러그인을 추가하지만, Codex는 훅을 신뢰하기 전에는 플러그인 훅을 실행하지 않는다. Codex에서 `/hooks`를 열고 ponytail의 라이프사이클 훅 2개를 검토·신뢰한 뒤 새 스레드를 시작한다. 같은 설치가 Codex 데스크톱 앱에도 적용된다 — 설치 후 앱을 재시작한다.
 
 ### 환경변수
 
@@ -314,7 +319,7 @@ Claude는 `model`·`effort` 두 필드를 쓴다. **Codex**는 TOML `model` + `m
 
 ## Scripts
 
-`scripts/`에는 설치·동기화 스크립트가 있다. `apply-to-*.sh`는 이 레포의 소스 변형을 사용자 홈의 실제 에이전트 환경으로 배포하고, `setup-ctx7.sh`는 반대로 외부 생성물을 레포 소스에 반영한다. 설치 대상 디렉토리는 기존 내용을 비운 뒤 다시 채우는 방식이라, 홈 디렉토리에서 직접 수정한 스킬·에이전트·훅은 다음 실행 때 소스 기준으로 덮어써진다.
+`scripts/`에는 설치·동기화 스크립트가 있다. `apply-to-*.sh`는 이 레포의 소스 변형을 사용자 홈의 실제 에이전트 환경으로 배포하고, `setup-ctx7.sh`는 반대로 외부 생성물을 레포 소스에 반영한다. 설치 대상 디렉토리는 기존 내용을 비운 뒤 다시 채우는 방식이라, 홈 디렉토리에서 직접 수정한 스킬·에이전트·훅은 다음 실행 때 소스 기준으로 덮어써진다. 각 `apply-to-*.sh`는 외부 [ponytail](https://github.com/DietrichGebert/ponytail) 플러그인도 설치한다 (Cursor는 사용자 룰 파일 — ponytail에 Cursor 플러그인이 없다). 그 설치본은 호스트 플러그인 저장소(또는 `~/.cursor/rules/`)에 있으며, wipe 대상인 harness 소유 디렉터리에는 없다.
 
 ### apply-to.sh
 
@@ -334,6 +339,7 @@ Claude Code 설치 스크립트다.
 
 - Claude Code: `instructions/AGENTS.md`를 `~/.claude/CLAUDE.md`로 복사하고, 런타임 스크립트를 `~/.agents/scripts`에 설치한 뒤 `~/.claude/skills/<name>` 스킬 단위 심링크를 `~/.agents/skills`로 건다. `~/.claude/agents`와 `~/.claude/hooks`는 `agents/claude/` · `hooks/claude/hooks/`로 다시 채운다.
 - Claude Code 설정: `hooks/claude/settings.json`의 `hooks` 블록을 `~/.claude/settings.json`에 `jq`로 머지한 뒤, 두 `~/.agents/scripts` Bash allow를 `permissions.allow`에 배열을 통째 교체하지 않고 append한다. 사용자의 다른 설정은 보존되며, 대상 파일이 없으면 통째로 생성한다 (jq 필요). `hooks/claude/settings.json`에는 `permissions`가 없다.
+- Ponytail: `claude plugin marketplace add DietrichGebert/ponytail` 다음 `claude plugin install ponytail@ponytail` (user scope). 이미 설치돼 있으면 건너뛴다. `claude` CLI 필요. 플러그인 라이프사이클 훅은 PATH에 `node`가 있어야 한다 (없어도 스킬은 동작한다).
 - 마지막에 항목별 설치 개수와 상태 요약을 출력한다.
 
 ### apply-to-codex.sh
@@ -344,6 +350,7 @@ Codex 설치 스크립트다.
 - 런타임 스크립트를 `~/.agents/scripts`에 설치하고 `~/.codex/skills`에서 harness 이름을 제거한다.
 - `~/.codex/agents/`를 비운 뒤 `agents/codex/*.toml`을 복사한다.
 - `~/.codex/hooks/`를 비운 뒤 `hooks/codex/hooks/*`를 복사하고, `hooks/codex/hooks.json`을 `~/.codex/hooks.json`으로 복사한다.
+- Ponytail: `codex plugin marketplace add DietrichGebert/ponytail` 다음 `codex plugin add ponytail@ponytail`. 이미 설치돼 있으면 건너뛴다. `codex` CLI 필요. 설치 후 Codex에서 `/hooks`를 열고 라이프사이클 훅 2개를 검토·신뢰한 뒤 새 스레드를 시작한다 (훅에는 PATH의 `node` 필요).
 - 마지막에 항목별 설치 개수와 상태 요약을 출력한다.
 
 ### apply-to-cursor.sh
@@ -353,6 +360,7 @@ Cursor 설치 스크립트다.
 - `instructions/AGENTS.md`를 `~/.cursor/AGENTS.md`로 복사한다. **Cursor는 이 파일을 읽지 않는다** — `session-context.sh`가 읽어서 `additional_context`로 주입한다. Cursor에 사용자 전역 지침 파일이 없고 User Rules는 설치 스크립트가 쓸 수 없는 UI 상태이기 때문이다.
 - 런타임 스크립트를 `~/.agents/scripts`에 설치하고 `~/.cursor/skills`에서 harness 이름을 제거한다. `~/.cursor/agents`와 `~/.cursor/hooks`는 `agents/cursor/` · `hooks/cursor/hooks/`로 다시 채운다.
 - `hooks/cursor/hooks.json`을 `~/.cursor/hooks.json`으로 **머지가 아니라 교체**한다. Claude의 `settings.json`은 다른 설정과 파일을 공유하지만 Cursor의 `hooks.json`은 훅 전용이다.
+- Ponytail: ponytail에 Cursor 플러그인은 없다. ponytail 레포의 `.cursor/rules/ponytail.mdc`를 `~/.cursor/rules/ponytail.mdc`로 받는다 (always-on 사용자 룰). `curl` 필요. apply 때마다 다시 받아 룰을 최신으로 유지한다.
 - 마지막에 설치 요약과 함께, 스크립트가 대신할 수 없는 1회성 수동 단계(`~/.claude` 호환 경로 끄기)를 안내한다.
 
 ### apply-to-grok.sh
@@ -363,11 +371,25 @@ Grok Build 전용 변형 설치 스크립트다(Claude/Cursor compat 경로를 �
 - 런타임 스크립트를 `~/.agents/scripts`에 설치하고 `~/.grok/skills`에서 harness 이름을 제거한다.
 - `~/.grok/agents/`를 비운 뒤 `agents/grok/*.md`를 복사한다.
 - 훅 스크립트를 `~/.grok/hooks/`에 두고, `hooks/grok/hooks.json`을 **`~/.grok/hooks/harness.json`**으로 복사한다(Grok은 `~/.grok/hooks/*.json`을 머지).
+- Ponytail: `grok plugin install DietrichGebert/ponytail --trust` 다음 `grok plugin enable ponytail` (플러그인은 enable 전까지 꺼져 있다). 이미 있으면 설치는 건너뛴다. `grok` CLI 필요. 설치 후 새 세션을 시작하거나 플러그인을 리로드한다.
 - 종료 시 **`[compat.claude]`·`[compat.cursor]` 끄기**와 세션 습관(plan-dev high / dev-loop medium)을 안내한다.
 
 ### apply-to-all.sh
 
 `apply-to.sh claude codex cursor grok`를 호출해 네 에이전트 설치를 순서대로 실행하는 래퍼다. 어디서 실행해도 된다(스크립트가 자체 경로 기준으로 해석한다).
+
+### Ponytail
+
+[ponytail](https://github.com/DietrichGebert/ponytail)은 외부 플러그인이다 (YAGNI / 가장 작은 동작하는 diff). 이 레포에 벤더링하지 않는다. 각 `apply-to-*.sh`는 해당 프로젝트 README에 적힌 방법으로 설치한다:
+
+| 호스트 | 방법 |
+| --- | --- |
+| Claude Code | `claude plugin marketplace add DietrichGebert/ponytail` 다음 `claude plugin install ponytail@ponytail` |
+| Codex | `codex plugin marketplace add DietrichGebert/ponytail` 다음 `codex plugin add ponytail@ponytail`; 이후 `/hooks`에서 훅 신뢰 |
+| Cursor | 플러그인 없음 — `.cursor/rules/ponytail.mdc`를 `~/.cursor/rules/ponytail.mdc`로 복사 |
+| Grok Build | `grok plugin install DietrichGebert/ponytail --trust` 다음 `grok plugin enable ponytail` |
+
+apply를 다시 실행해도 wipe하지 않는다: 이미 설치된 플러그인은 그대로 둔다 (Cursor는 룰 파일을 다시 받는다). 플러그인 업데이트는 harness apply가 아니라 호스트 자체의 update 명령으로 한다. 설치 후 `/ponytail` (Codex는 `@ponytail`)과 review/audit/debt/gain/help. 기본 모드는 `full`; `PONYTAIL_DEFAULT_MODE` 또는 `~/.config/ponytail/config.json`으로 바꿀 수 있다. 해당 호스트 CLI가 없으면 그 플랫폼의 ponytail 단계만 건너뛰고 harness apply의 나머지는 실패하지 않는다.
 
 ### setup-ctx7.sh
 
