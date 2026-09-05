@@ -8,7 +8,6 @@ source "${SCRIPT_DIR}/install-shared.sh"
 AGENTS_SOURCE_DIR="${SCRIPT_DIR}/../agents/claude"
 HOOKS_SOURCE_DIR="${SCRIPT_DIR}/../hooks/claude"
 INSTRUCTIONS_SOURCE_DIR="${SCRIPT_DIR}/../instructions"
-SKILLS_SOURCE_DIR="${SCRIPT_DIR}/../skills"
 RUNTIME_SCRIPTS_SOURCE_DIR="${SCRIPT_DIR}/runtime"
 
 CLAUDE_HOME="${HOME}/.claude"
@@ -25,8 +24,6 @@ if [[ -f "${INSTRUCTIONS_SOURCE_DIR}/AGENTS.md" ]]; then
   claude_md="✓ installed"
 fi
 
-echo "Installing shared skills to ~/.agents/skills..."
-install_shared_skills "${SKILLS_SOURCE_DIR}"
 install_shared_scripts "${RUNTIME_SCRIPTS_SOURCE_DIR}"
 link_claude_harness_skills
 skills_count=$(count_shared_skills)

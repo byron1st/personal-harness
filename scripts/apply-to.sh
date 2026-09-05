@@ -2,6 +2,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=install-shared.sh
+source "${SCRIPT_DIR}/install-shared.sh"
+
+SKILLS_SOURCE_DIR="${SCRIPT_DIR}/../skills"
 
 usage() {
   cat <<'EOF' >&2
@@ -57,6 +61,12 @@ for raw in "$@"; do
     agents+=("${agent}")
   fi
 done
+
+echo "Installing shared skills to ~/.agents/skills..."
+install_shared_skills "${SKILLS_SOURCE_DIR}"
+skills_count=$(count_shared_skills)
+echo "Shared skills: ${skills_count} directories in ${HOME}/.agents/skills"
+echo ""
 
 failed=0
 for agent in "${agents[@]}"; do

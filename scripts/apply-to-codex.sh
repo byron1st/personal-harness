@@ -6,7 +6,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/install-shared.sh"
 
 INSTRUCTIONS_SOURCE_DIR="${SCRIPT_DIR}/../instructions"
-SKILLS_SOURCE_DIR="${SCRIPT_DIR}/../skills"
 CODEX_AGENTS_SOURCE_DIR="${SCRIPT_DIR}/../agents/codex"
 CODEX_HOOKS_SOURCE_DIR="${SCRIPT_DIR}/../hooks/codex"
 RUNTIME_SCRIPTS_SOURCE_DIR="${SCRIPT_DIR}/runtime"
@@ -25,8 +24,6 @@ if [[ -f "${INSTRUCTIONS_SOURCE_DIR}/AGENTS.md" ]]; then
   codex_md="✓ installed"
 fi
 
-echo "Installing shared skills to ~/.agents/skills..."
-install_shared_skills "${SKILLS_SOURCE_DIR}"
 install_shared_scripts "${RUNTIME_SCRIPTS_SOURCE_DIR}"
 remove_platform_harness_skills "${HOME}/.codex/skills"
 skills_count=$(count_shared_skills)

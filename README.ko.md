@@ -318,7 +318,7 @@ Claude는 `model`·`effort` 두 필드를 쓴다. **Codex**는 TOML `model` + `m
 
 ### apply-to.sh
 
-에이전트 이름을 인자로 받아 해당 설치 스크립트만 순차 실행하는 공통 진입점이다.
+에이전트 이름을 인자로 받아 해당 설치 스크립트만 순차 실행하는 공통 진입점이다. 플랫폼별 설치 전에 harness 소유 이름을 `~/.agents/skills`에서 지운 뒤 `skills/<name>/`을 한 번만 복사한다 (호스트 공용).
 
 ```bash
 scripts/apply-to.sh claude
@@ -332,7 +332,7 @@ scripts/apply-to.sh claude codex cursor grok
 
 Claude Code 설치 스크립트다.
 
-- Claude Code: `instructions/AGENTS.md`를 `~/.claude/CLAUDE.md`로 복사하고, 공유 스킬을 `~/.agents/skills`에, 런타임 스크립트를 `~/.agents/scripts`에 설치한 뒤 `~/.claude/skills/<name>` 스킬 단위 심링크를 건다. `~/.claude/agents`와 `~/.claude/hooks`는 `agents/claude/` · `hooks/claude/hooks/`로 다시 채운다.
+- Claude Code: `instructions/AGENTS.md`를 `~/.claude/CLAUDE.md`로 복사하고, 런타임 스크립트를 `~/.agents/scripts`에 설치한 뒤 `~/.claude/skills/<name>` 스킬 단위 심링크를 `~/.agents/skills`로 건다. `~/.claude/agents`와 `~/.claude/hooks`는 `agents/claude/` · `hooks/claude/hooks/`로 다시 채운다.
 - Claude Code 설정: `hooks/claude/settings.json`의 `hooks` 블록을 `~/.claude/settings.json`에 `jq`로 머지한 뒤, 두 `~/.agents/scripts` Bash allow를 `permissions.allow`에 배열을 통째 교체하지 않고 append한다. 사용자의 다른 설정은 보존되며, 대상 파일이 없으면 통째로 생성한다 (jq 필요). `hooks/claude/settings.json`에는 `permissions`가 없다.
 - 마지막에 항목별 설치 개수와 상태 요약을 출력한다.
 
@@ -341,7 +341,7 @@ Claude Code 설치 스크립트다.
 Codex 설치 스크립트다.
 
 - `instructions/AGENTS.md`를 `~/.codex/AGENTS.md`로 복사한다.
-- 공유 스킬을 `~/.agents/skills`에, 런타임 스크립트를 `~/.agents/scripts`에 설치하고 `~/.codex/skills`에서 harness 이름을 제거한다.
+- 런타임 스크립트를 `~/.agents/scripts`에 설치하고 `~/.codex/skills`에서 harness 이름을 제거한다.
 - `~/.codex/agents/`를 비운 뒤 `agents/codex/*.toml`을 복사한다.
 - `~/.codex/hooks/`를 비운 뒤 `hooks/codex/hooks/*`를 복사하고, `hooks/codex/hooks.json`을 `~/.codex/hooks.json`으로 복사한다.
 - 마지막에 항목별 설치 개수와 상태 요약을 출력한다.
@@ -351,7 +351,7 @@ Codex 설치 스크립트다.
 Cursor 설치 스크립트다.
 
 - `instructions/AGENTS.md`를 `~/.cursor/AGENTS.md`로 복사한다. **Cursor는 이 파일을 읽지 않는다** — `session-context.sh`가 읽어서 `additional_context`로 주입한다. Cursor에 사용자 전역 지침 파일이 없고 User Rules는 설치 스크립트가 쓸 수 없는 UI 상태이기 때문이다.
-- 공유 스킬을 `~/.agents/skills`에, 런타임 스크립트를 `~/.agents/scripts`에 설치하고 `~/.cursor/skills`에서 harness 이름을 제거한다. `~/.cursor/agents`와 `~/.cursor/hooks`는 `agents/cursor/` · `hooks/cursor/hooks/`로 다시 채운다.
+- 런타임 스크립트를 `~/.agents/scripts`에 설치하고 `~/.cursor/skills`에서 harness 이름을 제거한다. `~/.cursor/agents`와 `~/.cursor/hooks`는 `agents/cursor/` · `hooks/cursor/hooks/`로 다시 채운다.
 - `hooks/cursor/hooks.json`을 `~/.cursor/hooks.json`으로 **머지가 아니라 교체**한다. Claude의 `settings.json`은 다른 설정과 파일을 공유하지만 Cursor의 `hooks.json`은 훅 전용이다.
 - 마지막에 설치 요약과 함께, 스크립트가 대신할 수 없는 1회성 수동 단계(`~/.claude` 호환 경로 끄기)를 안내한다.
 
@@ -360,7 +360,7 @@ Cursor 설치 스크립트다.
 Grok Build 전용 변형 설치 스크립트다(Claude/Cursor compat 경로를 쓰지 않는다).
 
 - `instructions/AGENTS.md`를 **`~/.grok/rules/AGENTS.md`**로 복사한다(SessionStart 주입이 아니라 네이티브 rules 로드).
-- 공유 스킬을 `~/.agents/skills`에, 런타임 스크립트를 `~/.agents/scripts`에 설치하고 `~/.grok/skills`에서 harness 이름을 제거한다.
+- 런타임 스크립트를 `~/.agents/scripts`에 설치하고 `~/.grok/skills`에서 harness 이름을 제거한다.
 - `~/.grok/agents/`를 비운 뒤 `agents/grok/*.md`를 복사한다.
 - 훅 스크립트를 `~/.grok/hooks/`에 두고, `hooks/grok/hooks.json`을 **`~/.grok/hooks/harness.json`**으로 복사한다(Grok은 `~/.grok/hooks/*.json`을 머지).
 - 종료 시 **`[compat.claude]`·`[compat.cursor]` 끄기**와 세션 습관(plan-dev high / dev-loop medium)을 안내한다.

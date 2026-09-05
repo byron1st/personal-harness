@@ -318,7 +318,7 @@ This applies to `full` too — every reviewer's model is pinned on the agent fil
 
 ### apply-to.sh
 
-Common entry point: takes agent names as arguments and runs only those install scripts, in order.
+Common entry point: takes agent names as arguments and runs only those install scripts, in order. Before the per-agent installers, it deletes harness-owned names under `~/.agents/skills` and copies `skills/<name>/` there once (shared across hosts).
 
 ```bash
 scripts/apply-to.sh claude
@@ -332,7 +332,7 @@ Allowed arguments: `claude` · `codex` · `cursor` · `grok` (case-insensitive, 
 
 Claude Code install script.
 
-- Claude Code: copies `instructions/AGENTS.md` to `~/.claude/CLAUDE.md`, installs shared skills to `~/.agents/skills`, runtime scripts to `~/.agents/scripts`, and per-skill symlinks under `~/.claude/skills`. Empties and refills `~/.claude/agents` and `~/.claude/hooks` from `agents/claude/` · `hooks/claude/hooks/`.
+- Claude Code: copies `instructions/AGENTS.md` to `~/.claude/CLAUDE.md`, installs runtime scripts to `~/.agents/scripts`, and per-skill symlinks under `~/.claude/skills` → `~/.agents/skills`. Empties and refills `~/.claude/agents` and `~/.claude/hooks` from `agents/claude/` · `hooks/claude/hooks/`.
 - Claude Code settings: merges the `hooks` block from `hooks/claude/settings.json` into `~/.claude/settings.json` with `jq`. Then appends the two `~/.agents/scripts` Bash allows to `permissions.allow` without replacing the array. Other user settings (`permissions`/`model`/`env`, …) are preserved; if the target file is missing it is created whole (`jq` required). `hooks/claude/settings.json` has no `permissions` key.
 - Prints a per-item install count and status summary at the end.
 
@@ -341,7 +341,7 @@ Claude Code install script.
 Codex install script.
 
 - Copies `instructions/AGENTS.md` to `~/.codex/AGENTS.md`.
-- Installs shared skills to `~/.agents/skills` and runtime scripts to `~/.agents/scripts`. Removes harness skill names from `~/.codex/skills`.
+- Installs runtime scripts to `~/.agents/scripts`. Removes harness skill names from `~/.codex/skills`.
 - Empties `~/.codex/agents/` and copies `agents/codex/*.toml`.
 - Empties `~/.codex/hooks/`, copies `hooks/codex/hooks/*`, and copies `hooks/codex/hooks.json` to `~/.codex/hooks.json`.
 - Prints a per-item install count and status summary at the end.
@@ -351,7 +351,7 @@ Codex install script.
 Cursor install script.
 
 - Copies `instructions/AGENTS.md` to `~/.cursor/AGENTS.md`. **Cursor does not read this file** — `session-context.sh` reads it and injects it as `additional_context`. Cursor has no user-global instructions file, and User Rules are UI state the install script cannot write.
-- Installs shared skills to `~/.agents/skills` and runtime scripts to `~/.agents/scripts`. Removes harness skill names from `~/.cursor/skills`. Empties and refills `~/.cursor/agents` and `~/.cursor/hooks` from `agents/cursor/` · `hooks/cursor/hooks/`.
+- Installs runtime scripts to `~/.agents/scripts`. Removes harness skill names from `~/.cursor/skills`. Empties and refills `~/.cursor/agents` and `~/.cursor/hooks` from `agents/cursor/` · `hooks/cursor/hooks/`.
 - Copies `hooks/cursor/hooks.json` to `~/.cursor/hooks.json` as a **replace, not a merge**. Claude's `settings.json` is shared with other settings; Cursor's `hooks.json` is hooks-only.
 - Prints an install summary and reminds you of the one-time manual step the script cannot take (turn off `~/.claude` compat paths).
 
@@ -360,7 +360,7 @@ Cursor install script.
 Install script for the Grok Build-only variant (does not use Claude/Cursor compat paths).
 
 - Copies `instructions/AGENTS.md` to **`~/.grok/rules/AGENTS.md`** (native rules load, not SessionStart injection).
-- Installs shared skills to `~/.agents/skills` and runtime scripts to `~/.agents/scripts`. Removes harness skill names from `~/.grok/skills`.
+- Installs runtime scripts to `~/.agents/scripts`. Removes harness skill names from `~/.grok/skills`.
 - Empties `~/.grok/agents/` and copies `agents/grok/*.md`.
 - Places hook scripts under `~/.grok/hooks/` and copies `hooks/grok/hooks.json` to **`~/.grok/hooks/harness.json`** (Grok merges `~/.grok/hooks/*.json`).
 - On exit, reminds you to **turn off `[compat.claude]` · `[compat.cursor]`** and of the session habit (plan-dev high / dev-loop medium).

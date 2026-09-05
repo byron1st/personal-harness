@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Shared skill/script install helpers sourced by apply-to-{claude,codex,cursor,grok}.sh.
+# Shared skill/script install helpers sourced by apply-to.sh and apply-to-{claude,codex,cursor,grok}.sh.
 # Harness-owned skill names only — never wipe ~/.agents/skills or a platform skills dir.
+# install_shared_skills is called only from apply-to.sh (once per invocation).
 
 HARNESS_SKILLS=(
   application-research-sync

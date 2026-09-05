@@ -8,7 +8,6 @@ source "${SCRIPT_DIR}/install-shared.sh"
 AGENTS_SOURCE_DIR="${SCRIPT_DIR}/../agents/cursor"
 HOOKS_SOURCE_DIR="${SCRIPT_DIR}/../hooks/cursor"
 INSTRUCTIONS_SOURCE_DIR="${SCRIPT_DIR}/../instructions"
-SKILLS_SOURCE_DIR="${SCRIPT_DIR}/../skills"
 RUNTIME_SCRIPTS_SOURCE_DIR="${SCRIPT_DIR}/runtime"
 
 CURSOR_HOME="${HOME}/.cursor"
@@ -27,8 +26,6 @@ if [[ -f "${INSTRUCTIONS_SOURCE_DIR}/AGENTS.md" ]]; then
   instructions_md="✓ installed"
 fi
 
-echo "Installing shared skills to ~/.agents/skills..."
-install_shared_skills "${SKILLS_SOURCE_DIR}"
 install_shared_scripts "${RUNTIME_SCRIPTS_SOURCE_DIR}"
 remove_platform_harness_skills "${HOME}/.cursor/skills"
 skills_count=$(count_shared_skills)
