@@ -2,22 +2,23 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=install-shared.sh
+source "${SCRIPT_DIR}/install-shared.sh"
+# shellcheck source=install-ponytail.sh
+source "${SCRIPT_DIR}/install-ponytail.sh"
 
-SKILLS_SOURCE_DIR="${SCRIPT_DIR}/../skills/claude"
 AGENTS_SOURCE_DIR="${SCRIPT_DIR}/../agents/claude"
 HOOKS_SOURCE_DIR="${SCRIPT_DIR}/../hooks/claude"
 INSTRUCTIONS_SOURCE_DIR="${SCRIPT_DIR}/../instructions"
-SCRIPTS_SOURCE_DIR="${SCRIPT_DIR}/runtime"
+RUNTIME_SCRIPTS_SOURCE_DIR="${SCRIPT_DIR}/runtime"
 
 CLAUDE_HOME="${HOME}/.claude"
-SKILLS_DIR="${CLAUDE_HOME}/skills"
 AGENTS_DIR="${CLAUDE_HOME}/agents"
 HOOKS_DIR="${CLAUDE_HOME}/hooks"
-SCRIPTS_DIR="${CLAUDE_HOME}/scripts"
 INSTRUCTIONS_FILE="${CLAUDE_HOME}/CLAUDE.md"
 SETTINGS_FILE="${CLAUDE_HOME}/settings.json"
 
-mkdir -p "${SKILLS_DIR}" "${AGENTS_DIR}" "${HOOKS_DIR}" "${SCRIPTS_DIR}"
+mkdir -p "${AGENTS_DIR}" "${HOOKS_DIR}" "${CLAUDE_HOME}/skills"
 
 claude_md="✗ not found"
 if [[ -f "${INSTRUCTIONS_SOURCE_DIR}/AGENTS.md" ]]; then
@@ -25,23 +26,17 @@ if [[ -f "${INSTRUCTIONS_SOURCE_DIR}/AGENTS.md" ]]; then
   claude_md="✓ installed"
 fi
 
-if [[ ! -d "${SKILLS_SOURCE_DIR}" ]]; then
-  echo "Error: Claude skills directory not found at ${SKILLS_SOURCE_DIR}" >&2
-  exit 1
-fi
-
-echo "Cleaning existing Claude skills..."
-find "${SKILLS_DIR}" -maxdepth 1 -mindepth 1 -exec rm -rf {} +
-find "${SKILLS_SOURCE_DIR}" -maxdepth 1 -mindepth 1 -exec cp -r {} "${SKILLS_DIR}/" \;
-skills_count=$(find "${SKILLS_DIR}" -maxdepth 1 -mindepth 1 -type d | wc -l | tr -d ' ')
+install_shared_scripts "${RUNTIME_SCRIPTS_SOURCE_DIR}"
+link_claude_harness_skills
+skills_count=$(count_shared_skills)
+scripts_count=$(count_shared_scripts)
 
 agents_status="✗ source not found"
 hooks_status="✗ source not found"
-scripts_status="✗ source not found"
 settings_status="✗ source not found"
+allow_status="✗ not appended"
 agents_count=0
 hooks_count=0
-scripts_count=0
 
 if [[ -d "${AGENTS_SOURCE_DIR}" ]]; then
   find "${AGENTS_DIR}" -maxdepth 1 -mindepth 1 -exec rm -rf {} +
@@ -57,15 +52,6 @@ if [[ -d "${HOOKS_SOURCE_DIR}/hooks" ]]; then
   hooks_status="✓ installed"
 fi
 
-# Runtime scripts the skills call at execution time. `-p` preserves the
-# executable bit, same reason the hooks block above uses it.
-if [[ -d "${SCRIPTS_SOURCE_DIR}" ]]; then
-  find "${SCRIPTS_DIR}" -maxdepth 1 -mindepth 1 -exec rm -rf {} +
-  find "${SCRIPTS_SOURCE_DIR}" -maxdepth 1 -mindepth 1 -exec cp -rp {} "${SCRIPTS_DIR}/" \;
-  scripts_count=$(find "${SCRIPTS_DIR}" -maxdepth 1 -mindepth 1 -type f | wc -l | tr -d ' ')
-  scripts_status="✓ installed"
-fi
-
 if [[ -f "${HOOKS_SOURCE_DIR}/settings.json" ]]; then
   if [[ -f "${SETTINGS_FILE}" ]]; then
     tmp_settings=$(mktemp)
@@ -78,11 +64,20 @@ if [[ -f "${HOOKS_SOURCE_DIR}/settings.json" ]]; then
   fi
 fi
 
+if append_claude_script_allows; then
+  allow_status="✓ appended"
+fi
+
+ponytail_status=$(install_ponytail_claude)
+
 echo "Claude harness applied:"
-echo "  Claude Code skills:       ${skills_count} directories installed to ${SKILLS_DIR}"
+echo "  Shared skills:            ${skills_count} directories in ${HOME}/.agents/skills"
+echo "  Claude skill symlinks:    per-skill links in ${CLAUDE_HOME}/skills → ~/.agents/skills"
+echo "  Shared runtime scripts:   ${scripts_count} files in ${HOME}/.agents/scripts"
 echo "  Claude Code instructions: ${claude_md}"
 echo "  Claude Code sub-agents:   ${agents_count} files installed to ${AGENTS_DIR} (${agents_status})"
 echo "  Claude Code hook scripts: ${hooks_count} files installed to ${HOOKS_DIR} (${hooks_status})"
-echo "  Claude Code run scripts:  ${scripts_count} files installed to ${SCRIPTS_DIR} (${scripts_status})"
 echo "  Claude Code settings:     ${settings_status}"
+echo "  Claude script allows:     ${allow_status}"
+echo "  Ponytail plugin:          ${ponytail_status}"
 echo ""

@@ -2,43 +2,10 @@
 
 ALWAYS respond in English.
 
-## Key Principles
-
-### Simplicity First
-
-Minimum code that solves the problem. Nothing speculative.
-
-- No features beyond what was asked.
-- No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
-- No error handling for impossible scenarios.
-- If you write 200 lines and it could be 50, rewrite it.
-
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
-
-### Surgical Changes
-
-Touch only what you must. Clean up only your own mess.
-
-When editing existing code:
-
-- Don't "improve" adjacent code, comments, or formatting.
-- Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it - don't delete it.
-
-When your changes create orphans:
-- Remove imports/variables/functions that YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
-
-The test: Every changed line should trace directly to the user's request.
-
 ## Common Development Rules
 
 - Always use Context7 for code generation, setup/configuration steps, or library/API documentation.
-- Check `Makefile` or `package.json` to find useful commands for verifying the code, generating mocks/database models/swagger documentation, testing the code, building the application, or listing outdated direct dependencies.
-- Use `rg` (ripgrep) instead of `grep` for code/codebase searches. Plain pipe-filter usage (e.g. `git status | grep modified`) is fine.
-- Use `fd` instead of `find` for file/code searches. Metadata-only queries (e.g. `find . -mtime ...`, `-size`, `-perm`) may still use `find`.
+- Always read `Makefile` or `package.json` to find useful commands for verifying the code, generating mocks/database models/swagger documentation, testing the code, building the application, or listing outdated direct dependencies.
 - When writing Markdown documents, do not insert line breaks solely for readability; keep each paragraph or bullet as a single logical line unless the format requires line breaks.
 
 <!-- context7 -->

@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """sync-harness verifier.
 
-Mechanizes the "Verify" checklists from docs/sync-harness/SYNC_TO_CODEX.md
-and SYNC_TO_CLAUDE.md so a migration can be checked without eyeballing:
+Mechanizes the "Verify" checklists from docs/sync-harness/ so a migration
+can be checked without eyeballing:
 
-  - tree parity across claude/ codex/ (skills, agents, hooks)
+  - shared skill tree: skills/<name>/ for the 13 harness skills, SKILL.md
+    name matches the directory
+  - residual sweep on the shared skill tree (host tool names, platform
+    script paths, allowed-tools)
   - sub-agent frontmatter parses as YAML (the colon-space trap)
-  - skill / agent `name` matches its directory or filename across variants
-  - residual sweep: leftover Claude-only references in the Codex variants
+  - agent name matches filename across claude/codex variants
   - hooks.json valid JSON
   - bash -n on every hook script
 
@@ -16,7 +18,6 @@ Usage: verify-sync.py [REPO_ROOT]   (defaults to git toplevel / cwd ancestor)
 """
 from __future__ import annotations
 import json
-import os
 import re
 import subprocess
 import sys
@@ -24,7 +25,36 @@ from pathlib import Path
 
 FAILURES: list[tuple[str, str]] = []
 WARNINGS: list[tuple[str, str]] = []
-CODEX_ONLY_SKILLS: set[str] = set()
+
+HARNESS_SKILLS = {
+    "application-research-sync",
+    "chat-summary",
+    "commit-code",
+    "dev-loop",
+    "fix-dev",
+    "implement-dev",
+    "learn-from-manual-edits",
+    "loki-log-search",
+    "plan-dev",
+    "review-code",
+    "setup-initial-repo",
+    "spec-creator",
+    "test-dev",
+}
+
+SKILL_RESIDUALS = (
+    "AskUserQuestion",
+    "AskQuestion",
+    "ExitPlanMode",
+    "fork_turns",
+    "allowed-tools",
+    "$HOME/.claude/scripts",
+    "$HOME/.cursor/scripts",
+    "$HOME/.codex/scripts",
+    "$HOME/.grok/scripts",
+)
+
+PLATFORM_SKILL_DIRS = ("claude", "codex", "cursor", "grok")
 
 
 def fail(section: str, msg: str) -> None:
@@ -35,7 +65,6 @@ def warn(section: str, msg: str) -> None:
     WARNINGS.append((section, msg))
 
 
-# ── locating the repo root ──────────────────────────────────────────────────
 def find_root(argv: list[str]) -> Path:
     if len(argv) > 1:
         return Path(argv[1]).resolve()
@@ -54,7 +83,6 @@ def find_root(argv: list[str]) -> Path:
     return here
 
 
-# ── tiny frontmatter loader (no external deps) ──────────────────────────────
 def load_frontmatter(path: Path):
     """Return (data, error). Prefers PyYAML; falls back to a heuristic that
     still flags the unquoted colon-space trap the migration cares about."""
@@ -69,11 +97,10 @@ def load_frontmatter(path: Path):
         import yaml  # type: ignore
         try:
             return yaml.safe_load(block) or {}, None
-        except Exception as e:  # YAMLError and friends
+        except Exception as e:
             return None, f"YAML parse error: {e}"
     except ImportError:
         pass
-    # Heuristic parser: top-level "key: value" lines only.
     data: dict[str, str] = {}
     for raw in block.splitlines():
         line = raw.rstrip()
@@ -86,7 +113,6 @@ def load_frontmatter(path: Path):
         if val and val[0] in "\"'":
             data[key] = val.strip("\"'")
         else:
-            # Unquoted scalar containing another ': ' would break a real parser.
             if ": " in val:
                 return None, f"unquoted value contains ': ' (YAML colon trap): {line.strip()}"
             data[key] = val
@@ -100,7 +126,6 @@ def read(path: Path) -> str:
         return ""
 
 
-# ── checks ──────────────────────────────────────────────────────────────────
 def check_agents(root: Path) -> None:
     sec = "agents/tree-parity"
     cl, cx = root / "agents/claude", root / "agents/codex"
@@ -121,57 +146,49 @@ def check_agents(root: Path) -> None:
             fail("agents/codex", f"{name}.toml name=\"{m.group(1)}\" != filename `{name}`")
 
 
-def skill_dirs(base: Path) -> set[str]:
-    return {p.name for p in base.iterdir() if p.is_dir()} if base.is_dir() else set()
-
-
-def subtree(base: Path) -> set[str]:
-    return {str(p.relative_to(base)) for p in base.rglob("*") if p.is_file()} if base.is_dir() else set()
-
-
 def check_skills(root: Path) -> None:
-    cl, cx = root / "skills/claude", root / "skills/codex"
-    if not cl.is_dir():
+    skills = root / "skills"
+    if not skills.is_dir():
+        fail("skills/tree", "skills/ directory missing")
         return
-    sc, sx = skill_dirs(cl), skill_dirs(cx)
 
-    only_claude = sc - sx
-    only_codex = sx - sc
-    if only_claude or only_codex != CODEX_ONLY_SKILLS:
-        fail(
-            "skills/tree-parity",
-            "unexpected platform-specific skills: "
-            f"only-claude={only_claude} only-codex={only_codex} "
-            f"expected-only-codex={CODEX_ONLY_SKILLS}",
-        )
+    present = {p.name for p in skills.iterdir() if p.is_dir()}
+    platform_leftovers = present & set(PLATFORM_SKILL_DIRS)
+    if platform_leftovers:
+        fail("skills/tree", f"platform skill forks still present: {sorted(platform_leftovers)}")
 
-    for plat, base, names in (("claude", cl, sc), ("codex", cx, sx)):
-        for name in sorted(names):
-            sk = base / name / "SKILL.md"
-            if not sk.exists():
-                fail("skills/structure", f"{plat}/{name} missing SKILL.md")
-                continue
-            data, err = load_frontmatter(sk)
-            if err:
-                fail(f"skills/{plat}", f"{name}/SKILL.md frontmatter: {err}")
-            elif data and str(data.get("name")) != name:
-                fail(f"skills/{plat}", f"{name}/SKILL.md name `{data.get('name')}` != dir `{name}`")
+    missing = HARNESS_SKILLS - present
+    extra = present - HARNESS_SKILLS - set(PLATFORM_SKILL_DIRS)
+    if missing:
+        fail("skills/tree", f"missing harness skills: {sorted(missing)}")
+    if extra:
+        warn("skills/tree", f"non-harness entries under skills/: {sorted(extra)}")
 
-    for name in sorted(sc & sx):
-        # references/ and scripts/ copy verbatim — trees must be identical
-        for sub in ("references", "scripts"):
-            t = {plat: subtree(base / name / sub) for plat, base in (("claude", cl), ("codex", cx))}
-            if t["claude"] != t["codex"]:
-                fail("skills/subtree-parity", f"{name}/{sub} trees differ: {t}")
+    for name in sorted(HARNESS_SKILLS & present):
+        sk = skills / name / "SKILL.md"
+        if not sk.exists():
+            fail("skills/structure", f"{name} missing SKILL.md")
+            continue
+        data, err = load_frontmatter(sk)
+        if err:
+            fail("skills/frontmatter", f"{name}/SKILL.md frontmatter: {err}")
+        elif data and str(data.get("name")) != name:
+            fail("skills/frontmatter", f"{name}/SKILL.md name `{data.get('name')}` != dir `{name}`")
 
 
-def check_codex_residuals(root: Path) -> None:
-    cx = root / "skills/codex"
-    for f in (cx.rglob("*.md") if cx.is_dir() else []):
+def check_skill_residuals(root: Path) -> None:
+    skills = root / "skills"
+    if not skills.is_dir():
+        return
+    for f in skills.rglob("*.md"):
+        # Skip leftover platform dirs if they still exist; check_skills already fails them.
+        rel = f.relative_to(skills)
+        if rel.parts and rel.parts[0] in PLATFORM_SKILL_DIRS:
+            continue
         body = read(f)
-        for tok in ("subagent_type", "ExitPlanMode", "AskUserQuestion"):
+        for tok in SKILL_RESIDUALS:
             if tok in body:
-                fail("codex/residual-sweep", f"{f.relative_to(root)} still contains Claude-only `{tok}`")
+                fail("skills/residual-sweep", f"{f.relative_to(root)} contains `{tok}`")
 
 
 def check_hooks(root: Path) -> None:
@@ -184,7 +201,6 @@ def check_hooks(root: Path) -> None:
     if s_cl != s_cx:
         fail("hooks/tree-parity", f"claude vs codex scripts differ: {s_cl ^ s_cx}")
 
-    # Codex hooks.json: valid JSON, points at ~/.codex (not ~/.claude)
     cxj = root / "hooks/codex/hooks.json"
     if cxj.exists():
         try:
@@ -194,7 +210,10 @@ def check_hooks(root: Path) -> None:
         if "$HOME/.claude/" in read(cxj):
             fail("hooks/codex", "hooks.json still references $HOME/.claude/ (should be $HOME/.codex/)")
 
-    # bash -n on every hook script across both variants
+    cl_settings = root / "hooks/claude/settings.json"
+    if cl_settings.exists() and '"permissions"' in read(cl_settings):
+        fail("hooks/claude", "settings.json must not contain permissions (allow is appended at install)")
+
     for base in (cl, cx):
         for sh in sorted(base.glob("*.sh")):
             r = subprocess.run(["bash", "-n", str(sh)], capture_output=True, text=True)
@@ -206,8 +225,7 @@ def main() -> int:
     root = find_root(sys.argv)
     if not (root / "docs" / "sync-harness" / "SYNC_TO_CODEX.md").exists():
         print(f"warning: {root} doesn't look like the harness root (no docs/sync-harness/SYNC_TO_CODEX.md)", file=sys.stderr)
-    for fn in (check_agents, check_skills,
-               check_codex_residuals, check_hooks):
+    for fn in (check_agents, check_skills, check_skill_residuals, check_hooks):
         try:
             fn(root)
         except Exception as e:

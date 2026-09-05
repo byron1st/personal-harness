@@ -19,7 +19,7 @@ OpenCode는 Claude Code 호환 모드를 기본 제공하여 `~/.claude/skills/`
 - **리뷰 섹션명**: `## Accepted Review Exceptions`, `## Applied Exceptions`.
 - **상태 어휘**: `pass | blocked | failed | needs-confirmation | needs-decision | changes-required` (+ test-dev 전용 `pass-with-suspected-defects`). 번역·동의어 치환 금지.
 - **ID 규칙**: `AC-N`, `AR-NNN`, `TEST-NNN`(test Worker가 부여), `REVIEW-NNN`(aggregate 시 메인 세션이 부여 — reviewer 부여 금지).
-- **스킬·에이전트 이름**: `plan-dev`, `implement-dev`, `fix-dev`, `test-dev`, `review-code`, `commit-code`, `request-merge`, (도입 시) `dev-loop`; persona `planner`, `implementer`, `security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`.
+- **스킬·에이전트 이름**: `plan-dev`, `implement-dev`, `fix-dev`, `test-dev`, `review-code`, `commit-code` (optional PR/MR; `request-merge` is a routing alias), (도입 시) `dev-loop`; persona `planner`, `implementer`, `security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`.
 - **파일명 규칙**: `{timestamp}_{Jira}_PLAN|IMPL|LOOP_{title}.md`와 `-STEP-N` 접미 규칙.
 - **AR 불변식**: AR 엔트리는 사용자의 명시적 Accept 응답이 있을 때만 기록한다. 어떤 플랫폼 변형에서도 이 규칙을 완화하거나 자동화하는 번역을 하지 않는다.
 

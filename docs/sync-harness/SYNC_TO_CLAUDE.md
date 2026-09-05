@@ -4,100 +4,28 @@
 
 마이그레이션 토폴로지는 **Claude ↔ Codex**(양방향)다. 이 문서는 Codex 변형을 소스로 삼아 Claude Code 변형을 갱신하는 공식 경로다. Claude와 Codex의 공유 스킬 집합은 동일해야 하며 플랫폼 전용 스킬 예외는 없다.
 
-이 문서의 소스는 Codex 변형(`skills/codex/`, `agents/codex/`, `hooks/codex/`)이고, 대상은 Claude Code 변형(`skills/claude/`, `agents/claude/`, `hooks/claude/`)이다. repo-scoped Codex skill인 `.agents/skills/<skill>`을 소스로 지정받은 경우에도 아래 Skill migration 규칙을 적용하되, 대상은 사용자가 지정한 Claude Code skill 위치(일반적으로 `.claude/skills/<skill>` 또는 `skills/claude/<skill>`)로 둔다.
+이 문서의 소스는 Codex 에이전트·훅(`agents/codex/`, `hooks/codex/`)이고, 대상은 Claude Code 에이전트·훅(`agents/claude/`, `hooks/claude/`)이다. 제품 스킬은 공유 트리 `skills/<name>/`이며 변환하지 않는다.
 
-옮기는 대상은 크게 세 가지 — 스킬(`SKILL.md`), 서브에이전트(custom agent 정의 파일), 훅(hook 설정·스크립트) — 이고, 아래도 그 순서로 나눈다.
+옮기는 대상은 서브에이전트와 훅이다. 스킬 불변식은 아래 Shared skills 절.
 
-## Skill migration
+## Shared skills
 
-`skills/codex/<skill>`를 `skills/claude/<skill>`로 옮길 때의 규칙이다.
+제품 스킬은 `skills/<name>/` 한 트리만 쓴다. `skills/{claude,codex,cursor,grok}/`를 만들지 않는다. 스킬은 플랫폼 변환 대상이 아니다. 에이전트·훅만 이 문서의 나머지 절을 따른다.
 
-### Start from the Codex behavior, then restore Claude Code mechanics
+불변식 (스킬 본문·references):
 
-- 먼저 Codex 변형이 실제로 바꾼 사용자-facing 의미를 식별한다. 단순히 Claude 원본을 다시 복사하면 Codex에서 추가된 동작·문구·검증 규칙을 잃을 수 있다.
-- 트리 구조, 파일명, `references/`·`scripts/` 경로, frontmatter `name`은 기본적으로 유지한다. `references/`와 `scripts/`가 host-neutral하면 그대로 복사한다.
-- skill-local `agents/openai.yaml`은 Codex/OpenAI UI 메타데이터이며 Claude Code custom subagent 정의가 아니다. Codex 소스에 이 파일이 있어도 `skills/claude/<skill>/agents/openai.yaml`로 복사하지 말고, Claude 대상 스킬에는 필요한 `SKILL.md`, host-neutral `references/`, `scripts/`만 둔다.
-- Claude Code 변형에서는 Codex 실행모델을 설명하는 문장을 Claude Code 실행모델로 바꾼다. 예: Codex `sandbox and approval policy`, `worker`, `explorer`, `/permissions`는 Claude Code의 permission mode, `Agent` tool, `subagent_type`, `ExitPlanMode`, `AskUserQuestion` 등으로 바꾼다.
-- host-neutral skill은 거의 그대로 옮긴다. 위임(subagent), plan mode, hook/tool 이름, 권한 모델, Codex 전용 위치(`.agents/skills`, `~/.codex`)가 없으면 차이를 만들지 않는다.
+- frontmatter는 `name` + `description`만. `allowed-tools` 금지.
+- description은 한두 문장, 대략 300자, 첫 문장에 trigger. Dispatcher/Worker 절차를 description에 넣지 않는다.
+- 호스트 툴 이름 금지: `Agent`, `Task`, `spawn_subagent`, `AskUserQuestion`, `AskQuestion`, `ask_user_question`, `ExitPlanMode`, `fork_turns`, `subagent_type`.
+- 질문은 "사용자에게 물어라". 객관식이면 선택지와 미응답=미분류만 적는다.
+- 런타임 스크립트는 `$HOME/.agents/scripts/detect-commands.sh` 와 `$HOME/.agents/scripts/resolve-scope.sh`만.
+- `agents/<platform>/` 경로를 스킬에 넣지 않는다. Reporting contract는 persona 본문의 `## Reporting contract`로 지칭한다.
+- 스테이지 스킬은 persona를 띄우지 않는다. `dev-loop`가 단계 persona를 띄운다. standalone implement/test/fix는 현재 세션 in-place.
+- `(design-bearing)` TODO는 `## Stage Status: needs-design-decision`을 반환한다. 실행자가 `plan-consultant`를 띄우지 않는다. `needs-design-decision`은 공통 상태 어휘이며 `blocked`와 섞지 않는다.
+- `failed` 재시도는 루프가 같은 persona를 한 번 더 띄운다. 스킬에 호스트 모델명을 적지 않는다.
 
-### Expand descriptions only when Claude Code benefits from it
-
-Codex는 시작 시 skill `name`, `description`, 경로만 예산 제한 안에서 먼저 보므로 description을 짧게 유지한다. Claude Code도 skill description을 자동 선택에 사용하지만, 이 harness의 Claude 변형은 더 긴 trigger 예시와 workflow 설명을 담아온 경우가 있다.
-
-- Codex의 짧은 description을 그대로 써도 trigger가 충분하면 늘리지 않는다.
-- Claude Code가 자동 skill 선택이나 subagent dispatch에 쓸 단서가 부족하면, 사용자가 말할 법한 트리거·대상 범위·금지 범위를 한 문단 안에서 보강한다.
-- 구현 세부 절차를 frontmatter description에 과하게 넣지 않는다. 긴 절차는 본문이나 `references/`에 둔다.
-- `name`은 디렉터리명과 일치시키고, YAML frontmatter가 파싱되는지 확인한다. 값에 `: `(콜론+공백)가 있으면 따옴표로 감싼다.
-
-### Preserve Skill-directed delegation and restore Claude Code mechanics
-
-Codex와 Claude Code 모두 활성 skill이 위임을 요구하면 사용자가 같은 요청을 반복하지 않아도 Dispatcher-first 흐름을 시작할 수 있다. Codex 변형의 기본 위임 의미와 명시적 실패 gate를 유지하되, 실제 dispatch와 사용자 질문은 Claude Code 도구로 바꾼다.
-
-- Codex `worker` 또는 custom agent dispatch는 Claude Code의 `Agent` tool과 적절한 `subagent_type`으로 바꾼다. Codex `explorer` fallback은 Claude Code에서 사용할 수 있는 읽기 중심 subagent나 custom agent prompt로 바꾼다.
-- Claude Code의 named/custom subagent에는 `fork_turns` 옵션이 없다. Codex custom agent spawn의 필수 `fork_turns="none"`은 Claude Code로 옮기지 말고 제거한다. Named/custom subagent는 기본적으로 부모 대화 기록을 상속하지 않는 fresh context에서 시작하므로, 필요한 입력은 self-contained task prompt로 전달한다.
-- `fork_turns="none"`을 Claude Code의 fork subagent나 Skill의 `context: fork`로 변환하지 않는다. 둘은 부모 대화 전체를 상속하는 별도 동작이며, 사용자가 전체 대화 상속을 명시적으로 요구한 경우에만 사용한다.
-- 위임형 skill의 기본 Dispatcher 동작을 유지한다. Claude 변형에 별도의 "explicit user request only" gate를 추가하지 않는다.
-- `Agent` tool이나 호환 subagent capability가 없거나 dispatch가 실패하면 substantive 작업 전에 중단하고, `Delegation status: unavailable` 또는 `failed`와 관찰된 원인을 보고한 뒤 `AskUserQuestion`으로 direct fallback 여부를 묻는다. 사용자의 명시적 선택 전에는 main-session 작업으로 대체하지 않는다.
-- 병렬 reviewer 중 일부만 실패하면 성공한 결과를 보존하고 실패한 axis를 보고한 뒤, 누락된 pass를 main session에서 수행할지 사용자에게 묻는다.
-- Worker는 다시 subagent를 dispatch하지 않는다.
-- 사용자가 명시적으로 "main session only", "no subagents" 같은 제한을 둔 경우에는 그 지시가 우선한다.
-- 이 repo의 reviewer persona는 두 플랫폼에서 같은 이름(`security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`)을 유지한다.
-
-### Convert plan-mode instructions to Claude Code plan mode
-
-Codex plan mode는 UI/CLI의 approval flow를 통해 write-capable 단계로 넘어간다. Claude Code에는 plan mode 종료 시 agent가 호출하는 `ExitPlanMode` 도구가 있다.
-
-- "Codex plan mode"는 "Claude Code plan mode"로 바꾸고, 계획 단계는 read-only라는 원칙은 유지한다.
-- "Codex approval flow를 기다린다"는 문장은 최종 계획을 제시한 뒤 `ExitPlanMode`로 사용자 승인을 받는 흐름으로 바꾼다.
-- 승인 후 첫 write가 Obsidian plan/report 저장 같은 persistence여야 한다는 스킬 정책은 유지한다.
-- Codex 전용 `/plan`, `/permissions`, sandbox override 표현은 Claude Code의 plan mode, permission mode, `ExitPlanMode` 표현으로 바꾼다.
-
-### Preserve cross-platform contract keywords
-
-Codex 변형을 소스로 역이식할 때도 공통 계약 키워드는 번역·개명하지 않고 그대로 보존한다 (SYNC_TO_CODEX.md의 "Platform invariants" 목록과 동일 항목):
-
-- 공통 반환 블록과 섹션명: `## Stage Status` / `## Evidence` / `## Findings` / `## Decision Needed`, 플랜의 `## Acceptance Contract` / `## Authority Boundaries`, 리뷰의 `## Accepted Review Exceptions` / `## Applied Exceptions`.
-- 상태 어휘: `pass | blocked | failed | needs-confirmation | needs-decision | changes-required` (+ test-dev 전용 `pass-with-suspected-defects`). Codex 소스가 이 어휘를 쓰고 있으면 그대로 둔다 — Claude식 동의어로 바꾸지 않는다.
-- ID 규칙(`AC-N`, `AR-NNN`, `REVIEW-NNN`, `TEST-NNN`)과 AR 인간-전용 기록 불변식.
-- Codex의 텍스트 트리아지 규약("각 ID에 `REVIEW-001: fix` 형식으로 응답")은 Claude Code의 `AskUserQuestion` 트리아지로 되돌리되, 무응답=미분류 유지·자동 수용 금지 의미는 바꾸지 않는다.
-
-### Migrate controller skills (dev-loop) back to Claude Code
-
-`dev-loop`는 다른 스킬의 Dispatcher 흐름을 호출하고 상태를 전이시키는 **primary 세션 컨트롤러 스킬**이다. Codex 변형을 소스로 Claude Code로 역이식할 때도 대칭적으로 다룬다.
-
-- 자체적으로 Worker를 spawn하지 않으므로 대응하는 custom subagent(`agents/claude/*.md`)를 만들지 않는다. 컨트롤러 본문만 `skills/claude/dev-loop/`로 옮긴다.
-- 본문은 host-neutral하다(스테이지 스킬 위임이라 Codex 전용 도구명이 없음). 거의 그대로 옮기되, Codex에서 300자로 압축된 `description`은 Claude Code에 300자 제약이 없으므로 트리거가 부족하면 한 문단 안에서 보강한다("Expand descriptions only when Claude Code benefits from it" 참조).
-- 트리아지 등 사용자 상호작용은 dev-loop가 아니라 호출되는 `review-code`가 소유하므로, Codex의 텍스트 트리아지 규약을 Claude Code의 `AskUserQuestion`으로 되돌리는 변환은 `review-code`에만 적용되고 dev-loop 본문에는 추가 변환이 없다.
-- **루프 불변식은 스킬 본문 규칙으로만 보장된다.** 커밋·푸시·PR 금지, AR은 사용자 명시 Accept 시에만 기록, 테스트 약화 금지, 예산 초과 금지 등은 SKILL 본문이 강제한다 — 훅에 의존하지 않는다. Codex의 hooks.json이든 Claude의 settings.json이든 훅으로 루프 불변식을 강제한다고 가정하지 말고 본문 규칙을 그대로 보존한다.
-- 상태 어휘·섹션명·ID·스킬 이름은 위 "Preserve cross-platform contract keywords"대로 번역하지 않는다.
-
-### Replace Codex-safe generic wording with Claude Code tool names only when useful
-
-Codex 변형은 호스트 독립성을 위해 "read files", "search", "ask the user"처럼 기능 중심 표현을 쓰는 경우가 많다. Claude Code 변형은 필요할 때 `Read`, `Grep`, `Glob`, `Bash`, `Edit`, `Write`, `MultiEdit`, `AskUserQuestion`, `ExitPlanMode`, `Agent` 같은 도구명을 직접 써도 된다.
-
-- 도구명이 workflow 이해에 직접 도움이 되면 Claude Code 도구명으로 되돌린다. 예: "ask the user" → `AskUserQuestion`, "dispatch custom agents" → `Agent` tool with `subagent_type`, "exit plan mode" → `ExitPlanMode`.
-- 단순한 작업 지시는 기능 중심 표현으로 남겨도 된다. 예: `rg`로 검색하라는 repo 규칙은 Codex/Claude 모두에서 유효하므로 그대로 둔다.
-- Codex의 `apply_patch` 표현은 Claude Code 편집 도구명으로 바꾼다. hook matcher나 도구 allowlist에서는 `Edit|Write|MultiEdit`를 기준으로 생각한다.
-- 전역 지시 파일은 Claude Code가 읽는 `CLAUDE.md`를 우선하되, cross-agent repo에서는 `AGENTS.md`도 함께 확인하도록 둔다.
-
-### Re-check permissions and tool assumptions
-
-Codex는 sandbox mode와 approval policy를 중심으로 권한을 설명한다. Claude Code는 settings, permission mode, tool allowlist, subagent frontmatter의 `tools` 등으로 권한과 도구 접근을 표현한다.
-
-- Codex `sandbox_mode = "read-only"`나 read-only agent 의미는 Claude Code에서 `tools:` allowlist와 본문 hard rule로 옮긴다. 이 repo의 reviewer agent는 `tools: Read, Grep, Glob, Bash`와 "Read-only. No edits. No commits." 규칙을 함께 둔다.
-- Codex subagent가 parent sandbox를 상속한다는 설명은 Claude Code subagent frontmatter와 settings가 적용된다는 설명으로 바꾼다. 단, delegated agent가 별도 독립 권한을 가진다고 과장하지 않는다.
-- Claude Code의 `allowed-tools`, permission mode, hooks 전제가 필요한 경우에만 복원한다. 모든 skill에 tool allowlist를 새로 추가하지 않는다.
-- MCP나 external tool 사용은 플랫폼마다 다를 수 있으므로, Codex MCP 명칭이나 현재 세션 전용 tool 이름을 Claude Code skill에 그대로 남기지 않는다.
-
-### Verify
-
-- 트리 패리티: 대상 skill에 `SKILL.md`가 있고, host-neutral `references/`·`scripts/` 트리가 Codex 소스와 동일한가.
-- skill-local `agents/openai.yaml`이 Claude 대상에 복사되지 않았는가. Claude custom subagent는 repo-level `agents/claude/*.md`로만 관리한다.
-- frontmatter `name`이 디렉터리명과 일치하고 YAML이 파싱되는가.
-- 잔존 스윕(`rg`): `Codex`, `worker`, `explorer`, `sandbox and approval`, `apply_patch`, `.agents/skills`, `~/.codex`, `ExitPlanMode` 누락, `AskUserQuestion` 누락이 문맥상 의도된 것인지 확인한다. `Codex`가 제품명 예시로 필요한 경우만 허용한다.
-- Claude 대상 Skill의 named/custom subagent dispatch에 Codex 전용 `fork_turns`가 남아 있거나, 이를 fork subagent 또는 `context: fork`로 잘못 변환하지 않았는가.
-- 위임형 skill은 기본 Dispatcher 동작, `Agent` tool / `subagent_type` 변환, 명시적 실패 gate, Worker의 재-dispatch 금지를 보존하며 실패 시 main session으로 조용히 대체하지 않는가.
-- plan-mode skill은 최종 계획 후 `ExitPlanMode`로 승인받는 흐름을 갖는가.
+설치: `~/.agents/skills`가 유일 설치본. Claude만 스킬 단위 심링크 `~/.claude/skills/<name> → ~/.agents/skills/<name>`. Cursor/Codex/Grok 플랫폼 스킬 디렉터리에서 harness 이름은 제거한다. `sync-harness`는 `~/.agents/skills`에 설치하지 않는다.
+Cursor/Grok Claude-compat 스킬 스캔은 끈 채로 `~/.agents/skills`를 쓴다.
 
 ## Sub-agent migration
 

@@ -50,7 +50,7 @@ Session repository classification:
 - expected_commit_identity: ${expected_name:-<unset>} <${expected_email:-<unset>}>
 - current_git_email: ${actual_email:-<unset>}
 
-Use repo_type as session-scoped context. If you have not already done so, mention once to the user near the start of the session that this repository was detected as ${repo_type}. When committing or using commit-code, follow the ${repo_type} path: verify git user.name and user.email against the expected ${repo_type} identity, extract a Jira key from the branch only for work repositories, and do not push unless the user explicitly asks.
+Use repo_type as session-scoped context. If you have not already done so, mention once to the user near the start of the session that this repository was detected as ${repo_type}. When committing or using commit-code, follow the ${repo_type} path: verify git user.name and user.email against the expected ${repo_type} identity, extract a Jira key from the branch only for work repositories, and do not push unless the user explicitly asks or the commit-code run is opening a PR/MR (that path implies push).
 EOF
 )
 

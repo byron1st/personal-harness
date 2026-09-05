@@ -1,0 +1,185 @@
+---
+name: setup-initial-repo
+description: Bootstrap a new repository from SPEC.md with an agent instruction file, command targets/scripts, .gitignore, git identity, and optional remote. Use for initial project setup.
+---
+
+# Setup Initial Repo
+
+Bootstrap a new project repository from a `SPEC.md` document. This skill produces the minimum scaffolding an AI coding agent and a developer need to start working immediately:
+
+- `CLAUDE.md` or `AGENTS.md` (depending on the agent in use)
+- `docs/` for SPEC.md and project-local references when needed
+- `Makefile` or `package.json` scripts whose targets back every command referenced from the agent file
+- `.gitignore`
+- An initialized git repository with the right user identity (personal or work)
+- A remote `origin` (existing URL, or a freshly-created private repo via `gh`)
+- For Swift / macOS only: project-local Agent Skills under `.agents/skills/` (see [references/swift-project-skills.md](references/swift-project-skills.md))
+
+## Process
+
+The steps below are sequential. Confirm with the user before any irreversible action (overwriting an existing file, creating a remote repo, running the first commit).
+
+### Step 1: Locate SPEC.md
+
+Look for the spec in this order and stop at the first hit:
+
+1. `docs/SPEC.md`
+2. `SPEC.md` (project root)
+
+If neither exists, do **not** invent one. Ask the user where the spec lives or suggest running `/spec-creator` first. The rest of the skill assumes a real SPEC.md, so do not proceed without it.
+
+Once located, read the file fully. The Tech Stack section drives language detection and the rest of the scaffolding.
+
+### Step 2: Decide the agent file (CLAUDE.md vs AGENTS.md)
+
+Different coding agents read different filenames. Pick one — never both — to avoid drift.
+
+1. If exactly one of `CLAUDE.md` or `AGENTS.md` already exists in the project root, use that one and warn the user before any modification.
+2. If neither exists, ask the user which agent file they want. Frame the choice as: "Which AI coding agent will primarily use this repo? Claude Code → CLAUDE.md; Grok Build / Codex / Cursor → AGENTS.md."
+3. If both exist, ask the user which to keep as the canonical file and recommend deleting the other to prevent duplicated instructions.
+
+Hold the chosen path as `${AGENT_FILE}` for the rest of the run.
+
+### Step 3: Detect the project type and pick the command reference
+
+Read the Tech Stack section from SPEC.md and detect the primary project type. The command surface is language-specific; `.gitignore` still starts from the common baseline and then adds project-specific entries.
+
+| Detected project type | Command surface | Reference |
+|---|---|
+| Go | `Makefile` | [references/go-makefile.md](references/go-makefile.md) |
+| Swift / macOS | `Makefile` | [references/swift-makefile.md](references/swift-makefile.md) |
+| TypeScript / Next.js | `package.json` scripts | [references/ts-nextjs-packagejson.md](references/ts-nextjs-packagejson.md) |
+
+If the project type has no matching command reference, tell the user and ask whether to proceed with a minimal custom command surface or to stop and add support first.
+
+### Step 4: Determine identity (personal vs. work)
+
+Ask the user to choose "Personal" or "Work". The answer drives:
+
+- Which git `user.email` and `user.name` to set
+- Whether the skill may auto-create a remote with `gh` (only allowed for personal repos)
+
+Once the context is known, ask for the email and name to use. Show the values you intend to set and require explicit confirmation before applying them. Never reuse identities from another machine or session — always confirm.
+
+### Step 5: Initialize git and apply local config
+
+Check whether the working directory is a git repository:
+
+```bash
+git rev-parse --git-dir 2>/dev/null
+```
+
+If the command fails, run `git init`. Then apply the identity **locally** (not globally) so other repos on the machine are unaffected:
+
+```bash
+git config user.email "<email>"
+git config user.name "<name>"
+```
+
+Verify with `git config --local --list | grep user`.
+
+### Step 6: Set up the remote origin
+
+Ask: "Does an `origin` repository already exist for this project?"
+
+- **Yes → existing URL:** Ask for the SSH or HTTPS URL, validate the format, and run `git remote add origin <URL>` (or `git remote set-url origin <URL>` if origin already exists).
+- **No → ONLY for the Personal repository:** Ask for the repo name (default to the working directory's basename, but let the user override). Confirm visibility (`--private` is the default for this skill) and create with:
+
+  ```bash
+  gh repo create <owner>/<name> --private --source=. --remote=origin
+  ```
+
+  If `gh` is not authenticated, tell the user to run `gh auth login` and pause.
+- **No → for the Work repository:** Do **not** auto-create. Explain that work repos generally need to be created through the company process (organization settings, approvals, naming policies). Ask the user to create the repo on the work git host and come back with the URL.
+
+After wiring origin, do not push yet — wait for the first commit at the end.
+
+### Step 7: Generate `.gitignore`
+
+Start from the common baseline in [references/gitignore.md](references/gitignore.md) and append language-, framework-, and tooling-specific entries based on SPEC.md's Tech Stack and what is actually in the working directory (build dirs, coverage outputs, dependency caches, etc.).
+
+If `.gitignore` already exists, diff it against the result — if the user has custom entries, ask before overwriting; otherwise overwrite cleanly.
+
+### Step 8: Generate the command surface
+
+The command surface is the single source of truth for executable commands. Every command quoted from `${AGENT_FILE}` later must exist as a Makefile target or `package.json` script — no bare `go test ./...`, `swift test`, or `vitest run` in the agent file.
+
+Use the selected reference from Step 3. It lists the default target/script shape for the project type:
+
+- Go: [references/go-makefile.md](references/go-makefile.md)
+- Swift / macOS: [references/swift-makefile.md](references/swift-makefile.md)
+- TypeScript / Next.js: [references/ts-nextjs-packagejson.md](references/ts-nextjs-packagejson.md)
+
+Include the applicable common operations and omit impossible placeholders:
+
+- `format`, `lint`, and grouped `check`
+- `gen`, backed by real generation tasks such as `mockgen`, `modelgen` for `sqlc`, and `docsgen` for Swagger
+- `test`, Go-only `race`, `test-e2e`, `test-mutation`, `test-mutation-pkg`, and `coverage`
+- Go-only `outdated` for direct dependency update checks
+- `build` and `run`
+
+Decide variables to lift to the top (binary name, scheme, package manager, main package path, generated output dirs, etc.) so future edits stay in one place. Add project-specific targets only when they earn their place — never as filler.
+
+### Step 9: Generate `${AGENT_FILE}`
+
+Use the section structure in [references/agent-md-template.md](references/agent-md-template.md). The reference lists which sections to include and the constraints; the agent writes the actual content using SPEC.md, project state, and the selected command surface.
+
+Key requirements (the reference covers them in detail):
+
+- Every Core Commands entry must back to a Makefile target or `package.json` script. If one is missing, add it to the command surface first.
+- The Code Conventions section includes only 3–5 highlights from SPEC.md and the detected stack. Link to project-local convention docs only when they actually exist.
+- Boundaries are NEVER rules with concrete alternatives.
+- The file is **English-only** and **under 150 lines**, regardless of conversation or SPEC.md language.
+
+### Step 10: Copy Swift / macOS project skills
+
+Skip this step unless Step 3 detected Swift / macOS.
+
+Copy the SwiftUI / macOS Agent Skills into the target repo so they travel with the project. Layout, source resolution, and the Xcode 27 allowlist are in [references/swift-project-skills.md](references/swift-project-skills.md). Run the script; do not re-derive the copy set.
+
+If `.agents/skills` already has content, show what would be added or replaced and wait for confirmation before running.
+
+```bash
+bash "$HOME/.agents/skills/setup-initial-repo/scripts/copy-swift-project-skills.sh"
+```
+
+If the script cannot find `external-skills`, ask the user for that path and re-run with it as the second argument:
+
+```bash
+bash "$HOME/.agents/skills/setup-initial-repo/scripts/copy-swift-project-skills.sh" . /path/to/external-skills
+```
+
+Do not skip this step silently on a Swift / macOS project. Do not copy skills outside the set the script copies.
+
+### Step 11: Review, confirm, and commit
+
+Before the first commit, present a summary to the user:
+
+```
+✓ Initialized git repo (or detected existing)
+✓ Set local user.email = <email>, user.name = <name>
+✓ Remote origin: <URL>
+✓ Created: ${AGENT_FILE}, .gitignore, <Makefile or package.json scripts>
+✓ Copied Swift project skills: <names, or n/a>
+✓ Updated: <list any other modifications>
+```
+
+Ask whether to make the initial commit:
+
+```bash
+git add -A
+git commit -m "chore: initial project scaffolding"
+```
+
+Do **not** push automatically. Tell the user to push manually with `git push -u origin main` (or whichever default branch they prefer) so they can review the local commit first.
+
+## Writing Rules
+
+- The agent file (`CLAUDE.md` / `AGENTS.md`) is in **English**, regardless of conversation language.
+- Every executable command quoted from the agent file must exist as a Makefile target or `package.json` script.
+- The agent file stays under 150 lines — push deeper detail into `docs/` references.
+- Identity setup is **always local** to the repo (`git config` without `--global`).
+- The skill **never** runs `git push` automatically.
+- The skill **never** auto-creates remote repos for work contexts.
+- For overwriting existing files (`.gitignore`, `${AGENT_FILE}`, `Makefile`, `package.json`), always show a diff or ask first.
+- For Swift / macOS, copy project-local skills with the bundled script. Do not add skills beyond that set. Do not gitignore `.agents/skills`.
