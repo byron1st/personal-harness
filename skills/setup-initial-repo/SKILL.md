@@ -13,6 +13,7 @@ Bootstrap a new project repository from a `SPEC.md` document. This skill produce
 - `.gitignore`
 - An initialized git repository with the right user identity (personal or work)
 - A remote `origin` (existing URL, or a freshly-created private repo via `gh`)
+- For Swift / macOS only: project-local Agent Skills under `.agents/skills/` (see [references/swift-project-skills.md](references/swift-project-skills.md))
 
 ## Process
 
@@ -130,7 +131,27 @@ Key requirements (the reference covers them in detail):
 - Boundaries are NEVER rules with concrete alternatives.
 - The file is **English-only** and **under 150 lines**, regardless of conversation or SPEC.md language.
 
-### Step 10: Review, confirm, and commit
+### Step 10: Copy Swift / macOS project skills
+
+Skip this step unless Step 3 detected Swift / macOS.
+
+Copy the SwiftUI / macOS Agent Skills into the target repo so they travel with the project. Layout, source resolution, and the Xcode 27 allowlist are in [references/swift-project-skills.md](references/swift-project-skills.md). Run the script; do not re-derive the copy set.
+
+If `.agents/skills` already has content, show what would be added or replaced and wait for confirmation before running.
+
+```bash
+bash "$HOME/.agents/skills/setup-initial-repo/scripts/copy-swift-project-skills.sh"
+```
+
+If the script cannot find `external-skills`, ask the user for that path and re-run with it as the second argument:
+
+```bash
+bash "$HOME/.agents/skills/setup-initial-repo/scripts/copy-swift-project-skills.sh" . /path/to/external-skills
+```
+
+Do not skip this step silently on a Swift / macOS project. Do not copy skills outside the set the script copies.
+
+### Step 11: Review, confirm, and commit
 
 Before the first commit, present a summary to the user:
 
@@ -139,6 +160,7 @@ Before the first commit, present a summary to the user:
 ✓ Set local user.email = <email>, user.name = <name>
 ✓ Remote origin: <URL>
 ✓ Created: ${AGENT_FILE}, .gitignore, <Makefile or package.json scripts>
+✓ Copied Swift project skills: <names, or n/a>
 ✓ Updated: <list any other modifications>
 ```
 
@@ -160,3 +182,4 @@ Do **not** push automatically. Tell the user to push manually with `git push -u 
 - The skill **never** runs `git push` automatically.
 - The skill **never** auto-creates remote repos for work contexts.
 - For overwriting existing files (`.gitignore`, `${AGENT_FILE}`, `Makefile`, `package.json`), always show a diff or ask first.
+- For Swift / macOS, copy project-local skills with the bundled script. Do not add skills beyond that set. Do not gitignore `.agents/skills`.
