@@ -5,129 +5,48 @@ description: Sync repository-local docs/agents/research files with code changes.
 
 # Application Research Sync
 
-Automatically update repository-local Research files based on code changes.
+Bring `docs/agents/research/` back in line with code that has moved on. Typically run after implementation and before committing, but a commit range or a full-codebase pass makes it useful any time the research may have drifted.
 
-## Background
+Research files are investigative documents describing an Application's flows and architecture — the format, frontmatter, and index rules are `plan-dev`'s [research-file.md](../plan-dev/references/research-file.md). This skill only updates them.
 
-- **Research files**: Markdown documents in `docs/agents/research/` that investigate and describe an Application's (identified by Git repository name) features, flows, or architecture. Each file has a `Description` field in its frontmatter.
-- **Research index**: `docs/agents/research/index.md`, a metadata table containing each Research file's frontmatter fields plus a Markdown link to the file. Agents read this first to decide which Research files to open.
-- **Plan files**: Implementation plan documents located in `docs/agents/dev/`.
-- A single Application can have multiple Research files. When code changes, some of these files may become outdated.
+## 1. Scope
 
-## When to Run
+Ask which scope to detect changes against, unless the request already names one:
 
-Typical timing is after code implementation, before committing. However, this skill also supports syncing against a specific commit range or the full codebase, so it can be run at any point when Research files may be out of date.
+| Mode | Changes | How |
+| --- | --- | --- |
+| **Uncommitted** | staged + unstaged | `git diff HEAD` |
+| **Since commit** | everything after a commit | `git diff <commit-hash>` |
+| **Full codebase** | none — read the tree as it stands | no diff |
 
-## Workflow
+For the two diff modes, an empty diff means there is nothing to sync: say so and stop. Full-codebase mode compares each research file against the current source directly, which is what to use when files have drifted gradually with no single change point.
 
-### Step 1: Determine Change Scope
+The Application name is the repository directory name: `basename $(git rev-parse --show-toplevel)`.
 
-Ask the user which scope to use for detecting changes:
+A plan file under `docs/agents/dev/` is useful context for what the change was trying to achieve — take it from the session, or ask. It is optional in full-codebase mode.
 
-| Mode | Description | Command |
-|------|-------------|---------|
-| **Uncommitted** | Only uncommitted changes (staged + unstaged) | `git diff HEAD` |
-| **Since commit** | All changes after a specific commit | `git diff <commit-hash>` |
-| **Full codebase** | Analyze the entire current codebase regardless of changes | *(no diff - read the full source tree)* |
+## 2. Pick the files that actually need updating
 
-If the user has already specified the mode in their request, use it without asking.
+Read `docs/agents/research/index.md` and keep the rows for this Application. Each row's `Description` says what that file investigates — that is the field to judge against, which is why the index is read before any research file is opened.
 
-**Uncommitted** and **Since commit** modes: if the diff is empty, inform the user and stop.
+If `index.md` is missing but research files exist, build it first from their frontmatter, then continue. If there are no research files at all, report that and stop.
 
-**Full codebase** mode: skip the diff step entirely. In Step 5, compare each Research file's description against the actual codebase rather than a diff. This mode is useful when Research files may have drifted over time without a clear single change point.
+A file needs updating when the change touches the feature, flow, or architecture its description covers, or when the modified files and modules are ones it describes. **When in doubt, include it** — one unnecessary review is cheaper than leaving a document wrong.
 
-### Step 2: Identify the Application
+## 3. Update
 
-Determine the Application name from the current Git repository.
+Read each selected file and apply **targeted** edits. Do not rewrite a file to change part of it: preserve the existing tone, structure, and formatting, revise what is now false, and weave new flows into the structure that is already there. Update code snippets to match current code, and verify against the actual source whenever a detail is uncertain.
 
-```bash
-basename $(git rev-parse --show-toplevel)
-```
+Update frontmatter only when the content materially changed — and when `Description` changes, update the matching `index.md` row in the same step.
 
-### Step 3: Locate the Plan File
+Two things this skill must not do:
 
-Identify the Plan file from the current session context.
+- **Leave no trace of the update.** No "changed due to commit X" notes, no changelog. The file should read as though it always described the current state.
+- **Keep them investigative.** These are documents written to understand a system, not API references or code comments. Preserve the exploratory, explanatory register.
 
-- If the Plan file path is available from the conversation context, use it.
-- Otherwise, ask the user to provide the plan file path. If they provide only a filename, resolve it under `docs/agents/dev/`.
-- In **Full codebase** mode, the Plan file is optional. If unavailable, proceed without it and rely on comparing Research content directly against the source code.
+## 4. Report
 
-Read the Plan file to understand the implementation goals and scope of changes.
-
-### Step 4: Read Research Index
-
-Retrieve the list of Research files and their metadata for the Application.
-
-1. Read `docs/agents/research/index.md`.
-2. Parse its metadata table.
-3. Keep rows where `Application` matches the current Application. If `Application` is missing, keep it only when the linked filename or `Description` clearly matches the current repository.
-
-Expected index shape:
-
-```markdown
-# Research Index
-
-| File | Application | ResearchType | Description |
-|------|-------------|--------------|-------------|
-| [key-sharing-metadata-persistence](./key-sharing-metadata-persistence.md) | keyway | Flow | Explains key sharing metadata persistence flow. |
-```
-
-Extract each Research file's **Description** from the index. This description is the key indicator of what each file investigates. Also retain each linked file path for Step 6.
-
-If `index.md` is missing but research files exist in `docs/agents/research/`, create it before continuing: scan every `docs/agents/research/*.md` file's frontmatter and build the index table in the shape shown above, then proceed using the freshly built index. If `docs/agents/research/` contains no research files at all, report that there is nothing to sync and stop.
-
-### Step 5: Impact Analysis - Determine Which Research Files Need Updates
-
-Cross-reference the following information to decide which Research files require updates:
-
-**For Uncommitted / Since commit modes:**
-
-1. **Code changes** (diff output from Step 1)
-2. **Plan file** (implementation goals and scope)
-3. **Each Research file's description** (the topic it covers)
-
-**For Full codebase mode:**
-
-1. **Current source code** (the actual codebase as it stands)
-2. **Plan file** (implementation goals and scope, if available)
-3. **Each Research file's description** (the topic it covers)
-
-In Full codebase mode, read each Research file and verify its content against the current source code. A Research file needs an update if its description covers an area where the actual code no longer matches what the document says.
-
-Criteria for inclusion:
-- Do the code changes affect the area (feature, flow, or architecture) described by a Research file's description?
-- Are the changes outlined in the Plan related to the Research file's topic?
-- Do the modified files, functions, or modules correspond to components described in the Research file?
-
-Do not touch Research files that are unaffected. When in doubt, include the file; one unnecessary review is better than leaving a document outdated.
-
-### Step 6: Read and Update Research Files
-
-Read each Research file identified in Step 5 and apply targeted updates.
-
-Research file path pattern: `docs/agents/research/{title}.md`.
-
-#### Update Principles
-
-- **Modify only the sections that need changes.** Do not rewrite the entire file.
-- Preserve the existing tone, structure, and formatting.
-- Update frontmatter (`Description`, etc.) only if the content has materially changed.
-- If frontmatter changes, update `docs/agents/research/index.md` in the same step.
-- Remove or revise content that is no longer valid due to code changes.
-- When new features or flows have been added, weave them naturally into the existing document structure.
-- If code snippets are included, update them to match the current code.
-
-#### Important Guidelines
-
-- Research files are **investigative documents**. They are written to understand a feature or architecture, not as API docs or code comments. Maintain this exploratory, explanatory tone.
-- Do not leave traces of the update; no "changed due to commit X" notes. The file should read as if it was always written to describe the current state.
-- When uncertain about any detail, read the actual source code to verify before making changes.
-
-### Step 7: Report Results
-
-After completing all updates, report the following:
-
-- List of updated Research files with a brief summary of what changed in each
-- Whether `docs/agents/research/index.md` was created or updated
-- List of Research files excluded from updates, with short justifications
-- Any areas that need the user's manual review, if applicable
+- Updated files, with a one-line summary of what changed in each.
+- Whether `index.md` was created or updated.
+- Files excluded, each with a short reason.
+- Anything needing the user's own review.

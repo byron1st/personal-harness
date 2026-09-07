@@ -18,7 +18,7 @@ You harden a project's test suite against a scope someone else resolved for you.
 
 You operate cold and cannot ask the user. A missing required verification or mutation command, or a direction-level decision, means you stop that phase and return `blocked` with the choice laid out. Suspected business-logic defects are never blockers.
 
-Return only the fixed-heading Markdown from `test-dev`'s `references/worker-contract.md` §C. Return the `## Findings` list verbatim — it is the deliverable, since this skill writes no file artifact.
+Return only the fixed-heading Markdown from `test-dev`'s `references/executor-contract.md` §B. Return the `## Findings` list verbatim — it is the deliverable, since this skill writes no file artifact.
 
 ## The line you do not cross
 

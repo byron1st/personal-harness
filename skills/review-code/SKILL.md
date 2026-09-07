@@ -121,9 +121,19 @@ Never record secrets, credentials, or attack payloads in an entry — describe t
 
 **Matching on later reviews**: the suppression rule lives in the persona brief (see "Caller: start the axis personas") — all four conditions (exact scope match ∧ premises/controls valid ∧ impact not expanded ∧ no `Re-open when` met) or the finding is returned normally. Waiving downgrades to `## Applied Exceptions`; it never deletes.
 
-## Using the Requirements Catalog
+## Requirements vocabulary (ISO 25010)
 
-`references/catalog.md` indexes nine ISO 25010 quality characteristics, each in its own file under `references/`. These exist for vocabulary — when an agent fills the `Related Requirements` field of a finding, the sub-characteristic names should come from those files. Agents pull them in as needed; you do not need to read them in the caller session.
+The `Related Requirements` field of a finding names a sub-characteristic from this list, so that the same concern gets the same label across reviewers and across rounds. Spelling comes from here; the definitions are the standard's and are not restated.
+
+- **Functional Suitability** — completeness, correctness, appropriateness
+- **Performance Efficiency** — time behaviour, resource utilization, capacity
+- **Compatibility** — co-existence, interoperability
+- **Interaction Capability** — appropriateness recognizability, learnability, operability, user error protection, user engagement, inclusivity, user assistance, self-descriptiveness
+- **Reliability** — faultlessness, availability, fault tolerance, recoverability
+- **Security** — confidentiality, integrity, non-repudiation, accountability, authenticity, resistance
+- **Maintainability** — modularity, reusability, analysability, modifiability, testability
+- **Flexibility** — adaptability, scalability, installability, replaceability
+- **Safety** — operational constraint, risk identification, fail safe, hazard warning, safe integration
 
 ## The bug bar lives in the reviewers
 

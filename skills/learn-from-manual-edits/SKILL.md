@@ -5,46 +5,35 @@ description: Detect the user's manual edits on top of agent-written code in the 
 
 # Learn from Manual Edits
 
-When the user manually edits code the agent wrote, each edit is feedback: it shows how the user *would have wanted* the code written in the first place. This skill turns that feedback into persistent memory. The goal is that the same correction never has to be made twice — the next implementation should already follow the preference.
+When the user manually edits code the agent wrote, each edit is feedback: it shows how they *would have wanted* the code written in the first place. This skill turns that into persistent memory, so the same correction never has to be made twice.
 
-The working tree at invocation time typically contains a mix of **uncommitted agent edits and uncommitted user edits from the same session**. There is no git boundary between them, so git alone cannot separate the two. You can — because you know what you wrote.
+## 1. Separate the user's edits from your own
 
-## Step 1 — Separate the user's edits from your own
+The working tree typically holds uncommitted agent edits and uncommitted user edits from the same session, with no git boundary between them. Git alone cannot separate the two — you can, because you know what you wrote.
 
-1. Enumerate everything that changed: `git status --porcelain` and `git diff HEAD --stat`. Ignore generated files (lockfiles, build output, `*_gen.go`, etc.).
-2. Attribute each changed file:
-   - **Files you never touched this session** → the entire change is the user's.
-   - **Files you edited this session** → reconstruct the *final version you wrote* from the session context and compare it against the file's current content. Anything that differs is the user's edit.
-3. For precise comparison, don't eyeball it. Write your reconstructed version to a temp file and diff it:
+Enumerate what changed (`git status --porcelain`, `git diff HEAD --stat`), ignoring generated files. A file you never touched this session is entirely the user's. For a file you did edit, reconstruct the version *you* wrote from the session context and diff it against the current content — write your reconstruction to a temp file rather than eyeballing it. Re-read the current content first; never assume a file still matches what you last wrote.
 
-   ```bash
-   # /tmp/agent_version mirrors the repo layout
-   diff -u /tmp/agent_version/internal/service/user.go internal/service/user.go
-   ```
+**When attribution is uncertain** — long session, compacted context, no faithful reconstruction — say so and show the user the ambiguous hunks, asking which are theirs. A wrong attribution recorded as a convention is worse than a question. Do not guess.
 
-4. Always re-read the current file content before comparing — never assume a file still matches what you last wrote.
+## 2. Infer the intent and generalize
 
-**When attribution is uncertain** (long session, context was compacted, you can't faithfully reconstruct what you wrote): say so and show the user the ambiguous hunks, asking which ones are theirs. A wrong attribution recorded as a convention is worse than a question. Do not guess.
+For each user edit: *what general principle, had I known it, would have made me write this the way it now reads?*
 
-## Step 2 — Infer the intent and generalize
+An edit is worth recording only if it generalizes, which means all three of:
 
-For each user edit, ask: *what general principle, had I known it, would have made me write this code the way it is now?*
+- **Beyond this spot** — the same change would apply to other files and future code.
+- **How, not what** — it changes the *way* code is written (structure, style, idiom), not what it does (behavior, business logic).
+- **Forward-actionable** — it can be phrased as guidance followable next time without seeing this diff.
 
-An edit is worth recording only if it generalizes. Use these tests:
+Worth recording: error-wrapping style, interface-first design, naming, package layout, dependency injection, test structure, comment and doc style, stdlib-vs-third-party preferences.
 
-- **Beyond this spot** — would the same change apply to other files or future code, not just this one location?
-- **How, not what** — does it change the *way* the code is written (structure, style, idiom) rather than *what* it does (behavior, business logic)?
-- **Forward-actionable** — can it be phrased as guidance you could follow next time without seeing this diff?
+Not worth recording: one-off bug fixes, business-logic corrections, typo fixes, anything tied to one file's specific domain. Mention these in the report so the user knows you saw them — just do not persist them.
 
-Record things like: error-wrapping style, interface-first design, naming conventions, package layout, dependency-injection patterns, test structure, comment/doc style, preferred stdlib vs third-party choices.
+Several small edits sharing one theme merge into a single rule, not three entries.
 
-Do **not** record: one-off bug fixes, business-logic corrections, typo fixes, changes tied to a single file's specific domain. Mention these in your report (Step 4) so the user knows you saw them — just don't persist them.
+## 3. Record
 
-When several small edits share one theme (e.g. three renames that all shorten receiver names), merge them into a single rule rather than three entries.
-
-## Step 3 — Record in CLAUDE.md / AGENTS.md
-
-Maintain a dedicated section in the project root instruction file. Prefer `CLAUDE.md` when it exists, otherwise use `AGENTS.md`; if neither exists, create `CLAUDE.md` and append the section at the end:
+Maintain a dedicated section in the project root instruction file — `CLAUDE.md` when it exists, else `AGENTS.md`; if neither exists, create `CLAUDE.md` and append.
 
 ```markdown
 ## Conventions Learned from Manual Edits
@@ -58,19 +47,13 @@ Maintain a dedicated section in the project root instruction file. Prefer `CLAUD
 - Define consumer-side interfaces for services; constructors return the concrete type, callers depend on the interface. (2026-06-13)
 ```
 
-Rules for maintaining the section:
+- **One bullet per rule**: an imperative sentence, optionally a compact `before → after`, and the date observed. Grouped under `### Style` / `### Architecture` / `### Naming` / `### Errors` / `### Testing` / `### Other`, creating a heading only when first needed.
+- **Read the section before writing.** An equivalent rule already there is refined and re-dated, never duplicated. A new observation that *contradicts* an existing rule replaces it — the newest preference wins.
+- **Rules stay project-general.** No file paths or symbol names in the rule itself, though examples may use them. A rule that only makes sense for one file failed step 2.
+- Touch nothing else in the file.
 
-- **One bullet per rule**: rule in one imperative sentence, optionally a compact `before → after` example, and the date observed. Group bullets under `### Style`, `### Architecture`, `### Naming`, `### Errors`, `### Testing`, `### Other` — create a category heading only when first needed.
-- **Read the existing section before writing.** If an equivalent rule already exists, do not duplicate it — refine its wording if the new observation sharpens it, and update the date. If a new observation *contradicts* an existing rule, the newest preference wins: replace the old bullet.
-- **Keep rules project-general.** No file paths or symbol names in the rule itself (examples may use them). If a rule only makes sense for one file, it failed the Step 2 filter and doesn't belong here.
-- Don't touch anything else in the instructions file.
+## 4. Report, then continue
 
-## Step 4 — Report, then continue
+Briefly: which hunks you attributed to the user (a line per file), the rules you recorded (quote the bullets), and in one line what you deliberately did not record and why.
 
-Report briefly:
-
-- Which hunks you attributed to the user (one line per file is enough).
-- The rules you recorded (quote the bullets).
-- Edits you intentionally did **not** record (one-offs) and why, in one line.
-
-Then, if the user's message included a follow-up task ("…차이점을 확인하고 이어서 X를 구현해"), continue with it immediately — applying the just-recorded conventions to everything you write from this point on.
+Then, if the user's message carried a follow-up task, continue with it immediately — applying the just-recorded conventions to everything you write from here on.

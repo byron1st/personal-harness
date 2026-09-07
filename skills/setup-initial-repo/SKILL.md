@@ -45,7 +45,7 @@ Hold the chosen path as `${AGENT_FILE}` for the rest of the run.
 Read the Tech Stack section from SPEC.md and detect the primary project type. The command surface is language-specific; `.gitignore` still starts from the common baseline and then adds project-specific entries.
 
 | Detected project type | Command surface | Reference |
-|---|---|
+|---|---|---|
 | Go | `Makefile` | [references/go-makefile.md](references/go-makefile.md) |
 | Swift / macOS | `Makefile` | [references/swift-makefile.md](references/swift-makefile.md) |
 | TypeScript / Next.js | `package.json` scripts | [references/ts-nextjs-packagejson.md](references/ts-nextjs-packagejson.md) |
@@ -128,6 +128,7 @@ Key requirements (the reference covers them in detail):
 
 - Every Core Commands entry must back to a Makefile target or `package.json` script. If one is missing, add it to the command surface first.
 - The Code Conventions section includes only 3–5 highlights from SPEC.md and the detected stack. Link to project-local convention docs only when they actually exist.
+- For the Code Conventions and Testing sections, read the detected project type's block in [references/language-conventions.md](references/language-conventions.md) and select from it. It is a menu of the non-obvious choices, not a list to copy wholesale — SPEC.md and the project's own decisions override it.
 - Boundaries are NEVER rules with concrete alternatives.
 - The file is **English-only** and **under 150 lines**, regardless of conversation or SPEC.md language.
 
@@ -173,13 +174,10 @@ git commit -m "chore: initial project scaffolding"
 
 Do **not** push automatically. Tell the user to push manually with `git push -u origin main` (or whichever default branch they prefer) so they can review the local commit first.
 
-## Writing Rules
+## Hard rules
 
-- The agent file (`CLAUDE.md` / `AGENTS.md`) is in **English**, regardless of conversation language.
-- Every executable command quoted from the agent file must exist as a Makefile target or `package.json` script.
-- The agent file stays under 150 lines — push deeper detail into `docs/` references.
-- Identity setup is **always local** to the repo (`git config` without `--global`).
-- The skill **never** runs `git push` automatically.
-- The skill **never** auto-creates remote repos for work contexts.
-- For overwriting existing files (`.gitignore`, `${AGENT_FILE}`, `Makefile`, `package.json`), always show a diff or ask first.
-- For Swift / macOS, copy project-local skills with the bundled script. Do not add skills beyond that set. Do not gitignore `.agents/skills`.
+The steps above carry their own confirmations; these are the ones that have no safe default to fall back on.
+
+- **Never** run `git push` automatically, and **never** auto-create a remote for a work repository.
+- Git identity is always **local** to the repo — `git config` without `--global`.
+- **Never** gitignore `.agents/skills`; project-local skills are meant to travel with the repository.
