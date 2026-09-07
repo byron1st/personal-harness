@@ -212,7 +212,7 @@ Prior steps that must be completed first, or "None".
 - **FR-driven decomposition** (when SPEC.md is input): each FR-N already has Input, Output, Business rules, Edge cases; these map directly to a step's tasks and test scenarios. Group related FRs into a single step when they share dependencies; split a large FR across multiple steps when it is too big.
 - **Incrementality**: each step must leave the project compiling and tests passing. Foundation first, then dependent behavior.
 - **Right-sized steps**: a good step is a single-step plan's worth of focused work. If a step's `## TODOs` grow much past about 10 items, consider splitting it into two steps.
-- **Test-first thinking**: if you cannot define clear tests for a step, the step's scope is probably wrong.
+- **Testable scope**: if you cannot define clear tests for a step, its scope is probably wrong.
 - **Explicit step contracts**: because steps are planned together but implemented in separate `implement-dev` runs, whatever a step exposes to later steps (interfaces, types, schemas, function signatures) must be stated precisely in the plan, so later sub-plans can be written against a stable seam and a reader can see how the steps compose. This is the one place detail is required - step-internal mechanics stay coarse, but the seams between steps do not.
 - **Common first step**: project scaffold: module/package init, directory structure, linting/formatting config, CI setup, convention infrastructure (error types, logger setup, response helpers).
 

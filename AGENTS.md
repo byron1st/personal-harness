@@ -53,7 +53,7 @@ Each skill under `skills/<name>/` is shared across hosts. See each skill's `SKIL
 | Skill | Description | Execution | Artifacts |
 | --- | --- | --- | --- |
 | `plan-dev` | Drafts an implementation plan via Plan-mode interview; locks `Acceptance Contract` / `Authority Boundaries`; splits into multi-step when needed | Main session (conditionally delegates to `planner`) | PLAN·RESEARCH under `docs/agents/` |
-| `implement-dev` | Executes the approved plan with TDD and collects per-AC evidence; returns `blocked` on direction conflicts; returns `needs-design-decision` on `(design-bearing)` TODOs | Loop starts `implementer`; standalone runs in-place | Code + IMPL report |
+| `implement-dev` | Executes the approved plan and collects per-AC evidence; returns `blocked` on direction conflicts; returns `needs-design-decision` on `(design-bearing)` TODOs | Loop starts `implementer`; standalone runs in-place | Code + IMPL report |
 | `fix-dev` | Fixes one reviewed defect at a time (root cause → fix → verify); never commits | Loop starts `fixer`; standalone runs in-place | `## Fix` entries appended to the IMPL report |
 | `test-dev` | Fills unit/e2e gaps and removes LIVED mutants over a git scope (default: diff vs `main`); never modifies production code; the caller may put mutation out of scope | Loop starts `tester`; standalone runs in-place | Test code (no file artifact) |
 | `review-code` | Caller starts reviewer personas in parallel (4 by default, or a caller-named subset) and aggregates findings; reviewers report everything with a `Confidence` tag and **this skill filters**; HIGH/CRITICAL go through user Fix/Accept triage, accepted items recorded as AR and waived in later reviews | Loop or standalone is the caller | Findings, `Accepted Review Exceptions` |

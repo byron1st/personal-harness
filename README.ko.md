@@ -186,7 +186,7 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 | 스킬 | 설명 | 실행 방식 | 산출물 |
 | --- | --- | --- | --- |
 | `plan-dev` | 내장 Plan 모드의 인터뷰로 구현 플랜을 수립·승인. 완료 조건 라운드에서 `Acceptance Contract`·`Authority Boundaries` 확정, 필요 시 다단계(main + sub-plans) 분할 | 메인 세션 (`planner` 조건부 위임) | PLAN·RESEARCH (`docs/agents/`) |
-| `implement-dev` | 승인된 플랜을 TDD(Red-Green-Refactor)로 구현하고 AC별 증거를 수집. 방향 충돌 시 `blocked` 반환. `(design-bearing)` TODO에서는 `needs-design-decision` 반환 | 루프가 `implementer` 시작; standalone은 현재 세션 | 코드 + IMPL 리포트 (`## TODO Fulfillment` 축) |
+| `implement-dev` | 승인된 플랜을 구현하고 AC별 증거를 수집. 방향 충돌 시 `blocked` 반환. `(design-bearing)` TODO에서는 `needs-design-decision` 반환 | 루프가 `implementer` 시작; standalone은 현재 세션 | 코드 + IMPL 리포트 (`## TODO Fulfillment` 축) |
 | `fix-dev` | 리뷰·검증에서 발견된 결함을 한 건씩 원인 분석·수정·검증. 커밋하지 않음 | 루프가 `fixer` 시작; standalone은 현재 세션 | IMPL 리포트에 `## Fix` 누적 |
 | `test-dev` | git scope(기본: `main` 대비 diff) 기준으로 유닛/E2E 갭 채움과 mutation LIVED 제거. production 코드는 불변. 호출자가 mutation을 범위 밖으로 지정할 수 있다 | 루프가 `tester` 시작; standalone은 현재 세션 | 테스트 코드 (파일 아티팩트 없음) |
 | `review-code` | 호출자가 리뷰 페르소나를 병렬로 시작(기본 4축, 호출자가 부분집합 지정 가능)한 뒤 finding 종합. 리뷰어는 `Confidence`를 달아 전부 보고하고 **필터링은 이 스킬의 집계 단계**가 한다. HIGH/CRITICAL은 사용자 Fix/Accept 트리아지, Accept는 AR로 기록해 이후 리뷰에서 Waived 강등 | 루프 또는 standalone이 caller | finding 리포트, `Accepted Review Exceptions` |

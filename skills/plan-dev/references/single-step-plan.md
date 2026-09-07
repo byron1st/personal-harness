@@ -110,7 +110,7 @@ Do not restate the plan-wide bullets per TODO. A `## Authority Boundaries` secti
 
 ## 7. TODO checklist
 
-Every plan ends with a `## TODOs` section: a checkbox list of tasks. Each item is an **outcome** the implementer owns, not a keystroke-level edit: name what to achieve and where, with enough direction that `implement-dev` knows the approach, then let it resolve the mechanics itself (TDD-first). Aim for outcome-level, not edit-level:
+Every plan ends with a `## TODOs` section: a checkbox list of tasks. Each item is an **outcome** the implementer owns, not a keystroke-level edit: name what to achieve and where, with enough direction that `implement-dev` knows the approach, then let it resolve the mechanics itself. Aim for outcome-level, not edit-level:
 
 - Outcome-level (good): `- [ ] Add rate-limiting to the public API layer (token-bucket per API key)`
 - Edit-level (avoid): `- [ ] In ratelimit.go create a TokenBucket struct with fields capacity, tokens, refillRate and a Take() method`

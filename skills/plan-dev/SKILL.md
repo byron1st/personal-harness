@@ -40,7 +40,7 @@ Inside plan and research files, the **frontmatter** and **language** (Korean) ar
 
 ## Plan granularity
 
-A plan is a **goal-oriented, coarse-grained overview**, not a mechanical build script. Its job is to lock direction that a human can review quickly and that `implement-dev` can execute without second-guessing the approach, while leaving how-level details to be resolved at implementation time, where TDD and real environment feedback (compiler errors, failing tests, actual code state) settle those decisions better than read-only plan mode can.
+A plan is a **goal-oriented, coarse-grained overview**, not a mechanical build script. Its job is to lock direction that a human can review quickly and that `implement-dev` can execute without second-guessing the approach, while leaving how-level details to be resolved at implementation time, where real environment feedback (compiler errors, failing tests, actual code state) settles those decisions better than read-only plan mode can.
 
 Decide altitude by what the information *is*, not by how much of it you happen to have:
 

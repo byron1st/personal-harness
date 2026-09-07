@@ -5,83 +5,44 @@ description: Strengthen tests by filling unit/e2e gaps and reducing LIVED mutati
 
 # Test Dev
 
-Harden the project's test suite against a **git-defined scope** in three sequential phases — unit-test gap filling, e2e-test gap filling, and mutation-test LIVED elimination — and report the result inline in the chat. No file artifacts are produced.
+Harden the test suite over a **git-defined scope** in three phases — unit gaps, e2e gaps, mutation LIVED elimination — and report inline. No file artifact is written.
 
-This skill is methodology. It does not start a persona. Standalone (`/test-dev`, no loop): the current session runs this flow in place. Under `dev-loop`: the loop starts the `tester` persona, and that persona follows this skill.
+This skill is methodology. It does not start a persona.
 
-`test-dev` reads changed code with the same **fresh, unanchored perspective** as `review-code`: the scope is a diff (or the whole tree), never the author's session narrative. This is deliberate — an agent that did not write the code spots the untested branch the author's mental model skips over.
+- **Standalone** (`/test-dev`) — the current session resolves scope, runs the phases, and asks the user when a decision is needed.
+- **Loop** — `dev-loop` starts the `tester` persona, which receives scope and commands in its brief, cannot ask the user, and returns the headings in [references/executor-contract.md](references/executor-contract.md).
 
-## Who runs this
+Read the scope with **fresh eyes**: the input is a diff, never the author's narrative of what they meant. An agent that did not write the code spots the untested branch the author's mental model skips over — which is the entire reason this stage is separate from `implement-dev`.
 
-- **Standalone** — the current session is the executor. Resolve scope, run the three phases, ask the user when a decision is needed. Do not start a persona.
-- **Loop** — the `tester` persona is the executor. It receives the resolved scope and verification commands in the caller brief, does not re-derive scope from conversation, cannot ask the user, and returns the fixed headings in [references/worker-contract.md](references/worker-contract.md).
+## The boundary — test code only
 
-## Global Rules
+This skill is **strictly read-only with respect to production behavior**. Writable: unit and e2e test files, their dedicated fixtures/factories/page objects, test-only helpers and mocks no production code imports, and test-only configuration (`jest.e2e.config.ts`, `stryker.conf.json`, test-only `make` targets).
 
-### 1. Test public/exported surface only
+Not writable, even when a newly added test fails because of it: application source, production configuration, migrations, schema, infrastructure-as-code, and `AGENTS.md` / `CLAUDE.md` / `README.md`.
 
-Add tests against public/exported functions, methods, HTTP/CLI entry points, and other public boundaries. Internal/private helpers are exercised indirectly through the public surface. This matches `implement-dev`'s rule and keeps tests resilient to refactors.
+**When a legitimate test fails because production code is wrong, do not fix it.** Record it as a finding — file:line, the test path, observed vs expected in one sentence — with a sequential `TEST-NNN` id, leave the test red, and continue to the next gap. If leaving it red blocks the rest of the suite (it hangs, or corrupts shared state), skip it with the framework's standard mechanism annotated with a comment pointing at the suspected defect, and record it the same way. Never weaken an assertion to make it pass.
 
-### 2. Match the existing test style
+Two more rules survive from the same instinct: add tests against the **public/exported surface** (internal helpers get exercised through it), and **never relax an existing test** — when a mutant lives, the answer is a new assertion that distinguishes the mutation, not a looser old one.
 
-Before adding any new test, read the project's existing tests. Follow the same naming convention, file layout, helper utilities, fixtures, mocking style, and table-driven patterns. Do not import new test frameworks or assertion libraries unless none exist.
+Repository `AGENTS.md` / `CLAUDE.md` constraints — coverage policy, mock policy, allowed dependencies, layout — override anything in this skill.
 
-### 3. Never weaken a test to make it pass
+## Determine scope
 
-If a mutant LIVES, the fix is to add an assertion or new test case that distinguishes the mutated behavior from the original — never relax an existing test, remove an assertion, or skip a test. The same rule applies for unit/e2e gap filling.
+The **caller** resolves scope in git terms before the executor runs; a loop executor never re-derives it from conversation. Default: the diff between the current branch and `main` (or `origin/main`), including uncommitted and unstaged edits. On `main`, only staged and unstaged edits.
 
-### 4. Verify after each phase
+Overrides: "the latest commit" → `HEAD`; "uncommitted changes" → `git diff HEAD` plus untracked; "this file" → that file; "the whole codebase" → the entire tree.
 
-After each phase ends, run the project's lint + unit (+ e2e where appropriate) suites and confirm they pass before moving to the next phase. If anything fails, follow Error Recovery (same procedure as `implement-dev`).
+`$HOME/.agents/scripts/resolve-scope.sh {branch|head|uncommitted|all}` returns the diff range, absolute changed-file paths, and languages as JSON. State the decided scope in one sentence.
 
-### 5. Honor project conventions
-
-Read `AGENTS.md` / `CLAUDE.md` at repository root (and any nested copies relevant to changed files). Their constraints and testing rules — coverage policy, mock policy, allowed dependencies, layout conventions — override the defaults in this skill.
-
-### 6. Test-code only — never touch business logic
-
-This skill is **strictly read-only** with respect to production/business logic. Across all three phases, only files that exist to test the system may be added, modified, or deleted — production source files, configuration that drives runtime behavior, and project documentation must not be edited by this skill.
-
-What counts as test code (writable here):
-- Unit test files (`*_test.go`, `*.test.ts(x)`, `*.spec.ts(x)`, `test_*.py`, `*_test.py`, `*Test.java`, `*Spec.kt`, `tests/` folders, etc.).
-- E2E / integration test files and their dedicated fixtures, factories, page objects.
-- Test-only helpers / mocks / stubs / harness scaffolding that no production code imports.
-- Test-only configuration (e.g. `jest.e2e.config.ts`, `stryker.conf.json`, `playwright.config.ts`, `make` targets used purely by tests).
-
-What is **not** writable here, even if a newly added test fails because of it:
-- Application source code (handlers, services, repositories, components, hooks, domain models, etc.).
-- Production configuration consumed at runtime.
-- Database migrations, schema files, infrastructure-as-code.
-- `AGENTS.md` / `CLAUDE.md` / `README.md` content.
-
-When a legitimately written test breaks and the failure looks like a real defect in business logic, **do not fix it**. Record the suspected defect (file, line, observed vs expected behavior, the test that surfaced it) into a running list - returned as `## Findings`, each entry with an executor-assigned `TEST-NNN` id - **leave the failing test in place** unless leaving it red blocks subsequent tests from running, and continue to the next gap. After all phases finish, report the collected defects to the user as part of the final summary.
-
-If keeping the failing test red blocks the rest of the run (e.g. it hangs the suite or corrupts shared state), **skip it** with the framework's standard skip mechanism (`t.Skip`, `it.skip`, `@pytest.mark.skip`) annotated with a comment pointing to the suspected defect, and add the skipped test to the same defect list. Do not weaken the assertions to make it pass.
-
-## Determine Scope
-
-The **caller** (standalone session, or `dev-loop` at preflight) resolves the scope in git terms **before the executor runs** — the same grammar as `review-code`. A loop executor never re-derives scope from conversation; it receives the resolved scope in its brief.
-
-By default, the scope is the diff between the current branch and `main` (or `origin/main`), including uncommitted and unstaged edits. The user can override:
-
-- "test the latest commit" → `git show HEAD` / `git diff HEAD~1...HEAD`.
-- "test uncommitted changes" → `git diff HEAD` plus untracked files.
-- "test this file" → only the file they point at.
-- "test the whole codebase" → treat the entire tree as in scope.
-
-If the current branch *is* `main`, only staged and unstaged edits are in scope.
-
-Capture the scope once (mirroring `review-code`'s gather step): the diff, the touched files with absolute paths, and the language(s) involved. `$HOME/.agents/scripts/resolve-scope.sh {branch|head|uncommitted|all}` computes the last three as JSON in one call — the diff range, the absolute paths, and the languages are shell facts, not inferences. Read the diff itself with `git diff` over the range it returns. State the decided scope to the user in one sentence (e.g. "Scope: 4 files changed vs `main`." / "Scope: entire codebase.").
-
-If an `implement-dev` report exists for the change, the caller may pass its path as an **optional intent hint** — never as the scope definition. Scope is always the git diff. Keeping the executor's brief lean (diff + conventions, not the author's narrative) preserves the fresh-eyes advantage that makes gap analysis worth isolating.
+An `implement-dev` report may be passed as an **intent hint only** — scope is always the git diff. Keeping the brief lean is what preserves the fresh-eyes advantage.
 
 ## Prepare
 
-1. **Verification commands**: if the caller brief already lists resolved commands, use those. Otherwise run `$HOME/.agents/scripts/detect-commands.sh` for the declared lint, unit, e2e, and mutation commands, then fill any `null` from `AGENTS.md`, `CLAUDE.md`, or `README.md` prose. The caller resolves any missing required command before starting a loop executor; a loop executor that still finds one missing returns `blocked` with `## Decision Needed` (standalone asks the user).
-2. **E2E layout**: locate where e2e tests live — the `Makefile`, `package.json` scripts, and `AGENTS.md` / `CLAUDE.md` name the command. If the project has no e2e suite at all, note this and skip Phase 2 with a single-line justification in the final summary.
-3. **Mutation tooling**: find the project's mutation target (typical: `make test-mutation`). If no tooling is configured, standalone asks the user with options (skip Phase 3 / nominate a command / install a standard tool); a loop executor returns `blocked` with those options.
+1. **Verification commands** — from the caller brief, else `$HOME/.agents/scripts/detect-commands.sh`, filling any `null` from `AGENTS.md` / `CLAUDE.md` / `README.md` prose. A missing required command is `blocked` with `## Decision Needed` (loop) or a question (standalone).
+2. **E2E layout** — locate where e2e tests live; the `Makefile`, `package.json` scripts, and `AGENTS.md` name the command. No e2e suite at all → skip Phase 2 with a one-line justification.
+3. **Mutation tooling** — find the mutation target (typically `make test-mutation`). None configured → standalone asks (skip / nominate a command / install a standard tool); loop returns `blocked` with those options.
 
-**Caller opt-out**: when the invocation explicitly places mutation out of scope for this run — `dev-loop` modes `light` and `noreview` always do — skip step 3 and Phase 3 entirely, treat `mutation: out of scope` in the brief, and **do not treat a missing mutation command as `blocked`**. Record the skip as `out of scope (caller)` in the `## Mutation` section of the return. This opt-out covers mutation only; a missing lint/unit/e2e command is still resolved before the run or returned as `blocked`.
+**Caller opt-out**: when the invocation places mutation out of scope for this run — `dev-loop` modes `light` and `noreview` always do — skip step 3 and Phase 3 entirely, and **do not treat a missing mutation command as `blocked`**. Record `out of scope (caller)` under `## Mutation`. This covers mutation only.
 
 ## Phase 1 — Unit test gaps
 
@@ -89,47 +50,25 @@ Target: every public function in the in-scope files has at least one happy-path 
 
 ## Phase 2 — E2E test gaps
 
-Target: every in-scope change that crosses a system boundary (HTTP route, DB write, external IO, queue consumer, UI flow) has at least one e2e test covering it end-to-end. E2E exists to verify integration — do not duplicate unit-level branch coverage here.
+Target: every in-scope change that crosses a system boundary (HTTP route, DB write, external IO, queue consumer, UI flow) has at least one e2e test covering it end-to-end. E2E verifies integration — do not duplicate unit-level branch coverage here.
 
 If the project has no e2e harness, skip this phase and note it in the summary.
 
 ## Phase 3 — Mutation test LIVED elimination
 
-Skip this phase entirely when the caller placed mutation out of scope (see Prepare 3) — a missing mutation command is not a `blocked` condition in that case.
+Skip entirely when the caller placed mutation out of scope (see Prepare 3).
 
-**Goal**: drive **test efficacy** to **at least 80%**, then push as high as possible within the budget below. Reaching 0 LIVED mutants is infeasible — equivalent mutants and untestable side effects always remain — so the target is a score threshold, not zero. If efficacy stalls below 80%, surface the residual LIVED list rather than contorting tests to chase the number.
+**Goal**: drive **test efficacy** to **at least 80%**, then as high as possible within the budget below. Reaching 0 LIVED mutants is infeasible — equivalent mutants and untestable side effects always remain — so the target is a threshold, not zero. If efficacy stalls below 80%, surface the residual LIVED list rather than contorting tests to chase the number.
 
 - **Efficacy** is the tool's own reported score (gremlins "test efficacy", stryker "mutation score", pitest "mutation coverage"), i.e. `KILLED / (KILLED + LIVED)`. Exclude EQUIVALENT and ERROR. **NO COVERAGE counts as LIVED and is really a Phase 1/2 gap** — fill it there and re-run rather than treating it as a mutant.
-- **Restrict the run to in-scope paths**; a full-tree mutation run is slow enough to matter. `gremlins unleash ./pkg/...` · `stryker --mutate "src/foo/**/*.ts"` · `mutmut run --paths-to-mutate src/foo/` · `cargo mutants --file src/foo.rs` · `pitest -DtargetClasses=com.example.foo.*`. If the project's mutation target takes no path filter, run it whole the first time and call the underlying tool directly afterwards.
-- **A distinguishing test must pass on unmutated code.** If it fails there, the implementation disagrees with its own contract — that is a suspected defect, not a test to fix: record it as a `TEST-NNN` finding per Global Rule 6 and move on.
-- **Budgets**: uncapped iterations below 80%, at most 3 above it, and at most 3 attempts on any single mutant. Stop early when an iteration adds no new killing test. Record what could not be killed (file:line, operator, reason) for the summary.
+- **Restrict the run to in-scope paths**; a full-tree mutation run is slow enough to matter. `gremlins unleash ./pkg/...` · `stryker --mutate "src/foo/**/*.ts"` · `mutmut run --paths-to-mutate src/foo/` · `cargo mutants --file src/foo.rs` · `pitest -DtargetClasses=com.example.foo.*`. If the project's target takes no path filter, run it whole the first time and call the underlying tool directly afterwards.
+- **A distinguishing test must pass on unmutated code.** If it fails there, the implementation disagrees with its own contract — a suspected defect, not a test to fix. Record it as `TEST-NNN` and move on.
+- **Budgets**: uncapped iterations below 80%, at most 3 above it, at most 3 attempts on any single mutant. Stop early when an iteration adds no new killing test. Record what could not be killed (file:line, operator, reason) for the summary.
 
-## Final Verification
+## Finish
 
-Run the full lint + unit + e2e suites once more.
+Run the full lint + unit (+ e2e) suites once more. Every previously-green test must still be green — if one broke, the most recent test-code change is the suspect, so revert that rather than touching production code. If reverting does not restore it, return `failed` (loop) or surface it (standalone).
 
-- All previously-green tests must remain green. If a pre-existing test broke during the run, it points to a problem the skill caused — investigate by reverting the most recent test change rather than touching production code.
-- Newly added tests that surfaced suspected business-logic defects may legitimately remain red (or skipped per Global Rule 6). They do not block completion — they are reported to the user.
+Newly added tests that surfaced suspected defects may legitimately stay red or skipped. They do not block completion; they are the headline of the report.
 
-If a pre-existing test is red and reverting recent test changes does not restore it, stop and surface the failure with what was tried — loop executor returns `## Stage Status: failed`; standalone surfaces it to the user.
-
-## Output
-
-The result is delivered as two artifacts — the **executor return (②)** and the **caller chat summary (③)** — whose headings and shapes are defined in [references/worker-contract.md](references/worker-contract.md) §C and §D.
-
-**No file artifact is written, so the return is the deliverable.** That makes one rule outrank brevity in both artifacts: the `## Findings` list (suspected business-logic defects with `TEST-NNN` ids) is carried **verbatim**, never summarised or dropped, and a `pass-with-suspected-defects` return does not auto-proceed to any next stage.
-
-Standalone uses ③ as the final chat output. Do not write a separate report file. Do not modify `docs/agents/dev` implementation reports.
-
-## Error Recovery
-
-This skill is test-code-only (Global Rule 6). Production code is **never** edited here, even to "fix" a failing newly-added test. The recovery flow is:
-
-1. **Read the error carefully** — understand whether the failure points to a wrong test, a wrong assumption about behavior, or a suspected defect in production.
-2. **If the test itself is wrong** (assertion misstates expected behavior, fixture is incorrect, mock is set up wrong) — adjust the test. This is the only freely-allowed correction.
-3. **If the test correctly expresses the intended behavior but production code disagrees** — this is a suspected business-logic defect. Do **not** edit production code. Add it to the running defect list (see Global Rule 6), leave the test red (or skip with annotation if it blocks the suite), and continue.
-4. **If a previously-green test broke** because of changes made by this skill — the most recent test-code change is the suspect. Revert the test change and re-evaluate. Do not touch production code to make a previously-green test pass under a new test infrastructure.
-5. **Never weaken tests to make them pass** — see Global Rule 3.
-6. **Stop after 3 failed attempts on the same error** — record what was tried, what was observed, and add it to the defect list. Continue to the next gap; the user gets the full picture in the final summary. If the error is irrecoverable or a previously-green test cannot be restored, the loop executor sets `## Stage Status` to `failed` and returns; standalone asks the user for guidance. Suspected business-logic defects are never a `failed` condition — they go to the defect list and are reported.
-
-This skill does not retry `failed` under a different model. The loop may start the same persona once more; that retry is the loop's, not this skill's.
+**The return is the deliverable** — no file artifact exists to fall back on. So one rule outranks brevity in both the executor return and the chat summary: the `## Findings` list is carried **verbatim**, never summarised or dropped, and `pass-with-suspected-defects` never auto-proceeds to a next stage.
