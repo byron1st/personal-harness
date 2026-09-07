@@ -45,7 +45,7 @@ Hold the chosen path as `${AGENT_FILE}` for the rest of the run.
 Read the Tech Stack section from SPEC.md and detect the primary project type. The command surface is language-specific; `.gitignore` still starts from the common baseline and then adds project-specific entries.
 
 | Detected project type | Command surface | Reference |
-|---|---|
+|---|---|---|
 | Go | `Makefile` | [references/go-makefile.md](references/go-makefile.md) |
 | Swift / macOS | `Makefile` | [references/swift-makefile.md](references/swift-makefile.md) |
 | TypeScript / Next.js | `package.json` scripts | [references/ts-nextjs-packagejson.md](references/ts-nextjs-packagejson.md) |
@@ -128,6 +128,7 @@ Key requirements (the reference covers them in detail):
 
 - Every Core Commands entry must back to a Makefile target or `package.json` script. If one is missing, add it to the command surface first.
 - The Code Conventions section includes only 3–5 highlights from SPEC.md and the detected stack. Link to project-local convention docs only when they actually exist.
+- For the Code Conventions and Testing sections, read the detected project type's block in [references/language-conventions.md](references/language-conventions.md) and select from it. It is a menu of the non-obvious choices, not a list to copy wholesale — SPEC.md and the project's own decisions override it.
 - Boundaries are NEVER rules with concrete alternatives.
 - The file is **English-only** and **under 150 lines**, regardless of conversation or SPEC.md language.
 

@@ -25,10 +25,12 @@ This file lists **which sections to include**. It does not provide content — t
 
 5. **Code Conventions**
    - 3–5 prescriptive bullets covering the highest-impact rules.
+   - Start from the detected project type's block in [language-conventions.md](language-conventions.md) and select; SPEC.md and the project's own decisions override it.
    - Link to project-local convention docs only when they actually exist.
 
 6. **Testing**
    - Test framework, file naming rule, mocking approach, the single command to run before commit.
+   - The same [language-conventions.md](language-conventions.md) block carries the starter test-layout and framework picks.
 
 7. **Boundaries**
    - Convert SPEC.md Constraints into "NEVER ..." rules, each paired with a recommended alternative.

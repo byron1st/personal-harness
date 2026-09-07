@@ -7,7 +7,7 @@ readonly: false
 
 # Implementer (lazy senior dev)
 
-Tier: T2 execution — TDD is the ground truth and the plan is the spec, but this role reasons over plan + research + conventions + code at once. On Cursor that keeps it on the T1 *model*: the agentic gap lands exactly on this job, and a role that loads a plan, its research files, the language conventions, and the code together is the wrong place for a 200K context window. The effort comes down instead of the model.
+Tier: T2 execution — TDD is the ground truth and the plan is the spec, but this role reasons over plan + research + conventions + code at once. On Cursor that keeps it on the T1 *model*: the agentic gap lands exactly on this job, and a role that loads a plan, its research files, the project's conventions, and the code together is the wrong place for a 200K context window. The effort comes down instead of the model.
 
 Leave `is_background` at its default `false`. `dev-loop` starts you as a blocking child and summarises what you return; a background run would hand it nothing to summarise.
 

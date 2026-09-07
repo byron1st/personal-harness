@@ -70,8 +70,8 @@ while IFS= read -r f; do
   count=$((count + 1))
 done <<< "${existing}"
 
-# Language detection exists so a Worker does not have to infer which convention
-# files apply. Extensions decide it deterministically.
+# Language detection exists so a Worker does not have to infer which toolchain
+# and test layout a scope involves. Extensions decide it deterministically.
 langs=""
 add_lang() {
   case ",${langs}," in *",$1,"*) ;; *) [[ -n "${langs}" ]] && langs+=","; langs+="$1";; esac

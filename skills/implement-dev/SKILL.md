@@ -9,23 +9,6 @@ Execute an implementation plan by writing code test-first, validating via automa
 
 This skill is methodology. It does not start a persona. Standalone (`/implement-dev`, no loop): the current session runs this flow in place. Under `dev-loop`: the loop starts the `implementer` persona, and that persona follows this skill.
 
-## Required language convention gate
-
-Complete this gate during Prepare **before writing a Red test, production code, or completing a TODO**. It is a hard prerequisite, not a suggested resource lookup.
-
-1. Determine every language/framework involved in the plan's TODOs and the files expected to change. If that is unclear, inspect the plan and repository before proceeding.
-2. Open and read the **entire contents** of every matching convention file in the table below. Seeing its link, title, or table row does not count as reading it.
-3. For a multi-language change, read **all** matching files; do not select only a primary language. Read the file again even if it was consulted during an earlier task or session.
-4. If a matching convention file is missing or inaccessible, continue without it. Apply the most widely adopted de facto standard known for that language/framework, and record the fallback in the completion report's `## Summary`.
-
-| Language / framework | Read when | Required convention file |
-| --- | --- | --- |
-| Go | The plan or changed files involve Go code. | [references/go-convention.md](references/go-convention.md) |
-| Swift / macOS | The plan or changed files involve Swift, SwiftUI, AppKit, or macOS app code. | [references/swift-convention.md](references/swift-convention.md) |
-| TypeScript / Next.js | The plan or changed files involve TypeScript, React, or Next.js code. | [references/ts-nextjs-convention.md](references/ts-nextjs-convention.md) |
-
-Repository `AGENTS.md` / `CLAUDE.md` instructions override bundled defaults, but they do not replace this required read. Record every convention file consulted and any de facto fallback used in the completion report's `## Summary`.
-
 ## Who runs this
 
 - **Standalone** — the current session is the executor. Ask the user when a decision is needed. Do not start a persona.
@@ -44,8 +27,7 @@ The rules that bind whoever edits the code - TDD Red-Green-Refactor, flipping ea
 
 1. **Plan file**: the user or the caller brief provides the plan path. If it is omitted, ask (standalone) or return `blocked` with `## Decision Needed` (loop executor).
 2. **Verification commands**: if the caller brief already lists resolved commands, use those and re-derive only values marked `none`. Otherwise run `$HOME/.agents/scripts/detect-commands.sh` — it reads `Makefile` targets and `package.json` scripts and returns JSON, deterministically and without inference. Fill in whatever it returns `null` for by reading `AGENTS.md`, `CLAUDE.md`, or `README.md` prose. If a command still cannot be found, ask the user (standalone) or surface in `## Open Questions` / `## Decision Needed` (loop executor). The loop runs this script once at preflight and passes the result in the brief so the executor does not rediscover the same commands cold every round.
-3. **Project conventions**: read `AGENTS.md` / `CLAUDE.md`; their constraints apply to every implementation decision. Treat bundled conventions as defaults only where the repository's own instructions and existing code are silent.
-4. **Language conventions**: complete the [required language convention gate](#required-language-convention-gate). Do not advance from Prepare until every matching convention file has been read.
+3. **Project conventions**: read `AGENTS.md` / `CLAUDE.md` (root, plus any nested copy covering the files you will change); their constraints apply to every implementation decision. Where they are silent, match the surrounding code rather than importing a house style from elsewhere.
 
 ## Execute
 
@@ -79,5 +61,4 @@ This skill does not retry `failed` under a different model. The loop may start t
 - Every AC in the plan's `## Acceptance Contract` has its work-specific evidence collected and recorded (report `AC:` lines + return `## Evidence`) - an unproven AC blocks `pass`. Legacy plans without an `## Acceptance Contract` are not refused; they take the fallback in [references/implement-flow.md](references/implement-flow.md) step 3.
 - The completion report (①) is saved under `docs/agents/dev`, and the plan/report Markdown links are bidirectional.
 - The executor return ② uses the fixed headings and links ① by absolute path.
-- The completion report's `## Summary` records every language-specific convention file consulted and any de facto fallback used, or states that no table mapping applied.
 - `AGENTS.md` / `CLAUDE.md` / `README.md` have been reviewed for staleness caused by the change; update content while preserving the existing section structure.
