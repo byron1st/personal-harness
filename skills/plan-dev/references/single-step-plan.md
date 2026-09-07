@@ -1,48 +1,24 @@
 # Single-step plan file
 
-A single-step plan is one markdown file describing the full implementation of a task. Use this format when `plan-dev` is operating in **single-step** mode (the default).
+One markdown file describing the full implementation of a task — the default `plan-dev` mode, and the unit `implement-dev` executes.
 
-## What is enforced vs. flexible
-
-**Enforced** (structural metadata + tracking hooks, not content shape):
-
-- File name pattern (section 1)
-- Storage location (section 2)
-- Frontmatter fields (section 3)
-- Body language: Korean
-- Research file links at the top of the body when research files were created or consulted, in the strengthened format with per-TODO tags (section 4)
-- A `## Acceptance Contract` table agreed with the user during planning (section 5)
-- A `## Authority Boundaries` section bounding executor discretion and the loop budget (section 6)
-- A `## TODOs` checkbox list at the end of the body for progress tracking (section 7); each item carries its `(AC-N)` reference(s) and a `(mechanical)` / `(design-bearing)` difficulty tag, and when a TODO consults research, append the `(→ research: {file-stem})` hint
-- `## Non-goals` and `## Key decisions` direction anchors, **required when the plan is non-trivial** (the cold-handoff anchors the Worker needs to not re-derive a different direction)
-
-**Flexible**:
-
-- Everything else inside the body. Do NOT force the plan into a fixed section template (Goal / Technical Approach / Affected Files / Risks / Tradeoffs / Verification / ...). When the plan was produced by a planning agent, copy its output **verbatim** into the body between the research links and the TODO checklist. Squeezing a rich agent-generated plan into a normalized template loses fidelity; preserve it as-is.
-- The verbatim rule preserves the agent's structure and reasoning; it is not a license to keep mechanics-level detail. Plan granularity (see SKILL.md) still governs: keep the direction, and push line-level edits / code sketches down into research files or drop them.
-
-Two body elements bound a coarse plan's implementer discretion cheaply - both are information `implement-dev` cannot recover from environment feedback and, because **the implementer is a fresh session with no memory of this planning session**, they are the **cold-handoff anchors that stop the executor from re-deriving a different direction**:
-
-- `## Non-goals` - what this change explicitly does *not* touch. A Worker that re-derives the scope will re-discover these by guessing; write the exclusion here.
-- `## Key decisions` - the chosen approach and, where it matters, the alternatives you rejected and why (so the Worker does not re-pick a discarded path under its own discretion).
-
-These are **required when the plan is non-trivial**. Omit either only when the plan is trivial enough that a Worker cannot plausibly misread the direction from the plan body alone. Trivial = a single obvious change with no real alternative approach.
+Structure below is enforced. The body between the research links and the TODO checklist is **free-form**: do not force it into a fixed template (Goal / Technical Approach / Affected Files / Risks / …). When a planning agent produced the plan, copy its output **verbatim** — squeezing it into a normalized shape loses fidelity. That is not licence to keep mechanics-level detail; granularity still governs, so push line-level detail into research files or drop it.
 
 ## 1. File name
 
 `{timestamp}_{Jira ticket number}_PLAN_{title}.md`
 
-- `{timestamp}` - local time in `YYYYMMDDHHMMSS` format.
-- `{Jira ticket number}` - extract from the current branch name using the regex `[A-Z]+-[0-9]+`. If it cannot be extracted, ask the user unless they explicitly confirm `NO-JIRA`. **Session-context shortcut**: when the session context classifies this repo as personal (SessionStart `repo_type: personal`) and the branch carries no Jira key, propose `NO-JIRA` as the default — the confirmation question may be skipped.
-- `{title}` - short, concise, hyphen-separated description. No spaces. Example: `refactor-service-layer-to-resolve-cycle-dependencies`.
+- `{timestamp}` — local time, `YYYYMMDDHHMMSS`.
+- `{Jira ticket number}` — from the current branch via `[A-Z]+-[0-9]+`. If absent, ask, unless the user confirms `NO-JIRA`. **Shortcut**: when the SessionStart context says `repo_type: personal` and the branch has no Jira key, propose `NO-JIRA` as the default and skip the question.
+- `{title}` — short, hyphenated, no spaces. e.g. `refactor-service-layer-to-resolve-cycle-dependencies`.
 
-Example: `20260622153045_BLC-692_PLAN_refactor-service-layer.md`.
+Example: `20260622153045_BLC-692_PLAN_refactor-service-layer.md`
 
-## 2. Storage location
+## 2. Storage
 
-Always store the file in `docs/agents/dev/` under the project root. Create the directory if it does not exist.
+`docs/agents/dev/` under the project root; create it if missing.
 
-## 3. Required frontmatter
+## 3. Frontmatter
 
 ```yaml
 ---
@@ -54,17 +30,11 @@ Title: {title}
 ---
 ```
 
-These keys are required. Add other keys (e.g., `Tags`, `Status`) only when useful.
+Required. Add other keys (`Tags`, `Status`) only when useful.
 
-## 4. Research file links (strengthened)
+## 4. Research links
 
-When research files were created or consulted during planning, list them at the top of the body, immediately after the H1 heading. The Worker (`implement-dev`) starts cold - no memory of the planning session - so each link must carry enough context for it to pick the right research files for the right TODOs without re-exploring. Each link is one bullet with three parts:
-
-1. the Markdown link to the file,
-2. a one-line summary of **what current-code understanding** that research captures (the *why* exists; it is an anchor, not a duplicate of the body),
-3. the TODOs that should consult it, as `**TODO N·M**`.
-
-If no research files exist, omit this block entirely.
+When research was created or consulted, list it at the top of the body, right after the H1. The executor starts cold, so each link carries three parts: the Markdown link, a one-line summary of **what current-code understanding** it captures, and the TODOs that should read it as `**TODO N·M**`. Omit the block entirely when there is no research.
 
 ```markdown
 ## 참고 Research
@@ -74,28 +44,34 @@ If no research files exist, omit this block entirely.
   **TODO 5**의 대상 구조.
 ```
 
-## 5. Acceptance Contract
+## 5. Direction anchors
 
-Every plan carries a `## Acceptance Contract` section: the completion conditions agreed with the user during `plan-dev`'s acceptance round. It is the contract an independent evaluator (a reviewer, or a loop controller such as `dev-loop`) judges the finished work against, with no memory of the planning session.
+`## Non-goals` and `## Key decisions` are **required unless the plan is trivial** — trivial meaning a single obvious change with no real alternative approach. They are what stops a cold executor from re-deriving a different direction under its own discretion:
+
+- `## Non-goals` — what this change explicitly does *not* touch, so the executor does not rediscover the boundary by guessing.
+- `## Key decisions` — the chosen approach, and where it matters the alternatives rejected and why, so a discarded path is not re-picked.
+
+## 6. Acceptance Contract
+
+The completion conditions agreed during the acceptance round. An independent evaluator — a reviewer, or `dev-loop` — judges the finished work against this with no memory of the planning session.
 
 | ID | Observable condition | Evidence |
 | --- | --- | --- |
 | AC-1 | {an observable state a reviewer can check without asking the author} | {the work-specific proof: behavior, output, artifact} |
 
-- IDs are `AC-N`, numbered from 1.
-- An optional fourth column `Do not mark done if` names explicit disqualifiers for a row.
-- Record only work-specific outcomes and evidence the repository cannot announce on its own; generic gates stay out (SKILL.md, Plan granularity).
-- Every `## TODOs` item references the AC id(s) it fulfills as `(AC-N)` (section 7).
+- IDs are `AC-N` from 1. An optional fourth column `Do not mark done if` names explicit disqualifiers.
+- Work-specific outcomes only; generic gates stay out.
+- Every TODO references the AC id(s) it fulfills.
 
-## 6. Authority Boundaries
+## 7. Authority Boundaries
 
-Every plan carries a `## Authority Boundaries` section bounding the discretion of whoever executes the plan (implementer or loop controller):
+Bounds the discretion of whoever executes the plan:
 
-- **Discretion** - what the executor decides alone: how-level mechanics, per Plan granularity.
-- **Must-ask** - changes forbidden without user confirmation: direction changes (goal / approach / `## Key decisions` / `## Non-goals`), scope expansion, destructive or externally visible operations.
-- **Stop conditions** - situations that halt work immediately and go back to a human.
-- **Loop budget** - the maximum remediation rounds a fix loop may run over this plan. Default `3`; override only in this section.
-- **Per-TODO boundaries** - one line per TODO that needs one, naming what may be decided locally and what must be escalated for that specific item. Only for TODOs where the plan-wide answer above is genuinely wrong; a TODO whose boundary is the plan's default gets no line. This is the cheapest thing a plan can give an efficient executor - what it lacks is not detail but a sense of where its own authority ends.
+- **Discretion** — what the executor decides alone: how-level mechanics.
+- **Must-ask** — forbidden without user confirmation: direction changes (goal / approach / `## Key decisions` / `## Non-goals`), scope expansion, destructive or externally visible operations.
+- **Stop conditions** — situations that halt work and go back to a human.
+- **Loop budget** — maximum remediation rounds for a fix loop. Default `3`; override only here.
+- **Per-TODO lines** — only where the plan-wide answer above is genuinely wrong for that item. This is the cheapest thing a plan gives an efficient executor: what it lacks is not detail but a sense of where its own authority ends.
 
 ```markdown
 ## Authority Boundaries
@@ -106,27 +82,20 @@ Every plan carries a `## Authority Boundaries` section bounding the discretion o
 - TODO 2: 토큰 버킷의 자료구조·리필 주기는 로컬 판단. 저장소를 프로세스 메모리 밖으로 옮기는 선택은 escalate.
 ```
 
-Do not restate the plan-wide bullets per TODO. A `## Authority Boundaries` section that lists every TODO has stopped being a boundary and become a second TODO list.
+Do not restate the plan-wide bullets per TODO. A section that lists every TODO has stopped being a boundary and become a second TODO list.
 
-## 7. TODO checklist
+## 8. TODO checklist
 
-Every plan ends with a `## TODOs` section: a checkbox list of tasks. Each item is an **outcome** the implementer owns, not a keystroke-level edit: name what to achieve and where, with enough direction that `implement-dev` knows the approach, then let it resolve the mechanics itself. Aim for outcome-level, not edit-level:
+The plan ends with `## TODOs`, a checkbox list of **outcomes**, not keystroke-level edits. Name what to achieve and where, with enough direction that the approach is clear, then let the implementer resolve the mechanics.
 
 - Outcome-level (good): `- [ ] Add rate-limiting to the public API layer (token-bucket per API key)`
 - Edit-level (avoid): `- [ ] In ratelimit.go create a TokenBucket struct with fields capacity, tokens, refillRate and a Take() method`
 
-The second bakes in mechanics the implementer should decide against the running code, and inflates the plan past the point a human will actually review it. This pairs with `implement-dev`, which ticks each box as it completes a task.
+Each item carries trailing tags:
 
-**AC reference**: every item names the acceptance criteria it fulfills as a trailing `(AC-N)` (or `(AC-N, AC-M)`). This is how an evaluator maps completed TODOs to the `## Acceptance Contract` (section 5) without the planning session's memory.
-
-**Research hint**: when a TODO should consult a linked research file before being implemented, append `(→ research: {file-stem})` to the end of the item. This pairs with section 4's `**TODO N·M**` tagging - bidirectional, so the Worker reads research exactly once and exactly for the TODO that needs it, with no guesswork. Keep the hint terse; do not paraphrase the research in the TODO line.
-
-**Difficulty tag**: every item carries `(mechanical)` or `(design-bearing)`, in the same trailing position as the other tags.
-
-- `(mechanical)` - the *how* follows from the codebase. There is one obvious shape, or the alternatives are interchangeable and cheap to reverse.
-- `(design-bearing)` - two approaches are both consistent with the plan, and picking wrong is expensive to undo.
-
-**Be stingy with `design-bearing`.** It is the sole gate on `implement-dev`'s `plan-consultant` escalation hatch, which has no call cap - so how sparingly this tag is applied *is* the budget control. If most TODOs in a plan carry it, either the plan is under-decided (fix the plan) or the tag is being applied loosely (fix the tagging).
+- `(AC-N)` — the acceptance criteria it fulfills. This is how an evaluator maps TODOs to the contract without the planning session's memory.
+- `(mechanical)` or `(design-bearing)` — `mechanical` when the *how* follows from the codebase or the alternatives are cheap to reverse; `design-bearing` when two approaches both fit the plan and picking wrong is expensive to undo. **Be stingy with `design-bearing`**: it is the sole gate on `implement-dev`'s `plan-consultant` hatch, which has no call cap, so how sparingly it is applied *is* the budget control. If most TODOs carry it, either the plan is under-decided or the tagging is loose.
+- `(→ research: {file-stem})` — when the TODO should read a linked research file first. Pairs with the `**TODO N·M**` tags in section 4, so the executor reads research exactly once, for exactly the TODO that needs it.
 
 ```markdown
 ## TODOs
@@ -135,9 +104,9 @@ The second bakes in mechanics the implementer should decide against the running 
 - [ ] Update the docs page for rate limits (AC-3) (mechanical)
 ```
 
-If the agent-generated plan already contains its own task list, normalize it into this section's checkbox format and place it at the end. The rest of its content stays where it was.
+If an agent-generated plan already has its own task list, normalize it into this shape at the end of the body. The rest of its content stays where it was.
 
-## 8. File skeleton
+## 9. Skeleton
 
 ```markdown
 ---
@@ -150,11 +119,11 @@ Title: {title}
 
 # [Feature / Change Name]
 
-<!-- Section 4: research file links (strengthened), when applicable -->
+<!-- §4 research links, when applicable -->
 
-<!-- Agent-generated plan body, copied verbatim. Keep whatever sections / ordering the agent produced. -->
+<!-- Free-form body. Agent-generated plans are copied verbatim. -->
 
-<!-- Direction anchors - required when non-trivial, omitted only when the plan is truly trivial: -->
+<!-- §5 anchors — required unless the plan is trivial: -->
 <!-- ## Non-goals -->
 <!-- ## Key decisions -->
 
@@ -168,8 +137,6 @@ Title: {title}
 - Must-ask: ...
 - Stop conditions: ...
 - Loop budget: 3
-<!-- Per-TODO lines only where the plan-wide answer above is wrong for that item: -->
-- TODO N: ...
 
 ## TODOs
 - [ ] Task 1 (AC-1) (mechanical)
