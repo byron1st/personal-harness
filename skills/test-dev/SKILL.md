@@ -78,20 +78,16 @@ If an `implement-dev` report exists for the change, the caller may pass its path
 ## Prepare
 
 1. **Verification commands**: if the caller brief already lists resolved commands, use those. Otherwise run `$HOME/.agents/scripts/detect-commands.sh` for the declared lint, unit, e2e, and mutation commands, then fill any `null` from `AGENTS.md`, `CLAUDE.md`, or `README.md` prose. The caller resolves any missing required command before starting a loop executor; a loop executor that still finds one missing returns `blocked` with `## Decision Needed` (standalone asks the user).
-2. **E2E layout**: locate where e2e tests live (see [references/e2e-gap-analysis.md](references/e2e-gap-analysis.md) for common conventions). If the project has no e2e suite at all, note this and skip Phase 2 with a single-line justification in the final summary.
+2. **E2E layout**: locate where e2e tests live — the `Makefile`, `package.json` scripts, and `AGENTS.md` / `CLAUDE.md` name the command. If the project has no e2e suite at all, note this and skip Phase 2 with a single-line justification in the final summary.
 3. **Mutation tooling**: find the project's mutation target (typical: `make test-mutation`). If no tooling is configured, standalone asks the user with options (skip Phase 3 / nominate a command / install a standard tool); a loop executor returns `blocked` with those options.
 
 **Caller opt-out**: when the invocation explicitly places mutation out of scope for this run — `dev-loop` modes `light` and `noreview` always do — skip step 3 and Phase 3 entirely, treat `mutation: out of scope` in the brief, and **do not treat a missing mutation command as `blocked`**. Record the skip as `out of scope (caller)` in the `## Mutation` section of the return. This opt-out covers mutation only; a missing lint/unit/e2e command is still resolved before the run or returned as `blocked`.
 
 ## Phase 1 — Unit test gaps
 
-Read [references/unit-gap-analysis.md](references/unit-gap-analysis.md) before starting this phase — it carries the procedure (enumerate the public surface → map symbols to existing tests → inspect bodies for missed branches → fill each gap Red → Green).
-
 Target: every public function in the in-scope files has at least one happy-path test, plus tests for the obvious edge cases its body implies.
 
 ## Phase 2 — E2E test gaps
-
-Read [references/e2e-gap-analysis.md](references/e2e-gap-analysis.md) before starting this phase — it carries the procedure (locate the harness → identify boundary-crossing changes → map them to existing e2e tests → fill each gap with one happy-path test).
 
 Target: every in-scope change that crosses a system boundary (HTTP route, DB write, external IO, queue consumer, UI flow) has at least one e2e test covering it end-to-end. E2E exists to verify integration — do not duplicate unit-level branch coverage here.
 
@@ -99,11 +95,14 @@ If the project has no e2e harness, skip this phase and note it in the summary.
 
 ## Phase 3 — Mutation test LIVED elimination
 
-Read [references/mutation-iteration.md](references/mutation-iteration.md) before starting this phase — it carries the efficacy formula, the per-tool run commands and report states, the distinguishing-test technique, and the iteration budgets (pre-threshold uncapped, post-threshold ≤ 3, per-mutant 3 attempts).
-
 Skip this phase entirely when the caller placed mutation out of scope (see Prepare 3) — a missing mutation command is not a `blocked` condition in that case.
 
-**Goal**: drive **test efficacy** (the mutation-score metric the tool reports) to **at least 80%**, then push **as high as possible** within that budget. Reaching 0 LIVED mutants is generally infeasible — equivalent mutants and untestable side effects always remain — so the target is a score threshold, not zero. If efficacy stalls below 80%, surface the residual LIVED list rather than contorting tests to chase the number.
+**Goal**: drive **test efficacy** to **at least 80%**, then push as high as possible within the budget below. Reaching 0 LIVED mutants is infeasible — equivalent mutants and untestable side effects always remain — so the target is a score threshold, not zero. If efficacy stalls below 80%, surface the residual LIVED list rather than contorting tests to chase the number.
+
+- **Efficacy** is the tool's own reported score (gremlins "test efficacy", stryker "mutation score", pitest "mutation coverage"), i.e. `KILLED / (KILLED + LIVED)`. Exclude EQUIVALENT and ERROR. **NO COVERAGE counts as LIVED and is really a Phase 1/2 gap** — fill it there and re-run rather than treating it as a mutant.
+- **Restrict the run to in-scope paths**; a full-tree mutation run is slow enough to matter. `gremlins unleash ./pkg/...` · `stryker --mutate "src/foo/**/*.ts"` · `mutmut run --paths-to-mutate src/foo/` · `cargo mutants --file src/foo.rs` · `pitest -DtargetClasses=com.example.foo.*`. If the project's mutation target takes no path filter, run it whole the first time and call the underlying tool directly afterwards.
+- **A distinguishing test must pass on unmutated code.** If it fails there, the implementation disagrees with its own contract — that is a suspected defect, not a test to fix: record it as a `TEST-NNN` finding per Global Rule 6 and move on.
+- **Budgets**: uncapped iterations below 80%, at most 3 above it, and at most 3 attempts on any single mutant. Stop early when an iteration adds no new killing test. Record what could not be killed (file:line, operator, reason) for the summary.
 
 ## Final Verification
 
