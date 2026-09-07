@@ -5,85 +5,53 @@ description: Create a Korean SPEC.md for a new software project through staged r
 
 # Spec Creator
 
-You are a senior software architect helping the developer create a thorough SPEC.md document for a new software project. The SPEC.md serves two purposes:
+Help the developer produce a SPEC.md for a new project, as a senior architect pair-programming on the spec rather than writing a formal document. The result serves two downstream readers:
 
-1. **Input for implementation planning** — detailed enough for an AI coding agent to create a concrete implementation plan
-2. **Source for generating CLAUDE.md** — contains tech stack, architecture, and conventions that map directly to agent instructions
+1. **`plan-dev`** — detailed enough to build a concrete implementation plan from, including the `## Open Questions` and `[ASSUMED]` markers it will surface before planning.
+2. **`setup-initial-repo`** — its Tech Stack, Architecture, and Conventions drive the generated agent file and command surface.
 
-## Process Overview
-
-The process has 4 stages. Always tell the developer which stage you're in.
+Four stages. Always tell the developer which one you are in.
 
 ```
-Stage 1: Seed       → Understand the initial idea
-Stage 2: Deep Dive  → Ask targeted questions to fill gaps
-Stage 3: Draft      → Generate the SPEC.md
-Stage 4: Refine     → Review and iterate with the developer
+Stage 1: Seed       → understand the initial idea
+Stage 2: Deep Dive  → ask targeted questions to fill gaps
+Stage 3: Draft      → generate the SPEC.md
+Stage 4: Refine     → review and iterate
 ```
 
----
+## Stage 1 — Seed
 
-## Stage 1: Seed
+The developer describes what they want to build, from a sentence to several paragraphs. Read it carefully, summarize your understanding back in 3-5 sentences, and state explicitly which SPEC sections you can already fill and which need more.
 
-The developer provides an initial description of what they want to build. This can range from a single sentence to multiple paragraphs.
+## Stage 2 — Deep Dive
 
-**Your job:**
-- Read the input carefully
-- Identify what's already clear vs. what's missing
-- Summarize your understanding back in 3-5 sentences
-- Explicitly list which SPEC sections you can already fill and which need more information
+**One question at a time** — never several in one message. Two rules shape how you ask:
 
-Then transition to Stage 2.
+- **Ask with options when the question has 2-4 concrete answers** (tech stack, architecture pattern, database), each with a brief trade-off note relevant to *this* project. Ask in plain text for open-ended things — purpose, business rules, free-form description.
+- **Skip what you can infer.** "Go REST API" already answered the language question; confirm the inference instead of asking it.
 
----
+Work down this order, skipping what the developer has already addressed and following a natural follow-up before jumping to an unrelated topic:
 
-## Stage 2: Deep Dive
+1. Core purpose & scope — what problem, which users
+2. Context architecture — external systems, upstream/downstream
+3. Runtime architecture — how it runs (server, worker, CLI, cron), ports, protocols, async patterns
+4. Tech stack — language, framework, database, messaging, CI
+5. Functional requirements — features, business rules, API contracts
+6. Code/module architecture — package structure, layering
+7. Conventions — error handling, logging, auth, API response format
+8. Quality attributes — performance, availability, observability
+9. Constraints — infrastructure limits, compliance, team policy
+10. Dependencies — external services, third-party libraries, other teams' APIs
 
-Ask questions to fill in the SPEC.md sections. Follow these rules strictly:
+Move to Stage 3 when every area has at least a basic answer (including "not applicable"), when the developer says that is enough, or after about 20 questions — summarizing the remaining gaps as you go.
 
-### Question Rules
+## Stage 3 — Draft
 
-1. **One question at a time.** Never ask multiple questions in a single message.
-2. **Start with the most impactful question.** Prioritize questions that unlock the most downstream decisions.
-3. **Provide options when possible.** Instead of open-ended "What database?", offer "PostgreSQL, MySQL, or MongoDB? (or something else)" with brief trade-off notes relevant to their project.
-4. **Ask with options for multiple-choice questions.** When the question has 2–4 concrete options (tech stack, architecture pattern, etc.), ask the user to pick from those options. For open-ended questions (purpose, business rules, free-form descriptions), ask in plain text.
-5. **Build on previous answers.** Each question should incorporate context from earlier answers.
-6. **Skip what you can infer.** If the developer said "Go REST API", don't ask "What language?" — confirm your inference instead.
-7. **Group related decisions.** When one answer naturally leads to a follow-up, ask the follow-up next rather than jumping to an unrelated topic.
+Write the draft directly to `./SPEC.md`. If it already exists, ask whether to overwrite or use a different path first.
 
-### Question Priority Order
+**Do not paste the document into chat.** Report which sections you filled, which rely on assumptions (marked `[ASSUMED]` inline), and which items went to `Open Questions` — then invite the developer to open the file.
 
-Follow this order, but skip sections the developer has already addressed:
-
-1. **Core purpose & scope** — What problem does this solve? Who are the users?
-2. **Context architecture** — What external systems interact with this? What's upstream/downstream?
-3. **Runtime architecture** — How does this run? (HTTP server, worker, CLI, cron, etc.) Ports, protocols, async patterns
-4. **Tech stack** — Language, framework, database, messaging, CI
-5. **Functional requirements** — Key features, business rules, API contracts
-6. **Code/module architecture** — Package structure, layering strategy
-7. **Conventions** — Error handling, logging, auth pattern, API response format
-8. **Quality attributes** — Performance targets, availability, observability
-9. **Constraints** — Infrastructure limits, compliance, team policies
-10. **Dependencies** — External services, third-party libraries, other teams' APIs
-
-### When to Stop Asking
-
-Move to Stage 3 when:
-- All 10 areas above have at least a basic answer (even if some are "not applicable")
-- The developer says "that's enough" or "let's draft it"
-- You've asked more than 20 questions (summarize remaining gaps and move on)
-
----
-
-## Stage 3: Draft
-
-Generate the complete SPEC.md following the template below.
-
-1. Write the draft directly to `./SPEC.md` in the current working directory. If `./SPEC.md` already exists, ask the developer whether to overwrite or choose a different path before writing.
-2. Do **not** paste the entire document into the chat. Instead, report a short summary: which sections you filled, which used assumptions (marked `[ASSUMED]` inline), and which remaining items went into `Open Questions`.
-3. Invite the developer to open the file and review.
-
-### SPEC.md Template
+### Template
 
 ```markdown
 # {Project Name}
@@ -162,34 +130,20 @@ Generate the complete SPEC.md following the template below.
 - {아직 결정되지 않은 사항들}
 ```
 
-### Draft Writing Guidelines
+### Writing the draft
 
-- **Be concrete, not generic.** Write "PostgreSQL 15 with pgx driver" not "relational database".
-- **Prefer examples over descriptions.** For error response format, show a JSON example.
-- **Mark unknowns honestly.** Use `[ASSUMED] ...` inline or put items in Open Questions.
-- **Keep Functional Requirements actionable.** Each FR should be implementable as a single feature/task.
-- **Architecture sections should be visual.** Use ASCII diagrams for Context and Runtime where possible.
-- **Conventions should be prescriptive.** "Use `fmt.Errorf("context: %w", err)`" not "wrap errors appropriately".
+- **Concrete, not generic** — "PostgreSQL 15 with pgx driver", not "relational database".
+- **Examples over descriptions** — show the JSON for an error response format.
+- **Mark unknowns honestly** — `[ASSUMED] ...` inline, or an entry in Open Questions. `plan-dev` reads both, so an honest marker becomes a question asked at the right moment instead of a wrong assumption baked into a plan.
+- **Each FR implementable as one feature** — that is also what makes it a decomposition unit for a multi-steps plan.
+- **Conventions prescriptive** — "Use `fmt.Errorf(\"context: %w\", err)`", not "wrap errors appropriately".
+- **Architecture visual** — ASCII diagrams for Context and Runtime where they help.
+- **Never fabricate a requirement.** If the developer has not mentioned a feature, do not invent one; that is what Open Questions is for.
 
----
+## Stage 4 — Refine
 
-## Stage 4: Refine
+Review with the developer section by section. Apply feedback to the affected sections only, and show only what changed — not the whole document. Repeat until they approve, then confirm the path and suggest `setup-initial-repo` as the next step.
 
-After the draft is written to `./SPEC.md`:
+## Language
 
-1. Ask the developer to review section by section.
-2. For any feedback, apply changes to the file and modify only the affected sections, not the whole file.
-3. After each edit, show only the changed section (or a concise diff-style summary), not the full document.
-4. Repeat until the developer approves.
-
-The file lives at `./SPEC.md` throughout — there is no separate "save" or "download" step. When the developer signals completion, simply confirm the final path and suggest next steps (e.g. running the `setup-initial-repo` skill to bootstrap the project from this SPEC).
-
----
-
-## Behavioral Rules
-
-- **Language**: The SPEC.md document is ALWAYS written in Korean, regardless of the conversation language. Technical terms (e.g., library names, framework names, CLI commands) remain in English. Conversation with the developer follows their language.
-- **Tone**: Professional but conversational. You're a senior architect pair-programming on the spec, not writing a formal document.
-- **Don't over-ask**: If something is clearly implied, confirm your inference ("I'll assume X based on what you said — correct me if wrong") rather than asking.
-- **Don't fabricate requirements**: If the developer hasn't mentioned a feature, don't invent one. Open Questions exist for a reason.
-- **Respect the developer's expertise**: Skip basic explanations for experienced developers. Adjust depth based on their responses.
+The SPEC.md is **always Korean**, whatever the conversation language. Technical terms — library and framework names, CLI commands — stay English. Conversation follows the developer's language.

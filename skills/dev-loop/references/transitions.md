@@ -65,7 +65,7 @@ If a persona cannot start, ask the user whether to run this stage in the current
 8. No unresolved `## Decision Needed` or `needs-confirmation` anywhere.
 9. The LOOP file carries the final state and evidence (`## Result` appended).
 
-Predicates ⑥ and ⑦ survive `noreview` because acceptance survives it: the user can still knowingly ship a defect, and that decision still leaves a record. What is gone is the reviewer that would have found a *different* class of defect — not the machinery for accepting one.
+⑥ and ⑦ hold in `noreview` too: what that mode removes is the reviewer, not the machinery for knowingly accepting a defect.
 
 ## Escalation conditions
 

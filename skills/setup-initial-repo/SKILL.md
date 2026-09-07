@@ -174,13 +174,10 @@ git commit -m "chore: initial project scaffolding"
 
 Do **not** push automatically. Tell the user to push manually with `git push -u origin main` (or whichever default branch they prefer) so they can review the local commit first.
 
-## Writing Rules
+## Hard rules
 
-- The agent file (`CLAUDE.md` / `AGENTS.md`) is in **English**, regardless of conversation language.
-- Every executable command quoted from the agent file must exist as a Makefile target or `package.json` script.
-- The agent file stays under 150 lines — push deeper detail into `docs/` references.
-- Identity setup is **always local** to the repo (`git config` without `--global`).
-- The skill **never** runs `git push` automatically.
-- The skill **never** auto-creates remote repos for work contexts.
-- For overwriting existing files (`.gitignore`, `${AGENT_FILE}`, `Makefile`, `package.json`), always show a diff or ask first.
-- For Swift / macOS, copy project-local skills with the bundled script. Do not add skills beyond that set. Do not gitignore `.agents/skills`.
+The steps above carry their own confirmations; these are the ones that have no safe default to fall back on.
+
+- **Never** run `git push` automatically, and **never** auto-create a remote for a work repository.
+- Git identity is always **local** to the repo — `git config` without `--global`.
+- **Never** gitignore `.agents/skills`; project-local skills are meant to travel with the repository.
