@@ -26,11 +26,11 @@ Verification commands (already resolved - use these instead of rediscovering the
 
 Whenever a `## TODOs` checkbox completes, flip `- [ ]` to `- [x]` in the plan file immediately - do not batch.
 
-Read the plan's `## Acceptance Contract` and `## Authority Boundaries` when present. Record, in the report's `## TODO Fulfillment`, which AC id(s) each TODO fulfills (`AC:` line), and collect each AC's work-specific evidence for your return's `## Evidence`. If the plan has no `## Acceptance Contract` (legacy plan), do not refuse the run: skip AC evidence and record `Acceptance Contract: none (legacy plan)` in the report's `## Summary` and the return's `## Evidence`.
+Read the plan's `## Acceptance Contract` and `## Authority Boundaries`. Record, in the report's `## TODO Fulfillment`, which AC id(s) each TODO fulfills (`AC:` line), and collect each AC's work-specific evidence for your return's `## Evidence`.
 
 If you hit a direction-level conflict - the plan's goal / chosen approach / `## Key decisions` / `## Non-goals` turn out wrong or unworkable - stop, do not write code for the conflicting TODO, and return `blocked` with the decision needed laid out in `## Decision Needed`. Detail-level obstacles (a helper, an edge case, the *how* of a TODO) are yours to resolve and record in the report; do not escalate them.
 
-On a TODO tagged `(design-bearing)` do not start `plan-consultant`. Return `## Stage Status: needs-design-decision` with the fork brief under `## Design Decision Needed`. TODOs tagged `(mechanical)`, and untagged TODOs from older plans, never consult. A consultant cannot authorize a direction change - if the answer would contradict the plan, return `blocked` instead. Do not mix `needs-design-decision` with `blocked`.
+On a TODO tagged `(design-bearing)` do not start `plan-consultant`. Return `## Stage Status: needs-design-decision` with the fork brief under `## Design Decision Needed`. TODOs tagged `(mechanical)`, and TODOs carrying no difficulty tag, never consult. A consultant cannot authorize a direction change - if the answer would contradict the plan, return `blocked` instead. Do not mix `needs-design-decision` with `blocked`.
 
 Do not start another persona. Do not run `test-dev` or `review-code`. Do not revert edits made by others. Follow the repository's AGENTS.md / CLAUDE.md / README.md / Makefile instructions.
 
@@ -48,7 +48,7 @@ Fixed `##` headings, Markdown. The caller parses these headings by name, so the 
 pass | blocked | failed | needs-design-decision
 
 ## Evidence
-{one line per AC from the plan's `## Acceptance Contract`: "AC-N: {work-specific proof - command/observation and its result}". When the plan has no `## Acceptance Contract` (legacy plan): exactly "Acceptance Contract: none (legacy plan)"}
+{one line per AC from the plan's `## Acceptance Contract`: "AC-N: {work-specific proof - command/observation and its result}"}
 
 ## Decision Needed
 {only when status is blocked: the direction conflict + the choices the user must pick between. Otherwise "none"}
@@ -79,7 +79,7 @@ pass | blocked | failed | needs-design-decision
 
 The first headings are the **common stage block** shared across executor-returning skills (`## Stage Status` / `## Evidence` / `## Decision Needed`; other skills add `## Findings`). `## Design Decision Needed` is implement-dev's consultable-fork brief. `## Evidence` carries AC-specific proof only - generic gate results stay under `## Verification`.
 
-`pass` = every TODO fulfilled, verification green, and every AC evidenced under `## Evidence` (legacy plans: the `none (legacy plan)` line recorded instead - an unproven AC blocks `pass`). `blocked` = at least one TODO is blocked on a direction-level decision (no further code should be written past that conflict; detail-level obstacles are not blockers). `failed` = verification failed irrecoverably after `implement-dev`'s Error Recovery, or an unexpected hard error. `needs-design-decision` = a `(design-bearing)` TODO needs a `plan-consultant` decision; the executor did not start that persona. The caller starts `plan-consultant` read-only, then resumes the executor with the decision in the brief. This is not `blocked` and does not consume loop budget.
+`pass` = every TODO fulfilled, verification green, and every AC evidenced under `## Evidence` - an unproven AC blocks `pass`. `blocked` = at least one TODO is blocked on a direction-level decision (no further code should be written past that conflict; detail-level obstacles are not blockers). `failed` = verification failed irrecoverably after `implement-dev`'s Error Recovery, or an unexpected hard error. `needs-design-decision` = a `(design-bearing)` TODO needs a `plan-consultant` decision; the executor did not start that persona. The caller starts `plan-consultant` read-only, then resumes the executor with the decision in the brief. This is not `blocked` and does not consume loop budget.
 
 ## D. Caller chat summary (③)
 

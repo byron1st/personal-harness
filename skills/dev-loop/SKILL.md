@@ -46,13 +46,12 @@ Normative effects (axes, mutation, whether REVIEWING exists) live in [references
 
 ## Preflight (before any stage)
 
-1. Read the plan end to end. Enforce: frontmatter `PlanType: single-step` (a `-STEP-N` sub-plan qualifies), and both `## Acceptance Contract` and `## Authority Boundaries` present. On any miss, **refuse the run** and route to `plan-dev` (augment the plan or re-plan) — the loop has no legacy fallback; graceful degradation for legacy plans belongs to the standalone skills, not here.
+1. Read the plan end to end. Enforce: frontmatter `PlanType: single-step` (a `-STEP-N` sub-plan qualifies), and both `## Acceptance Contract` and `## Authority Boundaries` present. On any miss, **refuse the run** and route to `plan-dev` (augment the plan or re-plan). The loop does not degrade gracefully around a thin plan — its termination predicates are written against the contract.
 2. Read the **Loop budget** (maximum remediation rounds) from `## Authority Boundaries`; default `3` when the section does not override it.
 3. Snapshot `git status --short`. This is the pre-existing-change baseline the loop must preserve, and the reference for observing hook-driven tree changes.
 4. **Prepare once.** Run `$HOME/.agents/scripts/detect-commands.sh` and, when TESTING or REVIEWING is ahead, `$HOME/.agents/scripts/resolve-scope.sh`. Put the JSON in every executor brief so the persona does not rediscover commands or scope cold. If a script returns nothing, the executor may run it itself; the loop still passes what it has.
 5. Resolve Mode and the LOOP file — `docs/agents/dev/{plan stem with _PLAN_ → _LOOP_}.md` per [references/loop-state.md](references/loop-state.md):
-   - **Existing LOOP with `Mode:`** — resume. Trust the file's Mode and the last round's `Next` over memory and over a new utterance. If the new utterance names a *different* mode, **refuse and ask**; do not switch.
-   - **Existing LOOP with no `Mode:`** (legacy file) — **ask** which mode this resume is; do not default.
+   - **Existing LOOP** — resume. Trust the file's Mode and the last round's `Next` over memory and over a new utterance. If the new utterance names a *different* mode, **refuse and ask**; do not switch.
    - **No LOOP yet** — resolve Mode from the invocation (default `light`), create the file with that `Mode:`, then start at IMPLEMENTING.
    Never rewrite prior rounds.
 

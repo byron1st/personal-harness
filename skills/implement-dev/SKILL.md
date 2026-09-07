@@ -58,7 +58,7 @@ This skill does not retry `failed` under a different model. The loop may start t
 ## Completion
 
 - All plan TODO checkboxes are up to date.
-- Every AC in the plan's `## Acceptance Contract` has its work-specific evidence collected and recorded (report `AC:` lines + return `## Evidence`) - an unproven AC blocks `pass`. Legacy plans without an `## Acceptance Contract` are not refused; they take the fallback in [references/implement-flow.md](references/implement-flow.md) step 3.
+- Every AC in the plan's `## Acceptance Contract` has its work-specific evidence collected and recorded (report `AC:` lines + return `## Evidence`) - an unproven AC blocks `pass`.
 - The completion report (①) is saved under `docs/agents/dev`, and the plan/report Markdown links are bidirectional.
 - The executor return ② uses the fixed headings and links ① by absolute path.
 - `AGENTS.md` / `CLAUDE.md` / `README.md` have been reviewed for staleness caused by the change; update content while preserving the existing section structure.

@@ -135,8 +135,6 @@ The second bakes in mechanics the implementer should decide against the running 
 - [ ] Update the docs page for rate limits (AC-3) (mechanical)
 ```
 
-**Backward compatibility**: plans written before this tag exist are not refused. An untagged TODO is read as `(mechanical)` — the conservative default, since it withholds the escalation hatch rather than granting it.
-
 If the agent-generated plan already contains its own task list, normalize it into this section's checkbox format and place it at the end. The rest of its content stays where it was.
 
 ## 8. File skeleton

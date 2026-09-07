@@ -60,5 +60,4 @@ When the loop ends — READY_TO_COMMIT or an abort — append a `## Result` sect
 
 On invocation with an existing LOOP file: **trust the file over memory**. Continue from the last round's `Next` in the file's `Mode:`. Never rewrite history — corrections happen by appending. If the working tree contradicts what the rounds imply (e.g. expected changes missing), stop and surface the mismatch instead of guessing.
 
-- File has `Mode:` and the new utterance names a different mode → refuse and ask; do not switch.
-- File has no `Mode:` (legacy) → ask which mode this resume is; do not default to `light`.
+- The new utterance names a different mode than the file's `Mode:` → refuse and ask; do not switch.
