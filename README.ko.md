@@ -48,13 +48,12 @@ personal-harness/
 ├── hooks/            # 플랫폼별 훅 (claude: settings.json + *.sh · codex/cursor/grok: hooks.json + *.sh)
 ├── instructions/     # 전역 지침 AGENTS.md 배포 소스
 ├── scripts/          # 설치·동기화 스크립트 (apply-to.sh · apply-to-{claude,codex,cursor,grok}.sh · apply-to-all.sh · setup-ctx7.sh) + runtime/: ~/.agents/scripts/로 설치되는 플랫폼 무관 런타임 스크립트
-├── docs/             # 하네스 문서 (sync-harness/: SYNC_TO_* 변환 규칙 · loop-engineering/: 루프 엔지니어링 계획·조사 문서 · cost-effective/: 모델 티어링 비용 분석)
-└── .agents/skills/   # 하네스 자체용 메타 스킬 (sync-harness; .claude/skills/에 동일 사본)
+└── docs/             # 하네스 문서 (sync-harness/: SYNC_TO_* 변환 규칙 · loop-engineering/: 루프 엔지니어링 계획·조사 문서 · cost-effective/: 모델 티어링 비용 분석)
 ```
 
 훅의 상세 동작은 [Harness > Hooks](#hooks) 참조. 훅이 `rg`/`fd` 사용을 강제하므로 [ripgrep](https://github.com/BurntSushi/ripgrep)과 [fd](https://github.com/sharkdp/fd) 설치가 필요하다(Prerequisites 참조).
 
-제품 스킬은 공유한다 (`skills/<name>/` → `~/.agents/skills`). 에이전트·훅은 **Claude ↔ Codex**(양방향) + **Claude → Cursor**(단방향) + **Claude → Grok Build**(단방향, pure 경로)로 마이그레이션한다. Grok Build는 Claude 호환 경로를 쓰지 않는다. Cursor 에이전트·훅의 소스는 항상 Claude 변형이며, Cursor·Grok에서 시작한 변경도 Claude 변형에 먼저 반영한 뒤 내려보낸다. 변환 규칙은 [SYNC_TO_CODEX.md](docs/sync-harness/SYNC_TO_CODEX.md), [SYNC_TO_CLAUDE.md](docs/sync-harness/SYNC_TO_CLAUDE.md), [SYNC_TO_CURSOR.md](docs/sync-harness/SYNC_TO_CURSOR.md), [SYNC_TO_GROK.md](docs/sync-harness/SYNC_TO_GROK.md)에 정리되어 있다.
+제품 스킬은 공유한다 (`skills/<name>/` → `~/.agents/skills`). 에이전트·훅은 **Claude ↔ Codex**(양방향) + **Claude → Cursor**(단방향) + **Claude → Grok Build**(단방향, pure 경로)로 마이그레이션한다. Grok Build는 Claude 호환 경로를 쓰지 않는다. Cursor 에이전트·훅의 소스는 항상 Claude 변형이며, Cursor·Grok에서 시작한 변경도 Claude 변형에 먼저 반영한 뒤 내려보낸다. 별도의 동기화 스킬은 없다 — 에이전트가 해당 체크리스트를 읽고 직접 적용한다. 변환 규칙은 [SYNC_TO_CODEX.md](docs/sync-harness/SYNC_TO_CODEX.md), [SYNC_TO_CLAUDE.md](docs/sync-harness/SYNC_TO_CLAUDE.md), [SYNC_TO_CURSOR.md](docs/sync-harness/SYNC_TO_CURSOR.md), [SYNC_TO_GROK.md](docs/sync-harness/SYNC_TO_GROK.md)에 정리되어 있다.
 
 ## Prerequisites
 

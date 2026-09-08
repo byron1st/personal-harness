@@ -6,7 +6,7 @@ A harness of Agent Skills, global instructions, and install scripts for personal
 - Claude → Cursor (one-way; a change that starts in Cursor lands in the Claude variant first)
 - Claude → Grok Build (one-way; pure Grok paths only — do not rely on Grok's Claude/Cursor compat scanners)
 
-Per-stage conversion rules are defined in `docs/sync-harness/` (`SYNC_TO_CODEX.md`, `SYNC_TO_CLAUDE.md`, `SYNC_TO_CURSOR.md`, and `SYNC_TO_GROK.md`).
+Per-stage conversion rules are defined in `docs/sync-harness/` (`SYNC_TO_CODEX.md`, `SYNC_TO_CLAUDE.md`, `SYNC_TO_CURSOR.md`, and `SYNC_TO_GROK.md`). There is no sync skill — read the relevant checklist and apply it directly.
 
 ## Development
 

@@ -48,13 +48,12 @@ personal-harness/
 ├── hooks/            # per-platform hooks (claude: settings.json + *.sh · codex/cursor/grok: hooks.json + *.sh)
 ├── instructions/     # source for the global AGENTS.md instructions
 ├── scripts/          # install and sync scripts (apply-to.sh · apply-to-{claude,codex,cursor,grok}.sh · apply-to-all.sh · setup-ctx7.sh) + runtime/: platform-neutral runtime scripts installed to ~/.agents/scripts/
-├── docs/             # harness docs (sync-harness/: SYNC_TO_* conversion rules · loop-engineering/: loop-engineering plans and research · cost-effective/: model-tiering cost analysis)
-└── .agents/skills/   # meta-skill for the harness itself (sync-harness; identical copy under .claude/skills/)
+└── docs/             # harness docs (sync-harness/: SYNC_TO_* conversion rules · loop-engineering/: loop-engineering plans and research · cost-effective/: model-tiering cost analysis)
 ```
 
 Hook behavior is under [Harness > Hooks](#hooks). Hooks require `rg`/`fd`, so install [ripgrep](https://github.com/BurntSushi/ripgrep) and [fd](https://github.com/sharkdp/fd) (see Prerequisites).
 
-Product skills are shared (`skills/<name>/` → `~/.agents/skills`). Agents and hooks still migrate as **Claude ↔ Codex** (bidirectional) + **Claude → Cursor** (one-way) + **Claude → Grok Build** (one-way, pure path). Grok Build does not use Claude-compat paths. Cursor's agent/hook source is always the Claude variant; a change that starts in Cursor or Grok still lands in the Claude variant first, then is pushed down. Conversion rules live in [SYNC_TO_CODEX.md](docs/sync-harness/SYNC_TO_CODEX.md), [SYNC_TO_CLAUDE.md](docs/sync-harness/SYNC_TO_CLAUDE.md), [SYNC_TO_CURSOR.md](docs/sync-harness/SYNC_TO_CURSOR.md), and [SYNC_TO_GROK.md](docs/sync-harness/SYNC_TO_GROK.md).
+Product skills are shared (`skills/<name>/` → `~/.agents/skills`). Agents and hooks still migrate as **Claude ↔ Codex** (bidirectional) + **Claude → Cursor** (one-way) + **Claude → Grok Build** (one-way, pure path). Grok Build does not use Claude-compat paths. Cursor's agent/hook source is always the Claude variant; a change that starts in Cursor or Grok still lands in the Claude variant first, then is pushed down. There is no sync skill — the agent reads the relevant checklist and applies it directly. Conversion rules live in [SYNC_TO_CODEX.md](docs/sync-harness/SYNC_TO_CODEX.md), [SYNC_TO_CLAUDE.md](docs/sync-harness/SYNC_TO_CLAUDE.md), [SYNC_TO_CURSOR.md](docs/sync-harness/SYNC_TO_CURSOR.md), and [SYNC_TO_GROK.md](docs/sync-harness/SYNC_TO_GROK.md).
 
 ## Prerequisites
 
