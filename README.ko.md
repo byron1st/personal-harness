@@ -258,10 +258,10 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 | 티어 | 정의 | Claude | Codex | Cursor | Grok Build |
 | --- | --- | --- | --- | --- | --- |
 | **T1 judgment** | 되돌릴 수 없고 기계 검증이 불가능한 결정 | `opus` | `gpt-5.6-sol` | `grok-4.6` | `grok-4.6` |
-| **T2 execution** | 명세가 있고 결과가 기계로 검증 가능한 작업 | `sonnet`, 단 쓰기 역할 둘은 `opus` / `medium` | **Terra**(긴 컨텍스트) 또는 **Luna**(짧은 컨텍스트) | `grok-4.6` (T1/T2는 effort) | `grok-4.6` (T1/T2는 effort) |
+| **T2 execution** | 명세가 있고 결과가 기계로 검증 가능한 작업 | `sonnet`, 단 쓰기 역할 둘은 `opus` / `medium` | **Terra**, 단 쓰기 역할 둘은 Sol / `medium` | `grok-4.6` (T1/T2는 effort) | `grok-4.6` (T1/T2는 effort) |
 | **T3 mechanical** | 판단이 사실상 없는 변환·집계 | *(미사용 — 아래 참조)* | *(미사용)* | *(미사용)* | *(미사용)* |
 
-**T3는 의도적으로 비어 있다.** Haiku는 컨텍스트 200K·캐시 최소 프리픽스 4096 tok·모델 레벨 effort 미지원인데, 이 하네스의 T2 작업은 대부분 repo-slice 추론이라 최저 티어가 가장 못하는 일이다. Luna의 긴 컨텍스트 절벽(MRCR 41.3%) 때문에 Codex 최저 티어도 같은 이유로 탈락한다. **Cursor와 Grok Build는 `grok-4.6`만 쓴다.** `grok-4.5`는 4.6 대비 가격 메리트가 없어 쓰지 않는다. Composer 2.5도 쓰지 않는다. 티어는 모델이 아니라 effort다. 진짜 기계적인 일은 셸로 내린다(위 Runtime Scripts). 과금은 SuperGrok **구독 쿼터**다.
+**T3는 의도적으로 비어 있다.** Haiku는 컨텍스트 200K·캐시 최소 프리픽스 4096 tok·모델 레벨 effort 미지원인데, 이 하네스의 T2 작업은 대부분 repo-slice 추론이라 최저 티어가 가장 못하는 일이다. Luna의 긴 컨텍스트 절벽(MRCR 41.3%) 때문에 같은 이유로 탈락한다 — Codex 에이전트 역할 어디에도 쓰지 않고, `dev-loop` 컨트롤러 세션만 쓴다. **Cursor와 Grok Build는 `grok-4.6`만 쓴다.** `grok-4.5`는 4.6 대비 가격 메리트가 없어 쓰지 않는다. Composer 2.5도 쓰지 않는다. 티어는 모델이 아니라 effort다. 진짜 기계적인 일은 셸로 내린다(위 Runtime Scripts). 과금은 SuperGrok **구독 쿼터**다.
 
 ### 에이전트 배치
 
@@ -273,19 +273,19 @@ Claude는 `model`·`effort` 두 필드를 쓴다. **Codex**는 TOML `model` + `m
 | `plan-consultant` | `opus` / `high` | Sol / high | `grok-4.6[effort=high]` | `grok-4.6` / high (plan) | 루프가 `needs-design-decision`에서 시작 |
 | `security-reviewer` | `opus` / `medium` | Sol / medium | `grok-4.6[effort=high]` | `grok-4.6` / high (plan) | miss 비용 최대 |
 | `reliability-reviewer` | `opus` / `medium` | Sol / medium | `grok-4.6[effort=high]` | `grok-4.6` / high (plan) | 반사실 시뮬레이션 |
-| `implementer` | **`opus` / `medium`** | **Terra / high** | `grok-4.6[effort=medium]` | `grok-4.6` / **medium** | 장문맥; T1 모델 + T2 effort |
-| `tester` | `sonnet` / `medium` | Luna / high | `grok-4.6[effort=medium]` | `grok-4.6` / medium | 기계 목표; Cursor·Grok noreview 품질 게이트 |
-| `fixer` | **`opus` / `medium`** | **Terra / high** | **`grok-4.6[effort=medium]`** | `grok-4.6` / medium | finding = 명세; 단 전 플랫폼에서 `implementer`와 동급 |
-| `maintainability-reviewer` | `sonnet` / `medium` | Luna / high | `grok-4.6[effort=medium]` | `grok-4.6` / medium (plan) | 패턴 매칭 |
-| `senior-generalist-reviewer` | `sonnet` / `medium` | Luna / high | `grok-4.6[effort=medium]` | `grok-4.6` / medium (plan) | catch-all |
+| `implementer` | **`opus` / `medium`** | **Sol / medium** | `grok-4.6[effort=medium]` | `grok-4.6` / **medium** | 장문맥; T1 모델 + T2 effort |
+| `tester` | `sonnet` / `medium` | Terra / medium | `grok-4.6[effort=medium]` | `grok-4.6` / medium | 기계 목표; Cursor·Grok noreview 품질 게이트 |
+| `fixer` | **`opus` / `medium`** | **Sol / medium** | **`grok-4.6[effort=medium]`** | `grok-4.6` / medium | finding = 명세; 단 전 플랫폼에서 `implementer`와 동급 |
+| `maintainability-reviewer` | `sonnet` / `medium` | Terra / medium | `grok-4.6[effort=medium]` | `grok-4.6` / medium (plan) | 패턴 매칭 |
+| `senior-generalist-reviewer` | `sonnet` / `medium` | Terra / medium | `grok-4.6[effort=medium]` | `grok-4.6` / medium (plan) | catch-all |
 
-**effort 규칙 둘.** 최상단은 사지 않는다 — 기본 effort에서 `max`까지 올려도 티어 전반에서 몇 점 차이라, `xhigh`는 되돌릴 수 없는 결정에만 쓴다. 그리고 모델을 내릴 때 effort까지 같이 내리지 않는다: Codex T2 행이 Luna/Terra에 `high`를 쓰는 이유가 그것이다(싼 모델, 높은 effort).
+**effort: 최상단은 사지 않는다.** 기본 effort에서 `max`까지 올려도 티어 전반에서 몇 점 차이라, `xhigh`는 되돌릴 수 없는 결정에만 쓴다. T2 행은 모든 플랫폼에서 `medium`이다.
 
-**`fixer`는 전 플랫폼에서 T2 bulk가 아니라 `implementer`를 따라간다.** 수정을 쓰는 일은 변경을 쓰는 일과 입력 모양이 같다(브리프 · 리포트 · 주변 코드), 그리고 싼 모델은 그 가격 이점을 턴 수로 반납했다. 그래서 Codex는 Terra, Cursor는 Grok 4.6, Claude는 Opus에 둔다. Cursor와 Grok Build의 `tester`도 4.6 medium이다 — 기본 루프 모드는 `light`이라 tester가 T2 리뷰어 2종 옆에 있고, Composer는 지시를 자주 무시했다. `maintainability-reviewer`와 `senior-generalist-reviewer`도 4.6 medium이다 — `grok-4.5`는 가격 메리트가 없다.
+**`fixer`는 전 플랫폼에서 T2 bulk가 아니라 `implementer`를 따라간다.** 수정을 쓰는 일은 변경을 쓰는 일과 입력 모양이 같다(브리프 · 리포트 · 주변 코드), 그리고 싼 모델은 그 가격 이점을 턴 수로 반납했다. 그래서 Codex는 Sol, Cursor는 Grok 4.6, Claude는 Opus에 둔다. Cursor와 Grok Build의 `tester`도 4.6 medium이다 — 기본 루프 모드는 `light`이라 tester가 T2 리뷰어 2종 옆에 있고, Composer는 지시를 자주 무시했다. `maintainability-reviewer`와 `senior-generalist-reviewer`도 4.6 medium이다 — `grok-4.5`는 가격 메리트가 없다.
 
-**Claude의 쓰기 역할 둘은 T1 모델을 T2 effort로 돌린다.** `implementer`·`fixer`는 `sonnet`이 아니라 `opus` / `medium`이다 — 이 하네스에서 재보니 Sonnet은 같은 작업에 턴을 더 써서 1.67배 가격 차를 그대로(그 이상) 반납했고, 그 턴마다 플랜과 repo slice를 다시 읽었다. 티어는 여전히 T2이고 그걸 표현하는 건 effort다. T2의 나머지(`tester`·`maintainability-reviewer`·`senior-generalist-reviewer`)는 출력이 한정되고 재검증되므로 `sonnet`에 남는다.
+**Claude의 쓰기 역할 둘은 T1 모델을 T2 effort로 돌린다.** `implementer`·`fixer`는 `sonnet`이 아니라 `opus` / `medium`이다 — 이 하네스에서 재보니 Sonnet은 같은 작업에 턴을 더 써서 1.67배 가격 차를 그대로(그 이상) 반납했고, 그 턴마다 플랜과 repo slice를 다시 읽었다. 티어는 여전히 T2이고 그걸 표현하는 건 effort다. T2의 나머지(`tester`·`maintainability-reviewer`·`senior-generalist-reviewer`)는 출력이 한정되고 재검증되므로 `sonnet`에 남는다. Codex도 똑같이 쓰기 역할 둘은 Sol / `medium`, 나머지는 Terra / `medium`이다. Terra에는 긴 컨텍스트 절벽이 없으므로(MRCR 89.6%, Sol 91.5%) 컨텍스트 때문이 아니다 — 모든 플랫폼에서 그 두 행에 T1 모델을 두기 위해서이고, 가격은 Terra의 약 2–2.5배다.
 
-**Codex 전용.** `model_reasoning_effort = "ultra"`는 쓰지 않는다 — 자동 태스크 위임이 이 하네스의 dispatch와 충돌한다. `implementer`·`fixer`에 Luna를 두지 않는다(긴 컨텍스트 절벽). 공유 기본 루프 모드는 **`light`**다 — Luna 덕분에 마지막 2축 리뷰 비용이 거의 없어서, `light`가 이미 `noreview` 절감분의 ~95%를 담는다.
+**Codex 전용.** `model_reasoning_effort = "ultra"`는 쓰지 않는다 — 자동 태스크 위임이 이 하네스의 dispatch와 충돌한다. Luna는 어떤 에이전트 역할에도 두지 않는다 — 리뷰어와 `tester`도 diff와 주변 코드를 함께 읽으므로 긴 컨텍스트 절벽에 걸린다. 공유 기본 루프 모드는 **`light`**다.
 
 **Grok Build 전용.** 쓰는 카탈로그는 `grok-4.6`만(SuperGrok 구독 쿼터). `grok-4.5`는 쓰지 않는다. 4.6 effort는 `low|medium|high|xhigh`. 서브에이전트 깊이 1이라 design-bearing은 루프가 `needs-design-decision`에서 `plan-consultant`를 시작한다. 기본 루프 모드는 **`light`**. `[compat.claude]`·`[compat.cursor]`를 끈다.
 
