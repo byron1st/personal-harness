@@ -1,7 +1,5 @@
 # Global Instructions
 
-ALWAYS respond in English.
-
 ## Common Development Rules
 
 - Always use Context7 for code generation, setup/configuration steps, or library/API documentation.
