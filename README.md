@@ -33,7 +33,7 @@ A skill frontmatter `model:` applies **only to that turn**. `plan-dev` and the l
 | Invocation | Claude | Codex | Cursor | Grok Build |
 | --- | --- | --- | --- | --- |
 | `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.6** (effort xhigh) | **Grok 4.6 / xhigh** |
-| `dev-loop` | **Sonnet** | **Luna / medium** | **Grok 4.6 / medium** | **Grok 4.6 / medium** |
+| `dev-loop` | **Sonnet** | **Terra / medium** | **Grok 4.6 / medium** | **Grok 4.6 / medium** |
 
 - Even a cheap loop session still runs T1 roles (planner, plan-consultant, security/reliability reviewers) at T1 via file pins.
 - `noreview` has no reviewer reading the change, so at READY_TO_COMMIT read the IMPL report's `## TODO Fulfillment` and AC evidence yourself.
@@ -72,14 +72,13 @@ These CLI tools must be on PATH for this harness's skills, hooks, and install sc
 | `gcx` | `loki-log-search` | Grafana Loki log lookup via `gcx api` passthrough | install a `gcx` distribution, then configure context with `gcx config current-context` |
 | Cursor 2.4+ | entire Cursor variant | subagent `model`/`readonly` frontmatter, Agent Skills, `hooks.json` (including `subagentStart`) | update the Cursor app |
 | `grok` (Grok Build 0.2+) | entire Grok variant | `~/.grok/{agents,skills,hooks,scripts,rules}`; SuperGrok subscription recommended | [install Grok Build CLI](https://x.ai/cli) then `grok login` |
-| `node` | Claude/Codex ponytail plugin | ponytail's two lifecycle hooks | already on PATH if you have a JS toolchain; otherwise `brew install node` |
 
 Notes:
 - `rg`/`fd` are required: as the layout section's `hooks` item already says, hooks enforce their use.
 - `gh` and `glab` are only called on personal and work repos respectively, so you can omit the tool for a repo type you never use.
 - Project templates (`skills/*/setup-initial-repo/references/{go-makefile.md,swift-makefile.md,ts-nextjs-packagejson.md}`) pull along `go`, `golangci-lint`, `mockery`, `gremlins`, `swag`, `swiftlint`, `swiftformat`, `eslint`, `vitest`, `playwright`, `stryker`, and so on when `setup-initial-repo` references them. Those are build tools of the generated project, not prerequisites of this harness.
 
-### One-time required setup (Cursor · Grok Build · Codex ponytail)
+### One-time required setup (Cursor · Grok Build)
 
 These are UI/config-file steps the install scripts cannot take for you. Recheck them on a new machine, a reinstall, or a settings reset.
 
@@ -113,10 +112,6 @@ mcps = false
 hooks = false
 sessions = false
 ```
-
-#### Codex — trust ponytail lifecycle hooks
-
-`apply-to-codex.sh` adds the [ponytail](https://github.com/DietrichGebert/ponytail) marketplace and plugin, but Codex will not run a plugin's hooks until you trust them. Open `/hooks` in Codex, review ponytail's two lifecycle hooks, trust them, and start a new thread. The same install covers the Codex desktop app: restart the app after installing.
 
 ### Environment variables
 
@@ -153,7 +148,7 @@ The two axes `light` drops (`security` and `reliability`) are the ones whose mis
 **No mode is gate-free.** All three keep the same two human gates: TESTING's suspected-defect **Fix/Accept** triage, and READY_TO_COMMIT. Dropping review drops the four reviewers, not the human's judgement.
 
 1. **Plan**: Call `plan-dev` and interview a plan. In the completion-conditions round, lock per-TODO completion conditions and evidence (`Acceptance Contract`) together with authority boundaries and loop budget (`Authority Boundaries`). Approving the plan writes PLAN/RESEARCH files under `docs/agents/`. **The `plan-dev` session model differs by platform** — Claude Opus · Codex Sol/xhigh · Cursor Grok 4.6 xhigh · Grok Build Grok 4.6 xhigh ([Model Tier](#model-tier)).
-2. **Run the loop**: Call `dev-loop` with the approved plan path and a mode from the table above (default `light`). It then repeats autonomously until the termination predicates hold (TODOs done ∧ AC evidence met ∧ verification green ∧ blocking findings 0). Multi-step plans are invoked per sub-plan (`-STEP-N`). **The loop-run session is also per-platform** — Claude Sonnet · Codex Luna/medium · Cursor Grok 4.6 medium · Grok Build Grok 4.6 medium. T1 agents stay T1 via role pins.
+2. **Run the loop**: Call `dev-loop` with the approved plan path and a mode from the table above (default `light`). It then repeats autonomously until the termination predicates hold (TODOs done ∧ AC evidence met ∧ verification green ∧ blocking findings 0). Multi-step plans are invoked per sub-plan (`-STEP-N`). **The loop-run session is also per-platform** — Claude Sonnet · Codex Terra/medium · Cursor Grok 4.6 medium · Grok Build Grok 4.6 medium. T1 agents stay T1 via role pins.
 3. **Mid-run intervention in two cases only**: (a) If a finding appears at review (modes that have it) or the TESTING gate, answer the per-item Fix/Accept question — Accepted items are recorded in `AGENTS.md`'s `Accepted Review Exceptions`, shown as Waived (`Applied Exceptions`) from the next review, and do not count as blocking findings. (b) If it escalates on blocked, budget exhaustion, or no-progress, give instructions — if the problem is direction, re-enter `plan-dev`.
 4. **Confirm and commit**: The loop stops at READY_TO_COMMIT. Check the Implementation Report and LOOP state file, then call `commit-code` yourself (name a PR/MR in that invocation if you want one — `request-merge` is a routing alias). Commit, push, and PR/MR creation are outside the loop's authority. **Under `noreview` no reviewer has read the change**, so read the IMPL report's `## TODO Fulfillment` and AC evidence yourself — the instruction drift four-axis review used to catch is now the human's job.
 5. **Interrupt and resume**: If the loop dies mid-run, state remains in `docs/agents/dev/*_LOOP_*.md` (LOOP format is shared; `Mode:` is frozen in frontmatter). Calling `dev-loop` on the same plan continues from the last round in that mode.
@@ -261,7 +256,7 @@ The tier of a role is a property of the **work**, not of the model generation. E
 | **T2 execution** | Specified work whose result is machine-checkable | `sonnet`, except the two write-heavy roles (`opus` / `medium`) | **Terra**, except the two write-heavy roles (Sol / `medium`) | `grok-4.6` (effort distinguishes T1 vs T2) | `grok-4.6` (effort distinguishes T1 vs T2) |
 | **T3 mechanical** | Transformation and aggregation with no real judgement | *(unused — see below)* | *(unused)* | *(unused)* | *(unused)* |
 
-**T3 is empty on purpose.** Haiku's 200K context, 4096-token minimum cache prefix, and lack of model-level effort make it a poor fit for this harness, whose T2 work is mostly repo-slice reasoning — the thing the smallest tier is worst at. Luna's long-context cliff (MRCR 41.3%) puts it out for the same reason — no Codex agent role uses it; only the `dev-loop` controller session does. **Cursor and Grok Build use `grok-4.6` only.** `grok-4.5` is unused — it has no meaningful price advantage over 4.6. Composer 2.5 is unused. Tiers are effort, not model. Genuinely mechanical work goes to the shell (Runtime Scripts above). Billing is SuperGrok **subscription quota**.
+**T3 is empty on purpose.** Haiku's 200K context, 4096-token minimum cache prefix, and lack of model-level effort make it a poor fit for this harness, whose T2 work is mostly repo-slice reasoning — the thing the smallest tier is worst at. Luna's long-context cliff (MRCR 41.3%) puts it out for the same reason — no Codex agent role uses it, and the `dev-loop` controller session does not either (it holds the LOOP, the plan, and stage returns; Luna dropped the loop early and misread subagent results). **Cursor and Grok Build use `grok-4.6` only.** `grok-4.5` is unused — it has no meaningful price advantage over 4.6. Composer 2.5 is unused. Tiers are effort, not model. Genuinely mechanical work goes to the shell (Runtime Scripts above). Billing is SuperGrok **subscription quota**.
 
 ### Agent placement
 
@@ -285,7 +280,7 @@ Claude uses the two fields `model` and `effort`. **Codex** uses TOML `model` + `
 
 **Claude's two write roles run a T1 model at T2 effort.** `implementer` and `fixer` are `opus` / `medium`, not `sonnet` — re-running this harness, Sonnet spent extra turns on the same work and gave back (or more than) the 1.67× price gap, rereading the plan and repo slice on every one of those turns. The tier is still T2; effort is what expresses that. The rest of T2 (`tester` · `maintainability-reviewer` · `senior-generalist-reviewer`) stays on `sonnet` because output is bounded and re-verified. Codex mirrors this: Sol / `medium` on the two write roles, Terra / `medium` on the rest. Terra has no long-context cliff (MRCR 89.6% vs Sol 91.5%), so this is not a context fix — it keeps the T1 model on those two rows on every platform, at roughly 2–2.5× Terra's price.
 
-**Codex-only.** Do not use `model_reasoning_effort = "ultra"` — automatic task delegation collides with this harness's dispatch. Do not put Luna on any agent role — its long-context cliff hits reviewers and `tester` too, since they read the diff plus surrounding code. The shared default loop mode is **`light`**.
+**Codex-only.** Do not use `model_reasoning_effort = "ultra"` — automatic task delegation collides with this harness's dispatch. Do not use Luna on any agent role or on the `dev-loop` controller session — its long-context cliff hits reviewers, `tester`, and the accumulating LOOP + stage returns. The shared default loop mode is **`light`**.
 
 **Grok Build-only.** The catalog in use is `grok-4.6` only (SuperGrok subscription quota). `grok-4.5` is unused. 4.6 effort is `low|medium|high|xhigh`. Subagent depth is 1, so design-bearing work has the loop start `plan-consultant` on `needs-design-decision`. Default loop mode is **`light`**. Turn off `[compat.claude]` and `[compat.cursor]`.
 
@@ -302,7 +297,7 @@ A skill frontmatter `model:` applies **only to that turn** and reverts to the se
 | Session | Claude | Codex | Cursor | Grok Build | Why |
 | --- | --- | --- | --- | --- | --- |
 | `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.6** xhigh | **Grok 4.6 / xhigh** | Direction, boundaries, and ACs are irreversible |
-| **every `dev-loop` run** | **Sonnet** | **Luna / medium** | **Grok 4.6 / medium** | **Grok 4.6 / medium** | Controller = transition table + LOOP append. T1 stays on role pins |
+| **every `dev-loop` run** | **Sonnet** | **Terra / medium** | **Grok 4.6 / medium** | **Grok 4.6 / medium** | Controller holds LOOP + stage returns; T1 stays on role pins |
 
 This applies to `full` too — every reviewer's model is pinned on the agent file, so the session model no longer decides any agent's tier.
 
@@ -318,7 +313,7 @@ This applies to `full` too — every reviewer's model is pinned on the agent fil
 
 ## Scripts
 
-`scripts/` holds install and sync scripts. `apply-to-*.sh` deploys this repo's source variants into the real agent environment under the user's home; `setup-ctx7.sh` does the reverse, writing an external product back into the repo source. Install target directories are emptied then refilled, so skills, agents, and hooks edited directly under home are overwritten from source on the next run. Each `apply-to-*.sh` also installs the external [ponytail](https://github.com/DietrichGebert/ponytail) plugin (Cursor: a user rule file — ponytail has no Cursor plugin). That install lives in the host's plugin store (or `~/.cursor/rules/`), not in the harness-owned dirs that get wiped.
+`scripts/` holds install and sync scripts. `apply-to-*.sh` deploys this repo's source variants into the real agent environment under the user's home; `setup-ctx7.sh` does the reverse, writing an external product back into the repo source. Install target directories are emptied then refilled, so skills, agents, and hooks edited directly under home are overwritten from source on the next run.
 
 ### apply-to.sh
 
@@ -338,7 +333,6 @@ Claude Code install script.
 
 - Claude Code: copies `instructions/AGENTS.md` to `~/.claude/CLAUDE.md`, installs runtime scripts to `~/.agents/scripts`, and per-skill symlinks under `~/.claude/skills` → `~/.agents/skills`. Empties and refills `~/.claude/agents` and `~/.claude/hooks` from `agents/claude/` · `hooks/claude/hooks/`.
 - Claude Code settings: merges the `hooks` block from `hooks/claude/settings.json` into `~/.claude/settings.json` with `jq`. Then appends the two `~/.agents/scripts` Bash allows to `permissions.allow` without replacing the array. Other user settings (`permissions`/`model`/`env`, …) are preserved; if the target file is missing it is created whole (`jq` required). `hooks/claude/settings.json` has no `permissions` key.
-- Ponytail: `claude plugin marketplace add DietrichGebert/ponytail` then `claude plugin install ponytail@ponytail` (user scope). Skips if already installed. Requires the `claude` CLI. The plugin's lifecycle hooks need `node` on PATH (skills still work without it).
 - Prints a per-item install count and status summary at the end.
 
 ### apply-to-codex.sh
@@ -349,7 +343,6 @@ Codex install script.
 - Installs runtime scripts to `~/.agents/scripts`. Removes harness skill names from `~/.codex/skills`.
 - Empties `~/.codex/agents/` and copies `agents/codex/*.toml`.
 - Empties `~/.codex/hooks/`, copies `hooks/codex/hooks/*`, and copies `hooks/codex/hooks.json` to `~/.codex/hooks.json`.
-- Ponytail: `codex plugin marketplace add DietrichGebert/ponytail` then `codex plugin add ponytail@ponytail`. Skips if already installed. Requires the `codex` CLI. After install, open `/hooks` in Codex, review and trust its two lifecycle hooks, and start a new thread (`node` on PATH for those hooks).
 - Prints a per-item install count and status summary at the end.
 
 ### apply-to-cursor.sh
@@ -359,7 +352,6 @@ Cursor install script.
 - Copies `instructions/AGENTS.md` to `~/.cursor/AGENTS.md`. **Cursor does not read this file** — `session-context.sh` reads it and injects it as `additional_context`. Cursor has no user-global instructions file, and User Rules are UI state the install script cannot write.
 - Installs runtime scripts to `~/.agents/scripts`. Removes harness skill names from `~/.cursor/skills`. Empties and refills `~/.cursor/agents` and `~/.cursor/hooks` from `agents/cursor/` · `hooks/cursor/hooks/`.
 - Copies `hooks/cursor/hooks.json` to `~/.cursor/hooks.json` as a **replace, not a merge**. Claude's `settings.json` is shared with other settings; Cursor's `hooks.json` is hooks-only.
-- Ponytail: ponytail has no Cursor plugin. Downloads `.cursor/rules/ponytail.mdc` from the ponytail repo into `~/.cursor/rules/ponytail.mdc` (always-on user rule). Requires `curl`. Re-fetches on every apply so the rule stays current.
 - Prints an install summary and reminds you of the one-time manual step the script cannot take (turn off `~/.claude` compat paths).
 
 ### apply-to-grok.sh
@@ -370,25 +362,11 @@ Install script for the Grok Build-only variant (does not use Claude/Cursor compa
 - Installs runtime scripts to `~/.agents/scripts`. Removes harness skill names from `~/.grok/skills`.
 - Empties `~/.grok/agents/` and copies `agents/grok/*.md`.
 - Places hook scripts under `~/.grok/hooks/` and copies `hooks/grok/hooks.json` to **`~/.grok/hooks/harness.json`** (Grok merges `~/.grok/hooks/*.json`).
-- Ponytail: `grok plugin install DietrichGebert/ponytail --trust` then `grok plugin enable ponytail` (plugins stay off until enabled). Skips the install if already present. Requires the `grok` CLI. Start a new session (or reload plugins) after install.
 - On exit, reminds you to **turn off `[compat.claude]` · `[compat.cursor]`** and of the session habit (plan-dev high / dev-loop medium).
 
 ### apply-to-all.sh
 
 Wrapper that calls `apply-to.sh claude codex cursor grok` and runs all four agent installs in order. Runnable from anywhere (the script resolves paths from its own location).
-
-### Ponytail
-
-[ponytail](https://github.com/DietrichGebert/ponytail) is an external plugin (YAGNI / smallest working diff). It is not vendored in this repo. Each `apply-to-*.sh` installs it with the method that project's README documents:
-
-| Host | Method |
-| --- | --- |
-| Claude Code | `claude plugin marketplace add DietrichGebert/ponytail` then `claude plugin install ponytail@ponytail` |
-| Codex | `codex plugin marketplace add DietrichGebert/ponytail` then `codex plugin add ponytail@ponytail`; then trust hooks in `/hooks` |
-| Cursor | no plugin — copy `.cursor/rules/ponytail.mdc` to `~/.cursor/rules/ponytail.mdc` |
-| Grok Build | `grok plugin install DietrichGebert/ponytail --trust` then `grok plugin enable ponytail` |
-
-Re-running apply does not wipe it: an already-installed plugin is left as-is (Cursor re-fetches the rule file). Update a plugin with the host's own update command, not by re-applying the harness. After install, `/ponytail` (Codex: `@ponytail`) plus review/audit/debt/gain/help. Default mode is `full`; override with `PONYTAIL_DEFAULT_MODE` or `~/.config/ponytail/config.json`. A missing host CLI skips that platform's ponytail step and does not fail the rest of the harness apply.
 
 ### setup-ctx7.sh
 

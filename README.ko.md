@@ -33,7 +33,7 @@ plan-dev → (플랜 검토·승인) → dev-loop → commit-code
 | 호출 | Claude | Codex | Cursor | Grok Build |
 | --- | --- | --- | --- | --- |
 | `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.6** (effort xhigh) | **Grok 4.6 / xhigh** |
-| `dev-loop` | **Sonnet** | **Luna / medium** | **Grok 4.6 / medium** | **Grok 4.6 / medium** |
+| `dev-loop` | **Sonnet** | **Terra / medium** | **Grok 4.6 / medium** | **Grok 4.6 / medium** |
 
 - 루프 세션을 싸게 두어도 T1 역할(planner·plan-consultant·security/reliability 리뷰어)은 파일 핀으로 T1에서 돈다.
 - `noreview`는 리뷰어가 변경을 읽지 않으므로, READY_TO_COMMIT에서 IMPL 리포트의 `## TODO Fulfillment`와 AC 증거를 직접 확인한다.
@@ -72,14 +72,13 @@ personal-harness/
 | `gcx` | `loki-log-search` | Grafana Loki 로그 조회용 `gcx api` passthrough | `gcx` 배포본 설치 후 `gcx config current-context`로 컨텍스트 구성 |
 | Cursor 2.4+ | Cursor 변형 전체 | 서브에이전트 `model`·`readonly` 프론트매터, Agent Skills, `hooks.json`(`subagentStart` 포함) | Cursor 앱 업데이트 |
 | `grok` (Grok Build 0.2+) | Grok 변형 전체 | `~/.grok/{agents,skills,hooks,scripts,rules}`, SuperGrok 구독 권장 | [Grok Build CLI 설치](https://x.ai/cli) 후 `grok login` |
-| `node` | Claude/Codex ponytail 플러그인 | ponytail 라이프사이클 훅 2개 | JS 툴체인이 있으면 이미 PATH에 있음. 없으면 `brew install node` |
 
 참고:
 - `rg`/`fd`는 이미 폴더 구조 설명의 `hooks` 항목에서 언급한 대로 hook이 사용을 강제하므로 반드시 설치해야 한다.
 - `gh`·`glab`는 각각 personal/work 저장소에서만 호출되므로, 사용하지 않는 저장소 유형의 도구는 생략 가능하다.
 - 프로젝트 템플릿(`skills/*/setup-initial-repo/references/{go-makefile.md,swift-makefile.md,ts-nextjs-packagejson.md}`)이 `setup-initial-repo`로 참조될 때 함께 따라가는 `go`, `golangci-lint`, `mockery`, `gremlins`, `swag`, `swiftlint`, `swiftformat`, `eslint`, `vitest`, `playwright`, `stryker` 등은 생성되는 프로젝트의 빌드 도구이지 이 harness 자체의 prerequisite은 아니다.
 
-### 1회성 필수 설정 (Cursor · Grok Build · Codex ponytail)
+### 1회성 필수 설정 (Cursor · Grok Build)
 
 설치 스크립트가 대신 쓸 수 없는 UI/설정 파일 단계다. 새 머신·재설치·설정 초기화 때마다 다시 확인한다.
 
@@ -113,10 +112,6 @@ mcps = false
 hooks = false
 sessions = false
 ```
-
-#### Codex — ponytail 라이프사이클 훅 신뢰
-
-`apply-to-codex.sh`가 [ponytail](https://github.com/DietrichGebert/ponytail) 마켓플레이스와 플러그인을 추가하지만, Codex는 훅을 신뢰하기 전에는 플러그인 훅을 실행하지 않는다. Codex에서 `/hooks`를 열고 ponytail의 라이프사이클 훅 2개를 검토·신뢰한 뒤 새 스레드를 시작한다. 같은 설치가 Codex 데스크톱 앱에도 적용된다 — 설치 후 앱을 재시작한다.
 
 ### 환경변수
 
@@ -153,7 +148,7 @@ plan-dev → dev-loop( implement-dev → test-dev → [review-code] → (fix-dev
 **어느 모드도 게이트가 없지는 않다.** 셋 다 사람 게이트 2개(TESTING의 suspected-defect **Fix/Accept** 분류, READY_TO_COMMIT)를 그대로 갖는다. 리뷰를 끄면 사라지는 것은 리뷰어 4종이지 사람의 판단이 아니다.
 
 1. **계획 수립**: `plan-dev` 스킬을 호출해 인터뷰로 계획을 수립한다. 완료 조건 라운드에서 TODO별 완료 조건·증거(`Acceptance Contract`)와 권한 경계·루프 예산(`Authority Boundaries`)을 함께 확정하고, 계획을 승인하면 PLAN/RESEARCH 파일이 `docs/agents/` 아래에 저장된다. **`plan-dev` 세션 모델은 플랫폼별로 다르다** — Claude Opus · Codex Sol/xhigh · Cursor Grok 4.6 xhigh · Grok Build Grok 4.6 xhigh([Model Tier](#model-tier)).
-2. **루프 실행**: 위 표의 모드로 `dev-loop`를 호출한다(기본값 `light`). 이후 종료 술어(TODO 완료 ∧ AC 증거 충족 ∧ 검증 green ∧ 차단 finding 0)를 만족할 때까지 자율 반복된다. 멀티스텝 플랜은 sub-plan(`-STEP-N`) 단위로 호출한다. **루프 실행 세션도 플랫폼별** — Claude Sonnet · Codex Luna/medium · Cursor Grok 4.6 medium · Grok Build Grok 4.6 medium. T1 에이전트는 역할 핀으로 T1에서 돈다.
+2. **루프 실행**: 위 표의 모드로 `dev-loop`를 호출한다(기본값 `light`). 이후 종료 술어(TODO 완료 ∧ AC 증거 충족 ∧ 검증 green ∧ 차단 finding 0)를 만족할 때까지 자율 반복된다. 멀티스텝 플랜은 sub-plan(`-STEP-N`) 단위로 호출한다. **루프 실행 세션도 플랫폼별** — Claude Sonnet · Codex Terra/medium · Cursor Grok 4.6 medium · Grok Build Grok 4.6 medium. T1 에이전트는 역할 핀으로 T1에서 돈다.
 3. **중간 개입은 두 경우뿐**: (a) 리뷰(있는 모드만) 또는 TESTING 게이트에서 finding이 나오면 항목별 Fix/Accept 분류 질문에 답한다 — Accept 항목은 `AGENTS.md`의 `Accepted Review Exceptions`에 기록되어 다음 리뷰부터 Waived(`Applied Exceptions`)로 강등 표시되고 차단 finding으로 계산되지 않는다. (b) blocked·예산 소진·no-progress로 에스컬레이션되면 지시를 내린다 — 방향 문제면 `plan-dev`로 재진입한다.
 4. **완료 확인과 커밋**: 루프는 READY_TO_COMMIT에서 멈춘다. Implementation Report와 LOOP 상태 파일을 확인한 뒤 `commit-code`를 직접 호출한다(같은 호출에서 PR/MR을 원하면 말하면 된다 — `request-merge`는 라우팅 별칭). 커밋·푸시·PR/MR 생성은 루프 권한 밖이다. **`noreview`에서는 리뷰어가 아무도 변경을 읽지 않았으므로**, IMPL 리포트의 `## TODO Fulfillment`와 AC 증거를 직접 본다 — 4축 리뷰가 잡아주던 instruction drift가 여기서는 사람 몫이다.
 5. **중단·재개**: 루프가 중간에 끊겨도 상태는 `docs/agents/dev/*_LOOP_*.md`에 남으므로(LOOP 포맷은 공유, `Mode:`는 프론트매터에 고정), 같은 플랜으로 `dev-loop`를 다시 호출하면 그 모드의 마지막 라운드에서 이어서 진행한다.
@@ -261,7 +256,7 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 | **T2 execution** | 명세가 있고 결과가 기계로 검증 가능한 작업 | `sonnet`, 단 쓰기 역할 둘은 `opus` / `medium` | **Terra**, 단 쓰기 역할 둘은 Sol / `medium` | `grok-4.6` (T1/T2는 effort) | `grok-4.6` (T1/T2는 effort) |
 | **T3 mechanical** | 판단이 사실상 없는 변환·집계 | *(미사용 — 아래 참조)* | *(미사용)* | *(미사용)* | *(미사용)* |
 
-**T3는 의도적으로 비어 있다.** Haiku는 컨텍스트 200K·캐시 최소 프리픽스 4096 tok·모델 레벨 effort 미지원인데, 이 하네스의 T2 작업은 대부분 repo-slice 추론이라 최저 티어가 가장 못하는 일이다. Luna의 긴 컨텍스트 절벽(MRCR 41.3%) 때문에 같은 이유로 탈락한다 — Codex 에이전트 역할 어디에도 쓰지 않고, `dev-loop` 컨트롤러 세션만 쓴다. **Cursor와 Grok Build는 `grok-4.6`만 쓴다.** `grok-4.5`는 4.6 대비 가격 메리트가 없어 쓰지 않는다. Composer 2.5도 쓰지 않는다. 티어는 모델이 아니라 effort다. 진짜 기계적인 일은 셸로 내린다(위 Runtime Scripts). 과금은 SuperGrok **구독 쿼터**다.
+**T3는 의도적으로 비어 있다.** Haiku는 컨텍스트 200K·캐시 최소 프리픽스 4096 tok·모델 레벨 effort 미지원인데, 이 하네스의 T2 작업은 대부분 repo-slice 추론이라 최저 티어가 가장 못하는 일이다. Luna의 긴 컨텍스트 절벽(MRCR 41.3%) 때문에 같은 이유로 탈락한다 — Codex 에이전트 역할에도, `dev-loop` 컨트롤러 세션에도 쓰지 않는다(컨트롤러는 LOOP·플랜·단계 반환을 쌓아 들고, Luna는 루프를 일찍 끊거나 서브에이전트 결과를 잘못 읽었다). **Cursor와 Grok Build는 `grok-4.6`만 쓴다.** `grok-4.5`는 4.6 대비 가격 메리트가 없어 쓰지 않는다. Composer 2.5도 쓰지 않는다. 티어는 모델이 아니라 effort다. 진짜 기계적인 일은 셸로 내린다(위 Runtime Scripts). 과금은 SuperGrok **구독 쿼터**다.
 
 ### 에이전트 배치
 
@@ -285,7 +280,7 @@ Claude는 `model`·`effort` 두 필드를 쓴다. **Codex**는 TOML `model` + `m
 
 **Claude의 쓰기 역할 둘은 T1 모델을 T2 effort로 돌린다.** `implementer`·`fixer`는 `sonnet`이 아니라 `opus` / `medium`이다 — 이 하네스에서 재보니 Sonnet은 같은 작업에 턴을 더 써서 1.67배 가격 차를 그대로(그 이상) 반납했고, 그 턴마다 플랜과 repo slice를 다시 읽었다. 티어는 여전히 T2이고 그걸 표현하는 건 effort다. T2의 나머지(`tester`·`maintainability-reviewer`·`senior-generalist-reviewer`)는 출력이 한정되고 재검증되므로 `sonnet`에 남는다. Codex도 똑같이 쓰기 역할 둘은 Sol / `medium`, 나머지는 Terra / `medium`이다. Terra에는 긴 컨텍스트 절벽이 없으므로(MRCR 89.6%, Sol 91.5%) 컨텍스트 때문이 아니다 — 모든 플랫폼에서 그 두 행에 T1 모델을 두기 위해서이고, 가격은 Terra의 약 2–2.5배다.
 
-**Codex 전용.** `model_reasoning_effort = "ultra"`는 쓰지 않는다 — 자동 태스크 위임이 이 하네스의 dispatch와 충돌한다. Luna는 어떤 에이전트 역할에도 두지 않는다 — 리뷰어와 `tester`도 diff와 주변 코드를 함께 읽으므로 긴 컨텍스트 절벽에 걸린다. 공유 기본 루프 모드는 **`light`**다.
+**Codex 전용.** `model_reasoning_effort = "ultra"`는 쓰지 않는다 — 자동 태스크 위임이 이 하네스의 dispatch와 충돌한다. Luna는 어떤 에이전트 역할에도, `dev-loop` 컨트롤러 세션에도 두지 않는다 — 리뷰어·`tester`의 diff+주변 코드와, 컨트롤러가 쌓는 LOOP·단계 반환이 모두 긴 컨텍스트 절벽에 걸린다. 공유 기본 루프 모드는 **`light`**다.
 
 **Grok Build 전용.** 쓰는 카탈로그는 `grok-4.6`만(SuperGrok 구독 쿼터). `grok-4.5`는 쓰지 않는다. 4.6 effort는 `low|medium|high|xhigh`. 서브에이전트 깊이 1이라 design-bearing은 루프가 `needs-design-decision`에서 `plan-consultant`를 시작한다. 기본 루프 모드는 **`light`**. `[compat.claude]`·`[compat.cursor]`를 끈다.
 
@@ -302,7 +297,7 @@ Claude는 `model`·`effort` 두 필드를 쓴다. **Codex**는 TOML `model` + `m
 | 세션 | Claude | Codex | Cursor | Grok Build | 근거 |
 | --- | --- | --- | --- | --- | --- |
 | `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.6** xhigh | **Grok 4.6 / xhigh** | 방향·경계·AC는 되돌릴 수 없음 |
-| **모든 `dev-loop` 실행** | **Sonnet** | **Luna / medium** | **Grok 4.6 / medium** | **Grok 4.6 / medium** | 컨트롤러 = 전이표 + LOOP append. T1은 역할 핀 |
+| **모든 `dev-loop` 실행** | **Sonnet** | **Terra / medium** | **Grok 4.6 / medium** | **Grok 4.6 / medium** | 컨트롤러는 LOOP + 단계 반환을 든다. T1은 역할 핀 |
 
 `full`(4축)도 예외가 아니다 — 리뷰어 4종의 모델이 전부 파일에 명시돼 있으므로 세션 모델이 어떤 에이전트의 티어도 바꾸지 못한다.
 
@@ -318,7 +313,7 @@ Claude는 `model`·`effort` 두 필드를 쓴다. **Codex**는 TOML `model` + `m
 
 ## Scripts
 
-`scripts/`에는 설치·동기화 스크립트가 있다. `apply-to-*.sh`는 이 레포의 소스 변형을 사용자 홈의 실제 에이전트 환경으로 배포하고, `setup-ctx7.sh`는 반대로 외부 생성물을 레포 소스에 반영한다. 설치 대상 디렉토리는 기존 내용을 비운 뒤 다시 채우는 방식이라, 홈 디렉토리에서 직접 수정한 스킬·에이전트·훅은 다음 실행 때 소스 기준으로 덮어써진다. 각 `apply-to-*.sh`는 외부 [ponytail](https://github.com/DietrichGebert/ponytail) 플러그인도 설치한다 (Cursor는 사용자 룰 파일 — ponytail에 Cursor 플러그인이 없다). 그 설치본은 호스트 플러그인 저장소(또는 `~/.cursor/rules/`)에 있으며, wipe 대상인 harness 소유 디렉터리에는 없다.
+`scripts/`에는 설치·동기화 스크립트가 있다. `apply-to-*.sh`는 이 레포의 소스 변형을 사용자 홈의 실제 에이전트 환경으로 배포하고, `setup-ctx7.sh`는 반대로 외부 생성물을 레포 소스에 반영한다. 설치 대상 디렉토리는 기존 내용을 비운 뒤 다시 채우는 방식이라, 홈 디렉토리에서 직접 수정한 스킬·에이전트·훅은 다음 실행 때 소스 기준으로 덮어써진다.
 
 ### apply-to.sh
 
@@ -338,7 +333,6 @@ Claude Code 설치 스크립트다.
 
 - Claude Code: `instructions/AGENTS.md`를 `~/.claude/CLAUDE.md`로 복사하고, 런타임 스크립트를 `~/.agents/scripts`에 설치한 뒤 `~/.claude/skills/<name>` 스킬 단위 심링크를 `~/.agents/skills`로 건다. `~/.claude/agents`와 `~/.claude/hooks`는 `agents/claude/` · `hooks/claude/hooks/`로 다시 채운다.
 - Claude Code 설정: `hooks/claude/settings.json`의 `hooks` 블록을 `~/.claude/settings.json`에 `jq`로 머지한 뒤, 두 `~/.agents/scripts` Bash allow를 `permissions.allow`에 배열을 통째 교체하지 않고 append한다. 사용자의 다른 설정은 보존되며, 대상 파일이 없으면 통째로 생성한다 (jq 필요). `hooks/claude/settings.json`에는 `permissions`가 없다.
-- Ponytail: `claude plugin marketplace add DietrichGebert/ponytail` 다음 `claude plugin install ponytail@ponytail` (user scope). 이미 설치돼 있으면 건너뛴다. `claude` CLI 필요. 플러그인 라이프사이클 훅은 PATH에 `node`가 있어야 한다 (없어도 스킬은 동작한다).
 - 마지막에 항목별 설치 개수와 상태 요약을 출력한다.
 
 ### apply-to-codex.sh
@@ -349,7 +343,6 @@ Codex 설치 스크립트다.
 - 런타임 스크립트를 `~/.agents/scripts`에 설치하고 `~/.codex/skills`에서 harness 이름을 제거한다.
 - `~/.codex/agents/`를 비운 뒤 `agents/codex/*.toml`을 복사한다.
 - `~/.codex/hooks/`를 비운 뒤 `hooks/codex/hooks/*`를 복사하고, `hooks/codex/hooks.json`을 `~/.codex/hooks.json`으로 복사한다.
-- Ponytail: `codex plugin marketplace add DietrichGebert/ponytail` 다음 `codex plugin add ponytail@ponytail`. 이미 설치돼 있으면 건너뛴다. `codex` CLI 필요. 설치 후 Codex에서 `/hooks`를 열고 라이프사이클 훅 2개를 검토·신뢰한 뒤 새 스레드를 시작한다 (훅에는 PATH의 `node` 필요).
 - 마지막에 항목별 설치 개수와 상태 요약을 출력한다.
 
 ### apply-to-cursor.sh
@@ -359,7 +352,6 @@ Cursor 설치 스크립트다.
 - `instructions/AGENTS.md`를 `~/.cursor/AGENTS.md`로 복사한다. **Cursor는 이 파일을 읽지 않는다** — `session-context.sh`가 읽어서 `additional_context`로 주입한다. Cursor에 사용자 전역 지침 파일이 없고 User Rules는 설치 스크립트가 쓸 수 없는 UI 상태이기 때문이다.
 - 런타임 스크립트를 `~/.agents/scripts`에 설치하고 `~/.cursor/skills`에서 harness 이름을 제거한다. `~/.cursor/agents`와 `~/.cursor/hooks`는 `agents/cursor/` · `hooks/cursor/hooks/`로 다시 채운다.
 - `hooks/cursor/hooks.json`을 `~/.cursor/hooks.json`으로 **머지가 아니라 교체**한다. Claude의 `settings.json`은 다른 설정과 파일을 공유하지만 Cursor의 `hooks.json`은 훅 전용이다.
-- Ponytail: ponytail에 Cursor 플러그인은 없다. ponytail 레포의 `.cursor/rules/ponytail.mdc`를 `~/.cursor/rules/ponytail.mdc`로 받는다 (always-on 사용자 룰). `curl` 필요. apply 때마다 다시 받아 룰을 최신으로 유지한다.
 - 마지막에 설치 요약과 함께, 스크립트가 대신할 수 없는 1회성 수동 단계(`~/.claude` 호환 경로 끄기)를 안내한다.
 
 ### apply-to-grok.sh
@@ -370,25 +362,11 @@ Grok Build 전용 변형 설치 스크립트다(Claude/Cursor compat 경로를 �
 - 런타임 스크립트를 `~/.agents/scripts`에 설치하고 `~/.grok/skills`에서 harness 이름을 제거한다.
 - `~/.grok/agents/`를 비운 뒤 `agents/grok/*.md`를 복사한다.
 - 훅 스크립트를 `~/.grok/hooks/`에 두고, `hooks/grok/hooks.json`을 **`~/.grok/hooks/harness.json`**으로 복사한다(Grok은 `~/.grok/hooks/*.json`을 머지).
-- Ponytail: `grok plugin install DietrichGebert/ponytail --trust` 다음 `grok plugin enable ponytail` (플러그인은 enable 전까지 꺼져 있다). 이미 있으면 설치는 건너뛴다. `grok` CLI 필요. 설치 후 새 세션을 시작하거나 플러그인을 리로드한다.
 - 종료 시 **`[compat.claude]`·`[compat.cursor]` 끄기**와 세션 습관(plan-dev high / dev-loop medium)을 안내한다.
 
 ### apply-to-all.sh
 
 `apply-to.sh claude codex cursor grok`를 호출해 네 에이전트 설치를 순서대로 실행하는 래퍼다. 어디서 실행해도 된다(스크립트가 자체 경로 기준으로 해석한다).
-
-### Ponytail
-
-[ponytail](https://github.com/DietrichGebert/ponytail)은 외부 플러그인이다 (YAGNI / 가장 작은 동작하는 diff). 이 레포에 벤더링하지 않는다. 각 `apply-to-*.sh`는 해당 프로젝트 README에 적힌 방법으로 설치한다:
-
-| 호스트 | 방법 |
-| --- | --- |
-| Claude Code | `claude plugin marketplace add DietrichGebert/ponytail` 다음 `claude plugin install ponytail@ponytail` |
-| Codex | `codex plugin marketplace add DietrichGebert/ponytail` 다음 `codex plugin add ponytail@ponytail`; 이후 `/hooks`에서 훅 신뢰 |
-| Cursor | 플러그인 없음 — `.cursor/rules/ponytail.mdc`를 `~/.cursor/rules/ponytail.mdc`로 복사 |
-| Grok Build | `grok plugin install DietrichGebert/ponytail --trust` 다음 `grok plugin enable ponytail` |
-
-apply를 다시 실행해도 wipe하지 않는다: 이미 설치된 플러그인은 그대로 둔다 (Cursor는 룰 파일을 다시 받는다). 플러그인 업데이트는 harness apply가 아니라 호스트 자체의 update 명령으로 한다. 설치 후 `/ponytail` (Codex는 `@ponytail`)과 review/audit/debt/gain/help. 기본 모드는 `full`; `PONYTAIL_DEFAULT_MODE` 또는 `~/.config/ponytail/config.json`으로 바꿀 수 있다. 해당 호스트 CLI가 없으면 그 플랫폼의 ponytail 단계만 건너뛰고 harness apply의 나머지는 실패하지 않는다.
 
 ### setup-ctx7.sh
 

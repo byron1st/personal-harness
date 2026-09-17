@@ -80,7 +80,7 @@ Claude frontmatter의 `model` / `effort`는 Codex role TOML의 `model` / `model_
 
 - **`ultra` 금지.** automatic task delegation을 동반해 dev-loop 위임과 충돌한다.
 - **현재 배치에서는 `opus` → `gpt-5.6-sol`, `sonnet` → `gpt-5.6-terra`, effort 그대로가 모든 역할에서 성립한다.** 한쪽 플랫폼만 배치를 바꾸면 이 대응이 깨지므로, 그때는 `agents/AGENTS.md` 표를 따른다.
-- **Luna는 어떤 에이전트 역할에도 두지 않는다.** MRCR 장문맥 절벽(41.3%)이 plan+research+코드 입력과 diff+주변 코드 입력 모두와 겹친다. Terra는 절벽이 없다(89.6%, Sol 91.5%).
+- **Luna는 어떤 에이전트 역할에도, `dev-loop` 컨트롤러 세션에도 두지 않는다.** MRCR 장문맥 절벽(41.3%)이 plan+research+코드 입력, diff+주변 코드 입력, LOOP+단계 반환 모두와 겹친다. Terra는 절벽이 없다(89.6%, Sol 91.5%). 세션 습관: `plan-dev` = Sol / xhigh, `dev-loop` = Terra / medium.
 - `failed` 재시도는 루프가 같은 persona를 한 번 더 띄운다. 스킬/루프 본문에 호스트 모델명을 적지 않는다.
 - Codex의 `[agents] default_subagent_*`는 **fallback**이다 — role이 명시한 값을 덮어쓰지 않는다. Claude의 `CLAUDE_CODE_SUBAGENT_MODEL`과 다르다.
 - 각 본문에 `Tier: T1|T2 — {근거 한 줄}`을 남긴다. 모델명이 아니라 근거가 문서화 대상이다.

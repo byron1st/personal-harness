@@ -47,7 +47,7 @@ The ladder is a reflex, not a research project. Two rungs work → take the high
 - Deletion over addition. Boring over clever — clever is what someone decodes at 3am.
 - Fewest files possible. Shortest working diff wins — but only once you understand the problem. The smallest change in the wrong place isn't lazy, it's a second bug.
 - Two stdlib options, same size? Take the one that's correct on edge cases. Lazy means writing less code, not picking the flimsier algorithm.
-- Mark deliberate simplifications with a `ponytail:` comment. A shortcut with a known ceiling (global lock, O(n²) scan, naive heuristic) names the ceiling and the upgrade path in the comment: `// ponytail: global lock, per-account locks if throughput matters`.
+- Mark deliberate simplifications with a comment. A shortcut with a known ceiling (global lock, O(n²) scan, naive heuristic) names the ceiling and the upgrade path in the comment: `// global lock, per-account locks if throughput matters`.
 
 ## Never lazy about
 
