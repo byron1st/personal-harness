@@ -22,6 +22,7 @@ Reuse the **plan's** `{timestamp}_{Jira}_{title}` stem exactly - the plan's actu
 - Section titles in English; body content in Korean.
 - The report is an **overlay, not a copy**. Reference the change through `ReviewBase` (how to see the diff) and `file:line` anchors; never paste diffs or file bodies into the report. This keeps it small, avoids staleness, and anchors every position to one frozen revision.
 - Separate the deterministic from the narrative honestly. The implementer just wrote this code, so intent, risk, and red flags are cheap and trustworthy, but nothing here is statically verified. Anything you are unsure of belongs in `## Open Questions`, not asserted as fact.
+- **Attention first**: `## Red Flags`, `## Open Questions`, and `## Plan Divergence` sit right after `## Summary`, above `## TODO Fulfillment`, so a reviewer at READY_TO_COMMIT meets what needs their judgement before the per-TODO detail.
 - The spine of the report is **`## TODO Fulfillment`**: one sub-section per plan TODO, each carrying what was implemented (`path:line` + symbol + why), the test that pins that TODO's behavior (`path:line` + test name + what it pins), the `AC:` line (which Acceptance Contract id(s) the TODO fulfills, with an evidence pointer), and any deviation specific to that TODO. An optional `Risk / Lens` line goes on a TODO only when it is high-risk and the reviewer should read it line-by-line.
 - The completion chat output (② executor return, or the ③ chat summary) must not paste report sections verbatim. After saving the report, the caller sends a short summary, not the body. Keep `## TODO Fulfillment`, `## Red Flags`, `## Open Questions`, `## Plan Divergence`, and all lower sections in the report file for on-demand reading.
 
@@ -39,21 +40,10 @@ ReviewBase: {command or commit range that reproduces the reviewed snapshot, e.g.
 
 Plan: [{plan filename}](./{plan filename})
 
-## Summary
-2-3 sentences: what was implemented **and why** - the intent the reviewer should judge the code against. Lead with the goal, not the mechanics.
-
-## TODO Fulfillment
 See the change: `{ReviewBase}`. Every `path:line` anchor in this report is valid against that snapshot.
 
-### TODO 1: {the matching item from the plan's `## TODOs`} - done | partial | blocked
-- Risk / Lens: {high / line-by-line} (optional; only when this TODO is high-risk and needs that lens)
-- 구현: `path:line` `symbol` - what was changed and why
-- 테스트: `path:line` `TestName` - which behavior it pins (this TODO's executable spec)
-- AC: {이행한 AC id(s) + 증거 포인터, e.g. `AC-1 — make e2e 통과 로그`}
-- 편차: {how this TODO diverged from the plan; "none" when it did not}
-
-### TODO 2: ...
-- ...
+## Summary
+2-3 sentences: what was implemented **and why** - the intent the reviewer should judge the code against. Lead with the goal, not the mechanics.
 
 ## Red Flags
 AI-specific signals the reviewer should distrust on sight: new dependencies, possibly-hallucinated or unverified APIs, over-engineering, scope beyond the plan, swallowed errors, hardcoded values or secrets. Each gets a stable id and a `file:line` anchor. Write `None` if there are genuinely none; never omit the section.
@@ -71,6 +61,17 @@ Plan-vs-implementation deltas, sorted into three buckets so the reviewer can tel
 - what: why it was needed (when an Added item widened scope, cross-reference the matching **RF** by id here, do not duplicate its content)
 ### Deferred - planned but not implemented (deferred)
 - what: why / what follow-up is needed
+
+## TODO Fulfillment
+### TODO 1: {the matching item from the plan's `## TODOs`} - done | partial | blocked
+- Risk / Lens: {high / line-by-line} (optional; only when this TODO is high-risk and needs that lens)
+- 구현: `path:line` `symbol` - what was changed and why
+- 테스트: `path:line` `TestName` - which behavior it pins (this TODO's executable spec)
+- AC: {이행한 AC id(s) + 증거 포인터, e.g. `AC-1 — make e2e 통과 로그`}
+- 편차: {how this TODO diverged from the plan; "none" when it did not}
+
+### TODO 2: ...
+- ...
 
 ## Key Decisions
 (Optional) Cross-cutting decisions not tied to a single TODO, e.g. choosing one library or pattern over another. Omit when individual TODO rationales already carry the reasoning.

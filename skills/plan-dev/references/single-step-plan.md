@@ -2,7 +2,7 @@
 
 One markdown file describing the full implementation of a task — the default `plan-dev` mode, and the unit `implement-dev` executes.
 
-Structure below is enforced. The body between the research links and the TODO checklist is **free-form**: do not force it into a fixed template (Goal / Technical Approach / Affected Files / Risks / …). When a planning agent produced the plan, copy its output **verbatim** — squeezing it into a normalized shape loses fidelity. That is not licence to keep mechanics-level detail; granularity still governs, so push line-level detail into research files or drop it.
+Structure below is enforced. **Order matters**: the approval surface — `## Non-goals`, `## Key decisions`, `## Acceptance Contract` — comes right after the H1, so a human reviewing the plan reads the decisions before anything else; research links and the free-form body follow it, and the executor-facing `## Authority Boundaries` and `## TODOs` close the file. The free-form body is **free-form**: do not force it into a fixed template (Goal / Technical Approach / Affected Files / Risks / …). When a planning agent produced the plan, copy its output **verbatim** — squeezing it into a normalized shape loses fidelity. That is not licence to keep mechanics-level detail; granularity still governs, so push line-level detail into research files or drop it.
 
 ## 1. File name
 
@@ -34,14 +34,12 @@ Required. Add other keys (`Tags`, `Status`) only when useful.
 
 ## 4. Research links
 
-When research was created or consulted, list it at the top of the body, right after the H1. The executor starts cold, so each link carries three parts: the Markdown link, a one-line summary of **what current-code understanding** it captures, and the TODOs that should read it as `**TODO N·M**`. Omit the block entirely when there is no research.
+When research was created or consulted, list it right after the approval surface (§5–§6), before the free-form body. The executor starts cold, so each link carries the Markdown link and a one-line summary of **what current-code understanding** it captures. Which TODO reads which file is recorded once, on the TODO itself (`(→ research: …)`, §8) — not repeated here. Omit the block entirely when there is no research.
 
 ```markdown
 ## 참고 Research
 - [auth-flow](../research/auth-flow.md) — 로그인 요청의 현재 실행 경로(handler→service→repo).
-  **TODO 2·3** 구현 전 참조.
 - [module-dependencies](../research/module-dependencies.md) — service 계층의 현재 의존 방향.
-  **TODO 5**의 대상 구조.
 ```
 
 ## 5. Direction anchors
@@ -95,7 +93,7 @@ Each item carries trailing tags:
 
 - `(AC-N)` — the acceptance criteria it fulfills. This is how an evaluator maps TODOs to the contract without the planning session's memory.
 - `(mechanical)` or `(design-bearing)` — `mechanical` when the *how* follows from the codebase or the alternatives are cheap to reverse; `design-bearing` when two approaches both fit the plan and picking wrong is expensive to undo. **Be stingy with `design-bearing`**: it is the sole gate on `implement-dev`'s `plan-consultant` hatch, which has no call cap, so how sparingly it is applied *is* the budget control. If most TODOs carry it, either the plan is under-decided or the tagging is loose.
-- `(→ research: {file-stem})` — when the TODO should read a linked research file first. Pairs with the `**TODO N·M**` tags in section 4, so the executor reads research exactly once, for exactly the TODO that needs it.
+- `(→ research: {file-stem})` — when the TODO should read a linked research file first. This tag is the only TODO↔research mapping, so the executor reads research exactly once, for exactly the TODO that needs it.
 
 ```markdown
 ## TODOs
@@ -119,11 +117,7 @@ Title: {title}
 
 # [Feature / Change Name]
 
-<!-- §4 research links, when applicable -->
-
-<!-- Free-form body. Agent-generated plans are copied verbatim. -->
-
-<!-- §5 anchors — required unless the plan is trivial: -->
+<!-- Approval surface first. §5 anchors — required unless the plan is trivial: -->
 <!-- ## Non-goals -->
 <!-- ## Key decisions -->
 
@@ -131,6 +125,10 @@ Title: {title}
 | ID | Observable condition | Evidence |
 | --- | --- | --- |
 | AC-1 | ... | ... |
+
+<!-- §4 research links, when applicable -->
+
+<!-- Free-form body. Agent-generated plans are copied verbatim. -->
 
 ## Authority Boundaries
 - Discretion: ...

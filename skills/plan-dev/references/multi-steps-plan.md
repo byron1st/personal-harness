@@ -75,8 +75,8 @@ Step: {N}
 
 Part of main plan: [{timestamp}_{Jira}_PLAN_{title}.md](./{timestamp}_{Jira}_PLAN_{title}.md)
 
-<!-- research links · ## Depends On · free-form body · anchors -->
-<!-- ## Acceptance Contract · ## Authority Boundaries · ## TODOs -->
+<!-- ## Depends On · anchors · ## Acceptance Contract -->
+<!-- research links · free-form body · ## Authority Boundaries · ## TODOs -->
 ```
 
 ## 6. Decomposition
