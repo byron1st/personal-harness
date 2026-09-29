@@ -21,8 +21,8 @@
 # misses are unrecoverable, and everything else is left for post-hoc reading.
 #
 # Matching is on the base model id, not the full pin string: subagent_model
-# reports a resolved model (e.g. "grok-4.6"), while the frontmatter pin carries
-# parameters ("grok-4.6[effort=high]") that do not come back in this field.
+# reports a resolved model (e.g. "grok-4.7"), while the frontmatter pin carries
+# parameters ("grok-4.7[effort=high]") that do not come back in this field.
 # Comparing the full string would fire on every single dispatch.
 #
 # Unknown subagent types (Cursor built-ins like generalPurpose / explore /
@@ -48,9 +48,9 @@ subagent_model=$(echo "$input" | jq -r '.subagent_model // ""')
 # Expected base model per agent, mirroring the placement table in agents/AGENTS.md.
 case "$subagent_type" in
   planner|plan-consultant|security-reviewer|reliability-reviewer)
-    expected="grok-4.6"; tier="T1" ;;
+    expected="grok-4.7"; tier="T1" ;;
   implementer|fixer|tester|maintainability-reviewer|senior-generalist-reviewer)
-    expected="grok-4.6"; tier="T2" ;;
+    expected="grok-4.7"; tier="T2" ;;
   *)
     allow ;;
 esac

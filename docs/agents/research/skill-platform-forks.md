@@ -95,9 +95,9 @@ Grok만 반대다.
 | 플랫폼 | 위치 | 재시도 모델 |
 | --- | --- | --- |
 | Claude | implement-dev worker-contract §E'; fix-dev | `model: opus` |
-| Cursor | 동상 | `model: grok-4.6[effort=high]` |
-| Codex | 동상 | `gpt-5.6-sol` + high effort |
-| Grok | implement-dev는 모델 패밀리 변경 없음. 같은 implementer 1회 | fix-dev는 그래도 `model: grok-4.6`을 적음 |
+| Cursor | 동상 | `model: grok-4.7[effort=high]` |
+| Codex | 동상 | `gpt-6-sol` + high effort |
+| Grok | implement-dev는 모델 패밀리 변경 없음. 같은 implementer 1회 | fix-dev는 그래도 `model: grok-4.7`을 적음 |
 
 ## description
 

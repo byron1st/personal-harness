@@ -32,8 +32,8 @@ A skill frontmatter `model:` applies **only to that turn**. `plan-dev` and the l
 
 | Invocation | Claude | Codex | Cursor | Grok Build |
 | --- | --- | --- | --- | --- |
-| `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.6** (effort xhigh) | **Grok 4.6 / xhigh** |
-| `dev-loop` | **Sonnet** | **Terra / medium** | **Grok 4.6 / medium** | **Grok 4.6 / medium** |
+| `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.7** (effort xhigh) | **Grok 4.7 / xhigh** |
+| `dev-loop` | **Sonnet** | **Terra / medium** | **Grok 4.7 / medium** | **Grok 4.7 / medium** |
 
 - Even a cheap loop session still runs T1 roles (planner, plan-consultant, security/reliability reviewers) at T1 via file pins.
 - `noreview` has no reviewer reading the change, so at READY_TO_COMMIT read the IMPL report's `## TODO Fulfillment` and AC evidence yourself.
@@ -147,8 +147,8 @@ The two axes `light` drops (`security` and `reliability`) are the ones whose mis
 
 **No mode is gate-free.** All three keep the same two human gates: TESTING's suspected-defect **Fix/Accept** triage, and READY_TO_COMMIT. Dropping review drops the four reviewers, not the human's judgement.
 
-1. **Plan**: Call `plan-dev` and interview a plan. In the completion-conditions round, lock per-TODO completion conditions and evidence (`Acceptance Contract`) together with authority boundaries and loop budget (`Authority Boundaries`). Approving the plan writes PLAN/RESEARCH files under `docs/agents/`. **The `plan-dev` session model differs by platform** — Claude Opus · Codex Sol/xhigh · Cursor Grok 4.6 xhigh · Grok Build Grok 4.6 xhigh ([Model Tier](#model-tier)).
-2. **Run the loop**: Call `dev-loop` with the approved plan path and a mode from the table above (default `light`). It then repeats autonomously until the termination predicates hold (TODOs done ∧ AC evidence met ∧ verification green ∧ blocking findings 0). Multi-step plans are invoked per sub-plan (`-STEP-N`). **The loop-run session is also per-platform** — Claude Sonnet · Codex Terra/medium · Cursor Grok 4.6 medium · Grok Build Grok 4.6 medium. T1 agents stay T1 via role pins.
+1. **Plan**: Call `plan-dev` and interview a plan. In the completion-conditions round, lock per-TODO completion conditions and evidence (`Acceptance Contract`) together with authority boundaries and loop budget (`Authority Boundaries`). Approving the plan writes PLAN/RESEARCH files under `docs/agents/`. **The `plan-dev` session model differs by platform** — Claude Opus · Codex Sol/xhigh · Cursor Grok 4.7 xhigh · Grok Build Grok 4.7 xhigh ([Model Tier](#model-tier)).
+2. **Run the loop**: Call `dev-loop` with the approved plan path and a mode from the table above (default `light`). It then repeats autonomously until the termination predicates hold (TODOs done ∧ AC evidence met ∧ verification green ∧ blocking findings 0). Multi-step plans are invoked per sub-plan (`-STEP-N`). **The loop-run session is also per-platform** — Claude Sonnet · Codex Terra/medium · Cursor Grok 4.7 medium · Grok Build Grok 4.7 medium. T1 agents stay T1 via role pins.
 3. **Mid-run intervention in two cases only**: (a) If a finding appears at review (modes that have it) or the TESTING gate, answer the per-item Fix/Accept question — Accepted items are recorded in `AGENTS.md`'s `Accepted Review Exceptions`, shown as Waived (`Applied Exceptions`) from the next review, and do not count as blocking findings. (b) If it escalates on blocked, budget exhaustion, or no-progress, give instructions — if the problem is direction, re-enter `plan-dev`.
 4. **Confirm and commit**: The loop stops at READY_TO_COMMIT. Check the Implementation Report and LOOP state file, then call `commit-code` yourself (name a PR/MR in that invocation if you want one — `request-merge` is a routing alias). Commit, push, and PR/MR creation are outside the loop's authority. **Under `noreview` no reviewer has read the change**, so read the IMPL report's `## TODO Fulfillment` and AC evidence yourself — the instruction drift four-axis review used to catch is now the human's job.
 5. **Interrupt and resume**: If the loop dies mid-run, state remains in `docs/agents/dev/*_LOOP_*.md` (LOOP format is shared; `Mode:` is frozen in frontmatter). Calling `dev-loop` on the same plan continues from the last round in that mode.
@@ -252,11 +252,11 @@ The tier of a role is a property of the **work**, not of the model generation. E
 
 | Tier | Definition | Claude | Codex | Cursor | Grok Build |
 | --- | --- | --- | --- | --- | --- |
-| **T1 judgment** | Irreversible decisions that cannot be machine-verified | `opus` | `gpt-5.6-sol` | `grok-4.6` | `grok-4.6` |
-| **T2 execution** | Specified work whose result is machine-checkable | `sonnet`, except the two write-heavy roles (`opus` / `medium`) | **Terra**, except the two write-heavy roles (Sol / `medium`) | `grok-4.6` (effort distinguishes T1 vs T2) | `grok-4.6` (effort distinguishes T1 vs T2) |
+| **T1 judgment** | Irreversible decisions that cannot be machine-verified | `opus` | `gpt-6-sol` | `grok-4.7` | `grok-4.7` |
+| **T2 execution** | Specified work whose result is machine-checkable | `sonnet`, except the two write-heavy roles (`opus` / `medium`) | **Terra**, except the two write-heavy roles (Sol / `medium`) | `grok-4.7` (effort distinguishes T1 vs T2) | `grok-4.7` (effort distinguishes T1 vs T2) |
 | **T3 mechanical** | Transformation and aggregation with no real judgement | *(unused — see below)* | *(unused)* | *(unused)* | *(unused)* |
 
-**T3 is empty on purpose.** Haiku's 200K context, 4096-token minimum cache prefix, and lack of model-level effort make it a poor fit for this harness, whose T2 work is mostly repo-slice reasoning — the thing the smallest tier is worst at. Luna's long-context cliff (MRCR 41.3%) puts it out for the same reason — no Codex agent role uses it, and the `dev-loop` controller session does not either (it holds the LOOP, the plan, and stage returns; Luna dropped the loop early and misread subagent results). **Cursor and Grok Build use `grok-4.6` only.** `grok-4.5` is unused — it has no meaningful price advantage over 4.6. Composer 2.5 is unused. Tiers are effort, not model. Genuinely mechanical work goes to the shell (Runtime Scripts above). Billing is SuperGrok **subscription quota**.
+**T3 is empty on purpose.** Haiku's 200K context, 4096-token minimum cache prefix, and lack of model-level effort make it a poor fit for this harness, whose T2 work is mostly repo-slice reasoning — the thing the smallest tier is worst at. Luna's long-context cliff (MRCR 41.3%) puts it out for the same reason — no Codex agent role uses it, and the `dev-loop` controller session does not either (it holds the LOOP, the plan, and stage returns; Luna dropped the loop early and misread subagent results). **Cursor and Grok Build use `grok-4.7` only.** `grok-4.5` is unused — it has no meaningful price advantage over 4.7. Composer 2.5 is unused. Tiers are effort, not model. Genuinely mechanical work goes to the shell (Runtime Scripts above). Billing is SuperGrok **subscription quota**.
 
 ### Agent placement
 
@@ -264,27 +264,27 @@ Claude uses the two fields `model` and `effort`. **Codex** uses TOML `model` + `
 
 | Agent | Claude | Codex | Cursor | Grok Build | Rationale |
 | --- | --- | --- | --- | --- | --- |
-| `planner` | `opus` / `high` | Sol / high | `grok-4.6[effort=high]` | `grok-4.6` / high (plan) | Architecture judgement |
-| `plan-consultant` | `opus` / `high` | Sol / high | `grok-4.6[effort=high]` | `grok-4.6` / high (plan) | **Grok: the main session spawns** (depth 1) |
-| `security-reviewer` | `opus` / `medium` | Sol / medium | `grok-4.6[effort=high]` | `grok-4.6` / high (plan) | Highest miss cost |
-| `reliability-reviewer` | `opus` / `medium` | Sol / medium | `grok-4.6[effort=high]` | `grok-4.6` / high (plan) | Counterfactual simulation |
-| `implementer` | **`opus` / `medium`** | **Sol / medium** | `grok-4.6[effort=medium]` | `grok-4.6` / **medium** | Long context; T1 model + T2 effort |
-| `tester` | `sonnet` / `medium` | Terra / medium | `grok-4.6[effort=medium]` | `grok-4.6` / medium | Machine-checkable goal; quality gate alongside `light`'s two T2 reviewers |
-| `fixer` | **`opus` / `medium`** | **Sol / medium** | **`grok-4.6[effort=medium]`** | `grok-4.6` / medium | A finding is a spec; same tier as `implementer` on every platform |
-| `maintainability-reviewer` | `sonnet` / `medium` | Terra / medium | `grok-4.6[effort=medium]` | `grok-4.6` / medium (plan) | Pattern matching |
-| `senior-generalist-reviewer` | `sonnet` / `medium` | Terra / medium | `grok-4.6[effort=medium]` | `grok-4.6` / medium (plan) | Catch-all |
+| `planner` | `opus` / `high` | Sol / high | `grok-4.7[effort=high]` | `grok-4.7` / high (plan) | Architecture judgement |
+| `plan-consultant` | `opus` / `high` | Sol / high | `grok-4.7[effort=high]` | `grok-4.7` / high (plan) | **Grok: the main session spawns** (depth 1) |
+| `security-reviewer` | `opus` / `medium` | Sol / medium | `grok-4.7[effort=high]` | `grok-4.7` / high (plan) | Highest miss cost |
+| `reliability-reviewer` | `opus` / `medium` | Sol / medium | `grok-4.7[effort=high]` | `grok-4.7` / high (plan) | Counterfactual simulation |
+| `implementer` | **`opus` / `medium`** | **Sol / medium** | `grok-4.7[effort=medium]` | `grok-4.7` / **medium** | Long context; T1 model + T2 effort |
+| `tester` | `sonnet` / `medium` | Terra / medium | `grok-4.7[effort=medium]` | `grok-4.7` / medium | Machine-checkable goal; quality gate alongside `light`'s two T2 reviewers |
+| `fixer` | **`opus` / `medium`** | **Sol / medium** | **`grok-4.7[effort=medium]`** | `grok-4.7` / medium | A finding is a spec; same tier as `implementer` on every platform |
+| `maintainability-reviewer` | `sonnet` / `medium` | Terra / medium | `grok-4.7[effort=medium]` | `grok-4.7` / medium (plan) | Pattern matching |
+| `senior-generalist-reviewer` | `sonnet` / `medium` | Terra / medium | `grok-4.7[effort=medium]` | `grok-4.7` / medium (plan) | Catch-all |
 
 **Effort: do not buy the top of the ladder.** Even raising default effort to `max` is only a few points across tiers, so `xhigh` is reserved for irreversible decisions. Every T2 row sits at `medium` on every platform.
 
-**`fixer` follows `implementer` on every platform, not T2 bulk.** Writing a fix has the same input shape as writing a change (brief · report · surrounding code), and cheaper models gave the price advantage back in extra turns. So Codex uses Sol, Cursor uses Grok 4.6, Claude uses Opus. Cursor and Grok Build `tester` is also 4.6 medium — default loop mode is `light`, so tester sits next to the two T2 reviewers, and Composer often ignored instructions. `maintainability-reviewer` and `senior-generalist-reviewer` are 4.6 medium too — `grok-4.5` has no price advantage.
+**`fixer` follows `implementer` on every platform, not T2 bulk.** Writing a fix has the same input shape as writing a change (brief · report · surrounding code), and cheaper models gave the price advantage back in extra turns. So Codex uses Sol, Cursor uses Grok 4.7, Claude uses Opus. Cursor and Grok Build `tester` is also 4.7 medium — default loop mode is `light`, so tester sits next to the two T2 reviewers, and Composer often ignored instructions. `maintainability-reviewer` and `senior-generalist-reviewer` are 4.7 medium too — `grok-4.5` has no price advantage.
 
 **Claude's two write roles run a T1 model at T2 effort.** `implementer` and `fixer` are `opus` / `medium`, not `sonnet` — re-running this harness, Sonnet spent extra turns on the same work and gave back (or more than) the 1.67× price gap, rereading the plan and repo slice on every one of those turns. The tier is still T2; effort is what expresses that. The rest of T2 (`tester` · `maintainability-reviewer` · `senior-generalist-reviewer`) stays on `sonnet` because output is bounded and re-verified. Codex mirrors this: Sol / `medium` on the two write roles, Terra / `medium` on the rest. Terra has no long-context cliff (MRCR 89.6% vs Sol 91.5%), so this is not a context fix — it keeps the T1 model on those two rows on every platform, at roughly 2–2.5× Terra's price.
 
 **Codex-only.** Do not use `model_reasoning_effort = "ultra"` — automatic task delegation collides with this harness's dispatch. Do not use Luna on any agent role or on the `dev-loop` controller session — its long-context cliff hits reviewers, `tester`, and the accumulating LOOP + stage returns. The shared default loop mode is **`light`**.
 
-**Grok Build-only.** The catalog in use is `grok-4.6` only (SuperGrok subscription quota). `grok-4.5` is unused. 4.6 effort is `low|medium|high|xhigh`. Subagent depth is 1, so design-bearing work has the loop start `plan-consultant` on `needs-design-decision`. Default loop mode is **`light`**. Turn off `[compat.claude]` and `[compat.cursor]`.
+**Grok Build-only.** The catalog in use is `grok-4.7` only (SuperGrok subscription quota). `grok-4.5` is unused. 4.7 effort is `low|medium|high|xhigh`. Subagent depth is 1, so design-bearing work has the loop start `plan-consultant` on `needs-design-decision`. Default loop mode is **`light`**. Turn off `[compat.claude]` and `[compat.cursor]`.
 
-**Cursor's effort values are not Claude's.** Grok 4.6 is `low/medium/high/xhigh` (default `high`). T1 reviewers use `high` — one step below reserved `xhigh`, the same shape as Claude/Codex T1 reviewers. Cursor T2 matches Grok Build: every role `grok-4.6`, T2 is `[effort=medium]`. Composer 2.5 and `grok-4.5` are unused.
+**Cursor's effort values are not Claude's.** Grok 4.7 is `low/medium/high/xhigh` (default `high`). T1 reviewers use `high` — one step below reserved `xhigh`, the same shape as Claude/Codex T1 reviewers. Cursor T2 matches Grok Build: every role `grok-4.7`, T2 is `[effort=medium]`. Composer 2.5 and `grok-4.5` are unused.
 
 `implementer` and `fixer` keep a T1 **model** on Cursor. The agentic gap between the two models lands exactly on this work, and a 200K window does not fit a role that loads plan + research + conventions + code together — so effort was dropped instead of the model.
 
@@ -296,8 +296,8 @@ A skill frontmatter `model:` applies **only to that turn** and reverts to the se
 
 | Session | Claude | Codex | Cursor | Grok Build | Why |
 | --- | --- | --- | --- | --- | --- |
-| `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.6** xhigh | **Grok 4.6 / xhigh** | Direction, boundaries, and ACs are irreversible |
-| **every `dev-loop` run** | **Sonnet** | **Terra / medium** | **Grok 4.6 / medium** | **Grok 4.6 / medium** | Controller holds LOOP + stage returns; T1 stays on role pins |
+| `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.7** xhigh | **Grok 4.7 / xhigh** | Direction, boundaries, and ACs are irreversible |
+| **every `dev-loop` run** | **Sonnet** | **Terra / medium** | **Grok 4.7 / medium** | **Grok 4.7 / medium** | Controller holds LOOP + stage returns; T1 stays on role pins |
 
 This applies to `full` too — every reviewer's model is pinned on the agent file, so the session model no longer decides any agent's tier.
 

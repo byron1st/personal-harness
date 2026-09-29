@@ -55,7 +55,7 @@ Cursor/Grok Claude-compat 스킬 스캔은 끈 채로 `~/.agents/skills`를 쓴�
 ---
 name: security-reviewer
 description: "…(Claude 서술 유지)"
-model: grok-4.6       # every role — T1/T2 is effort, see table below
+model: grok-4.7       # every role — T1/T2 is effort, see table below
 effort: high          # or medium — see agents/AGENTS.md
 permission_mode: plan # read-only roles; writers use default
 agents_md: true
@@ -64,16 +64,16 @@ agents_md: true
 
 | Claude | Grok |
 | --- | --- |
-| T1 역할(planner · plan-consultant · security/reliability reviewer) | `model: grok-4.6` + `effort: high` |
-| T2 쓰기·tester(implementer · fixer · tester) | `model: grok-4.6` + `effort: medium` |
-| T2 리뷰어(maintainability · senior-generalist) | `model: grok-4.6` + `effort: medium` |
+| T1 역할(planner · plan-consultant · security/reliability reviewer) | `model: grok-4.7` + `effort: high` |
+| T2 쓰기·tester(implementer · fixer · tester) | `model: grok-4.7` + `effort: medium` |
+| T2 리뷰어(maintainability · senior-generalist) | `model: grok-4.7` + `effort: medium` |
 | `tools: Read, …` (read-only) | `permission_mode: plan` + spawn `capability_mode: read-only` |
 | `tools: …, Agent` | 삭제. depth 1이라 Worker는 consultant를 부르지 않음 |
 | `inherit` | **금지** |
 
 **Claude의 `model:` 값으로 매핑하지 않는다 — 역할의 티어로 매핑한다.** Claude는 `implementer`·`fixer`를 `opus` / `medium`(T1 모델 + T2 effort)에 두므로, 모델명만 보고 옮기면 두 역할이 T1 effort로 올라간다. `agents/AGENTS.md`의 배치표가 source of truth다.
 
-**4.6 effort 메뉴는 `low` · `medium` · `high` · `xhigh`** (기본 high). `xhigh`는 `plan-dev` 세션에만 쓴다. 에이전트 핀에는 `xhigh`를 넣지 않는다.
+**4.7 effort 메뉴는 `low` · `medium` · `high` · `xhigh`** (기본 high). `xhigh`는 `plan-dev` 세션에만 쓴다. 에이전트 핀에는 `xhigh`를 넣지 않는다.
 
 **`permission_mode: plan`은 읽기 셸을 막지 않는다** (`git diff`, `rg` 가능). 편집만 막힌다.
 
@@ -109,13 +109,13 @@ agents_md: true
 
 | Session | Model / effort |
 | --- | --- |
-| `plan-dev` | `grok-4.6` / **xhigh** |
-| every `dev-loop` | `grok-4.6` / **medium** |
+| `plan-dev` | `grok-4.7` / **xhigh** |
+| every `dev-loop` | `grok-4.7` / **medium** |
 
 ## Checklist (verifier)
 
 - [ ] compat.claude / compat.cursor off
-- [ ] 9 agents under `agents/grok/` with explicit `model` + `effort`, no `inherit` (all `grok-4.6`; T1/T2 is effort)
+- [ ] 9 agents under `agents/grok/` with explicit `model` + `effort`, no `inherit` (all `grok-4.7`; T1/T2 is effort)
 - [ ] read-only six use `permission_mode: plan`
 - [ ] implementer returns `needs-design-decision`; the loop starts `plan-consultant`
 - [ ] shared `skills/<name>/` (one `dev-loop`, modes in SKILL.md); scripts path `$HOME/.agents/scripts`

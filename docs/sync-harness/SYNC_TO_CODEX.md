@@ -63,8 +63,8 @@ Claude frontmatter의 `model` / `effort`는 Codex role TOML의 `model` / `model_
 
 | Claude | Codex TOML | 비고 |
 | --- | --- | --- |
-| T1 역할 (planner · plan-consultant · security/reliability reviewer) | `model = "gpt-5.6-sol"` | T1 judgment |
-| `implementer` · `fixer` | `model = "gpt-5.6-sol"` | Claude에서 `opus`인 두 T2 쓰기 역할 — T1 모델 + T2 effort |
+| T1 역할 (planner · plan-consultant · security/reliability reviewer) | `model = "gpt-6-sol"` | T1 judgment |
+| `implementer` · `fixer` | `model = "gpt-6-sol"` | Claude에서 `opus`인 두 T2 쓰기 역할 — T1 모델 + T2 effort |
 | 그 외 T2 | `model = "gpt-5.6-terra"` | tester / T2 reviewers |
 | `effort: high` / `medium` / … | `model_reasoning_effort = "high"` 등 | 공통 구간 값 그대로 |
 | `tools: Read, Grep, Glob, Bash` | `sandbox_mode = "read-only"` + 본문 hard rule | 툴 화이트리스트는 없음 |
@@ -74,12 +74,12 @@ Claude frontmatter의 `model` / `effort`는 Codex role TOML의 `model` / `model_
 
 | 역할 | model | effort |
 | --- | --- | --- |
-| planner · plan-consultant · security-reviewer · reliability-reviewer | `gpt-5.6-sol` | high (리뷰어 T1은 medium) |
-| implementer · fixer | `gpt-5.6-sol` | medium |
+| planner · plan-consultant · security-reviewer · reliability-reviewer | `gpt-6-sol` | high (리뷰어 T1은 medium) |
+| implementer · fixer | `gpt-6-sol` | medium |
 | tester · maintainability-reviewer · senior-generalist-reviewer | `gpt-5.6-terra` | medium |
 
 - **`ultra` 금지.** automatic task delegation을 동반해 dev-loop 위임과 충돌한다.
-- **현재 배치에서는 `opus` → `gpt-5.6-sol`, `sonnet` → `gpt-5.6-terra`, effort 그대로가 모든 역할에서 성립한다.** 한쪽 플랫폼만 배치를 바꾸면 이 대응이 깨지므로, 그때는 `agents/AGENTS.md` 표를 따른다.
+- **현재 배치에서는 `opus` → `gpt-6-sol`, `sonnet` → `gpt-5.6-terra`, effort 그대로가 모든 역할에서 성립한다.** 한쪽 플랫폼만 배치를 바꾸면 이 대응이 깨지므로, 그때는 `agents/AGENTS.md` 표를 따른다.
 - **Luna는 어떤 에이전트 역할에도, `dev-loop` 컨트롤러 세션에도 두지 않는다.** MRCR 장문맥 절벽(41.3%)이 plan+research+코드 입력, diff+주변 코드 입력, LOOP+단계 반환 모두와 겹친다. Terra는 절벽이 없다(89.6%, Sol 91.5%). 세션 습관: `plan-dev` = Sol / xhigh, `dev-loop` = Terra / medium.
 - `failed` 재시도는 루프가 같은 persona를 한 번 더 띄운다. 스킬/루프 본문에 호스트 모델명을 적지 않는다.
 - Codex의 `[agents] default_subagent_*`는 **fallback**이다 — role이 명시한 값을 덮어쓰지 않는다. Claude의 `CLAUDE_CODE_SUBAGENT_MODEL`과 다르다.

@@ -1,7 +1,7 @@
 ---
 name: plan-consultant
 description: Escalation hatch the loop starts when the implementer returns `needs-design-decision` — two approaches both fit the approved plan but picking wrong is expensive to undo. Returns a short decision plus its reasoning — never code, never a redesign. Read-only, and does not reopen the plan's direction. Not for detail-level mechanics or direction-level conflicts (those stop the work and go to the user).
-model: grok-4.6
+model: grok-4.7
 effort: high
 permission_mode: plan
 agents_md: true

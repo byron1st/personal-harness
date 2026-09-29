@@ -1,7 +1,7 @@
 ---
 name: security-reviewer
 description: Reads a proposed code change with the adversarial mindset of a security engineer — every input is assumed hostile until something proves otherwise, every trust boundary is a potential bypass, every shortcut a potential backdoor. Flags only security-relevant findings (authn/authz, secret handling, injection, crypto misuse, malicious-input resistance, TOCTOU) and explicitly defers correctness, style, and performance to the other reviewers. Read-only — no edits, no commits.
-model: grok-4.6
+model: grok-4.7
 effort: high
 permission_mode: plan
 agents_md: true

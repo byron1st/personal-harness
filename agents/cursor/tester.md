@@ -1,7 +1,7 @@
 ---
 name: tester
 description: Fills unit and e2e coverage gaps and eliminates LIVED mutants over a git-defined scope, working from the diff with fresh eyes rather than the author's narrative. Strictly test-code only — never edits production logic, and records suspected business-logic defects as findings instead of fixing them.
-model: grok-4.6[effort=medium]
+model: grok-4.7[effort=medium]
 readonly: false
 ---
 
