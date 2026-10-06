@@ -61,19 +61,13 @@ mockgen:
 	find $(MOCK_DIR) -type f -name '*.go' -exec perl -pi -e 's/interface\{\}/any/g' {} +
 	find $(MOCK_DIR) -type f -name '*.go' -exec gofmt -w {} +
 
-.PHONY: format lint check clean-testcache test race test-e2e test-mutation test-mutation-pkg
+.PHONY: format clean-testcache test race test-e2e test-mutation test-mutation-pkg
 # Run formatting and linting
-check: format lint
-
-# Format and modernize code
-format:
+check:
+	@go mod tidy
 	@go fmt ./...
 	@go fix ./...
-
-# Run linters to check code quality and style
-lint:
-	@go mod tidy
-	@golangci-lint run
+	@golangci-lint run --fix ./...
 
 # Clean test cache to ensure tests run with the latest code changes
 clean-testcache:
