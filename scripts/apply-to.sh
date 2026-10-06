@@ -66,6 +66,8 @@ echo "Installing shared skills to ~/.agents/skills..."
 install_shared_skills "${SKILLS_SOURCE_DIR}"
 skills_count=$(count_shared_skills)
 echo "Shared skills: ${skills_count} directories in ${HOME}/.agents/skills"
+echo "Installing external skills to ~/.agents/skills..."
+install_external_skills
 echo ""
 
 failed=0

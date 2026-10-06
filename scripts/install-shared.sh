@@ -19,6 +19,11 @@ HARNESS_SKILLS=(
   test-dev
 )
 
+# Third-party skills installed via `npx skills add` as "<source>|<skill>".
+EXTERNAL_SKILLS=(
+  'makenotion/skills|notion-cli'
+)
+
 CLAUDE_SCRIPT_ALLOWS=(
   'Bash($HOME/.agents/scripts/detect-commands.sh *)'
   'Bash($HOME/.agents/scripts/resolve-scope.sh *)'
@@ -41,6 +46,14 @@ install_shared_skills() {
       echo "Error: missing repo skill ${repo_skills}/${name}" >&2
       return 1
     fi
+  done
+}
+
+# `-g -a universal` installs into ~/.agents/skills (the other agents read it natively).
+install_external_skills() {
+  local entry
+  for entry in "${EXTERNAL_SKILLS[@]}"; do
+    npx --yes skills add "${entry%%|*}" --skill "${entry##*|}" -g -a universal -y
   done
 }
 
@@ -70,7 +83,7 @@ link_claude_harness_skills() {
   local agents_skills="${HOME}/.agents/skills"
   mkdir -p "${claude_skills}"
   local name
-  for name in "${HARNESS_SKILLS[@]}"; do
+  for name in "${HARNESS_SKILLS[@]}" "${EXTERNAL_SKILLS[@]##*|}"; do
     local link="${claude_skills}/${name}"
     local target="${agents_skills}/${name}"
     rm -rf "${link}"

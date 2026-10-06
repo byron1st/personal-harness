@@ -317,7 +317,7 @@ This applies to `full` too — every reviewer's model is pinned on the agent fil
 
 ### apply-to.sh
 
-Common entry point: takes agent names as arguments and runs only those install scripts, in order. Before the per-agent installers, it deletes harness-owned names under `~/.agents/skills` and copies `skills/<name>/` there once (shared across hosts).
+Common entry point: takes agent names as arguments and runs only those install scripts, in order. Before the per-agent installers, it deletes harness-owned names under `~/.agents/skills` and copies `skills/<name>/` there once (shared across hosts). It then installs third-party skills listed in `EXTERNAL_SKILLS` (`scripts/install-shared.sh`) with `npx skills add <source> --skill <name> -g -a universal -y` (network required); `apply-to-claude.sh` symlinks them from `~/.claude/skills` like the harness skills.
 
 ```bash
 scripts/apply-to.sh claude
