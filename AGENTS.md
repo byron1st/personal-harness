@@ -46,7 +46,7 @@ Each skill can be used standalone; typically the output of the previous skill (p
 
 ### Skills
 
-Each skill under `skills/<name>/` is shared across hosts. See each skill's `SKILL.md` for the full contract. Install lives in `~/.agents/skills`; Claude uses per-skill symlinks from `~/.claude/skills`.
+Each skill under `skills/<name>/` is shared across hosts. See each skill's `SKILL.md` for the full contract. Install lives in `~/.agents/skills`; Claude uses per-skill symlinks from `~/.claude/skills`. Third-party skills are not vendored: `EXTERNAL_SKILLS` in `scripts/install-shared.sh` lists them and `apply-to.sh` installs them into `~/.agents/skills` via `npx skills add` — currently the official Notion `notion-cli` (`makenotion/skills`).
 
 **Core Development Process:**
 

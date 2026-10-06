@@ -70,6 +70,8 @@ These CLI tools must be on PATH for this harness's skills, hooks, and install sc
 | `gh` | `commit-code` (personal PR path), `setup-initial-repo` (personal remote create) | create/update GitHub PRs, auto-create personal private repos | `brew install gh` then `gh auth login` |
 | `glab` | `commit-code` (work MR path) | create/update GitLab MRs | `brew install glab` then `glab auth login` |
 | `gcx` | `loki-log-search` | Grafana Loki log lookup via `gcx api` passthrough | install a `gcx` distribution, then configure context with `gcx config current-context` |
+| `acli` | `notion-daily-briefing`, `notion-daily-wrapup` | Atlassian CLI for read-only Jira ticket search/view/comment list | `brew tap atlassian/homebrew-acli && brew install acli` then `acli jira auth login --web` |
+| `ntn` | `notion-daily-briefing`, `notion-daily-wrapup`, `notion-cli` | Notion CLI for the Daily Note query/create/markdown update | `curl -fsSL https://ntn.dev \| bash` then `ntn login` |
 | Cursor 2.4+ | entire Cursor variant | subagent `model`/`readonly` frontmatter, Agent Skills, `hooks.json` (including `subagentStart`) | update the Cursor app |
 | `grok` (Grok Build 0.2+) | entire Grok variant | `~/.grok/{agents,skills,hooks,scripts,rules}`; SuperGrok subscription recommended | [install Grok Build CLI](https://x.ai/cli) then `grok login` |
 
@@ -197,6 +199,14 @@ Each skill lives once under `skills/<name>/` and installs to `~/.agents/skills`.
 | `learn-from-manual-edits` | Infers general preferences from the user's manual edits on top of agent-written code and records them as conventions | CLAUDE.md/AGENTS.md convention sections |
 | `chat-summary` | Turns a conversation into a self-contained Obsidian note using the vault's existing category/tag vocabulary (YAML frontmatter + body) | Obsidian note (.md) |
 | `loki-log-search` | Queries Grafana Loki logs via `gcx api` | None (chat report) |
+| `notion-daily-briefing` | Ensures today's Notion Daily Note (from template), summarizes my not-Done Jira tickets via `acli` (read-only), and writes them into its "아침 브리핑" section | Today's Notion Daily Note |
+| `notion-daily-wrapup` | Ensures today's Notion Daily Note, summarizes today's activity (created / commented / status-changed today) on my Jira tickets via `acli` (read-only), and writes it into its "하루 마무리" section | Today's Notion Daily Note |
+
+**External (official, not vendored in `skills/`):** installed by `apply-to.sh` from [`EXTERNAL_SKILLS`](scripts/install-shared.sh) via `npx skills add`.
+
+| Skill | Source | Description |
+| --- | --- | --- |
+| `notion-cli` | `makenotion/skills` (official Notion) | Uses the Notion CLI (`ntn`) for the Notion API, workers, and file uploads |
 
 ### Custom Agents
 

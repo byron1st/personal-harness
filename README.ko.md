@@ -70,6 +70,8 @@ personal-harness/
 | `gh` | `commit-code`(personal PR 경로), `setup-initial-repo`(personal 원격 생성) | GitHub PR 생성/업데이트, 개인 private repo 자동 생성 | `brew install gh` 후 `gh auth login` |
 | `glab` | `commit-code`(work MR 경로) | GitLab MR 생성/업데이트 | `brew install glab` 후 `glab auth login` |
 | `gcx` | `loki-log-search` | Grafana Loki 로그 조회용 `gcx api` passthrough | `gcx` 배포본 설치 후 `gcx config current-context`로 컨텍스트 구성 |
+| `acli` | `notion-daily-briefing`, `notion-daily-wrapup` | Jira 티켓 조회(search/view/comment list)용 Atlassian CLI (읽기 전용) | `brew tap atlassian/homebrew-acli && brew install acli` 후 `acli jira auth login --web` |
+| `ntn` | `notion-daily-briefing`, `notion-daily-wrapup`, `notion-cli` | Daily Note 조회·생성·markdown 수정용 Notion CLI | `curl -fsSL https://ntn.dev \| bash` 후 `ntn login` |
 | Cursor 2.4+ | Cursor 변형 전체 | 서브에이전트 `model`·`readonly` 프론트매터, Agent Skills, `hooks.json`(`subagentStart` 포함) | Cursor 앱 업데이트 |
 | `grok` (Grok Build 0.2+) | Grok 변형 전체 | `~/.grok/{agents,skills,hooks,scripts,rules}`, SuperGrok 구독 권장 | [Grok Build CLI 설치](https://x.ai/cli) 후 `grok login` |
 
@@ -197,6 +199,14 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 | `learn-from-manual-edits` | 에이전트 작성 코드 위의 사용자 수동 편집에서 일반 선호를 추론해 컨벤션으로 기록 | CLAUDE.md/AGENTS.md 컨벤션 섹션 |
 | `chat-summary` | 대화 내용을 vault 기존 category/tag 어휘로 정리한 자기완결 Obsidian 노트(YAML frontmatter + 본문)로 작성 | Obsidian 노트 (.md) |
 | `loki-log-search` | Grafana Loki 로그를 `gcx api` 경유로 조회 | 없음 (채팅 보고) |
+| `notion-daily-briefing` | 오늘 Notion Daily Note를 확인·생성(템플릿)하고, `acli`로 내게 할당된 Done 아닌 Jira 티켓을 읽기 전용으로 요약해 "아침 브리핑" 섹션에 작성 | 오늘 Notion Daily Note |
+| `notion-daily-wrapup` | 오늘 Notion Daily Note를 확인·생성하고, 내 Jira 티켓의 오늘 활동(오늘 생성·코멘트·상태 변경)을 `acli`로 읽기 전용 요약해 "하루 마무리" 섹션에 작성 | 오늘 Notion Daily Note |
+
+**외부 (공식, `skills/`에 vendoring하지 않음):** `apply-to.sh`가 [`EXTERNAL_SKILLS`](scripts/install-shared.sh)를 `npx skills add`로 설치한다.
+
+| 스킬 | 출처 | 설명 |
+| --- | --- | --- |
+| `notion-cli` | `makenotion/skills` (Notion 공식) | Notion CLI(`ntn`)로 Notion API 호출, worker 배포, 파일 업로드 |
 
 ### Custom Agents
 
@@ -317,7 +327,7 @@ Claude는 `model`·`effort` 두 필드를 쓴다. **Codex**는 TOML `model` + `m
 
 ### apply-to.sh
 
-에이전트 이름을 인자로 받아 해당 설치 스크립트만 순차 실행하는 공통 진입점이다. 플랫폼별 설치 전에 harness 소유 이름을 `~/.agents/skills`에서 지운 뒤 `skills/<name>/`을 한 번만 복사한다 (호스트 공용).
+에이전트 이름을 인자로 받아 해당 설치 스크립트만 순차 실행하는 공통 진입점이다. 플랫폼별 설치 전에 harness 소유 이름을 `~/.agents/skills`에서 지운 뒤 `skills/<name>/`을 한 번만 복사한다 (호스트 공용). 이어서 `EXTERNAL_SKILLS`(`scripts/install-shared.sh`)의 외부 스킬을 `npx skills add <source> --skill <name> -g -a universal -y`로 설치한다(네트워크 필요). `apply-to-claude.sh`가 하네스 스킬처럼 `~/.claude/skills`에서 심링크한다.
 
 ```bash
 scripts/apply-to.sh claude
