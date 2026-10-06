@@ -1,7 +1,7 @@
 name = "plan-consultant"
 description = "Read-only escalation hatch the loop starts on needs-design-decision; returns a short decision, never code."
 sandbox_mode = "read-only"
-model = "gpt-6-sol"
+model = "gpt-6.1-sol"
 model_reasoning_effort = "high"
 developer_instructions = """
 # Plan Consultant

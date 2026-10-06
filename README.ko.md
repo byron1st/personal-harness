@@ -33,7 +33,7 @@ plan-dev → (플랜 검토·승인) → dev-loop → commit-code
 | 호출 | Claude | Codex | Cursor | Grok Build |
 | --- | --- | --- | --- | --- |
 | `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.7** (effort xhigh) | **Grok 4.7 / xhigh** |
-| `dev-loop` | **Sonnet** | **Terra / medium** | **Grok 4.7 / medium** | **Grok 4.7 / medium** |
+| `dev-loop` | **Sonnet** | **Sol / low** | **Grok 4.7 / medium** | **Grok 4.7 / medium** |
 
 - 루프 세션을 싸게 두어도 T1 역할(planner·plan-consultant·security/reliability 리뷰어)은 파일 핀으로 T1에서 돈다.
 - `noreview`는 리뷰어가 변경을 읽지 않으므로, READY_TO_COMMIT에서 IMPL 리포트의 `## TODO Fulfillment`와 AC 증거를 직접 확인한다.
@@ -150,7 +150,7 @@ plan-dev → dev-loop( implement-dev → test-dev → [review-code] → (fix-dev
 **어느 모드도 게이트가 없지는 않다.** 셋 다 사람 게이트 2개(TESTING의 suspected-defect **Fix/Accept** 분류, READY_TO_COMMIT)를 그대로 갖는다. 리뷰를 끄면 사라지는 것은 리뷰어 4종이지 사람의 판단이 아니다.
 
 1. **계획 수립**: `plan-dev` 스킬을 호출해 인터뷰로 계획을 수립한다. 완료 조건 라운드에서 TODO별 완료 조건·증거(`Acceptance Contract`)와 권한 경계·루프 예산(`Authority Boundaries`)을 함께 확정하고, 계획을 승인하면 PLAN/RESEARCH 파일이 `docs/agents/` 아래에 저장된다. **`plan-dev` 세션 모델은 플랫폼별로 다르다** — Claude Opus · Codex Sol/xhigh · Cursor Grok 4.7 xhigh · Grok Build Grok 4.7 xhigh([Model Tier](#model-tier)).
-2. **루프 실행**: 위 표의 모드로 `dev-loop`를 호출한다(기본값 `light`). 이후 종료 술어(TODO 완료 ∧ AC 증거 충족 ∧ 검증 green ∧ 차단 finding 0)를 만족할 때까지 자율 반복된다. 멀티스텝 플랜은 sub-plan(`-STEP-N`) 단위로 호출한다. **루프 실행 세션도 플랫폼별** — Claude Sonnet · Codex Terra/medium · Cursor Grok 4.7 medium · Grok Build Grok 4.7 medium. T1 에이전트는 역할 핀으로 T1에서 돈다.
+2. **루프 실행**: 위 표의 모드로 `dev-loop`를 호출한다(기본값 `light`). 이후 종료 술어(TODO 완료 ∧ AC 증거 충족 ∧ 검증 green ∧ 차단 finding 0)를 만족할 때까지 자율 반복된다. 멀티스텝 플랜은 sub-plan(`-STEP-N`) 단위로 호출한다. **루프 실행 세션도 플랫폼별** — Claude Sonnet · Codex Sol/low · Cursor Grok 4.7 medium · Grok Build Grok 4.7 medium. T1 에이전트는 역할 핀으로 T1에서 돈다.
 3. **중간 개입은 두 경우뿐**: (a) 리뷰(있는 모드만) 또는 TESTING 게이트에서 finding이 나오면 항목별 Fix/Accept 분류 질문에 답한다 — Accept 항목은 `AGENTS.md`의 `Accepted Review Exceptions`에 기록되어 다음 리뷰부터 Waived(`Applied Exceptions`)로 강등 표시되고 차단 finding으로 계산되지 않는다. (b) blocked·예산 소진·no-progress로 에스컬레이션되면 지시를 내린다 — 방향 문제면 `plan-dev`로 재진입한다.
 4. **완료 확인과 커밋**: 루프는 READY_TO_COMMIT에서 멈춘다. Implementation Report와 LOOP 상태 파일을 확인한 뒤 `commit-code`를 직접 호출한다(같은 호출에서 PR/MR을 원하면 말하면 된다 — `request-merge`는 라우팅 별칭). 커밋·푸시·PR/MR 생성은 루프 권한 밖이다. **`noreview`에서는 리뷰어가 아무도 변경을 읽지 않았으므로**, IMPL 리포트의 `## TODO Fulfillment`와 AC 증거를 직접 본다 — 4축 리뷰가 잡아주던 instruction drift가 여기서는 사람 몫이다.
 5. **중단·재개**: 루프가 중간에 끊겨도 상태는 `docs/agents/dev/*_LOOP_*.md`에 남으므로(LOOP 포맷은 공유, `Mode:`는 프론트매터에 고정), 같은 플랜으로 `dev-loop`를 다시 호출하면 그 모드의 마지막 라운드에서 이어서 진행한다.
@@ -262,8 +262,8 @@ plan-dev → implement-dev → (이슈 발견 시 fix-dev 반복) → test-dev �
 
 | 티어 | 정의 | Claude | Codex | Cursor | Grok Build |
 | --- | --- | --- | --- | --- | --- |
-| **T1 judgment** | 되돌릴 수 없고 기계 검증이 불가능한 결정 | `opus` | `gpt-6-sol` | `grok-4.7` | `grok-4.7` |
-| **T2 execution** | 명세가 있고 결과가 기계로 검증 가능한 작업 | `sonnet`, 단 쓰기 역할 둘은 `opus` / `medium` | **Terra**, 단 쓰기 역할 둘은 Sol / `medium` | `grok-4.7` (T1/T2는 effort) | `grok-4.7` (T1/T2는 effort) |
+| **T1 judgment** | 되돌릴 수 없고 기계 검증이 불가능한 결정 | `opus` | `gpt-6.1-sol` | `grok-4.7` | `grok-4.7` |
+| **T2 execution** | 명세가 있고 결과가 기계로 검증 가능한 작업 | `sonnet`, 단 쓰기 역할 둘은 `opus` / `medium` | Sol (T1/T2는 effort) | `grok-4.7` (T1/T2는 effort) | `grok-4.7` (T1/T2는 effort) |
 | **T3 mechanical** | 판단이 사실상 없는 변환·집계 | *(미사용 — 아래 참조)* | *(미사용)* | *(미사용)* | *(미사용)* |
 
 **T3는 의도적으로 비어 있다.** Haiku는 컨텍스트 200K·캐시 최소 프리픽스 4096 tok·모델 레벨 effort 미지원인데, 이 하네스의 T2 작업은 대부분 repo-slice 추론이라 최저 티어가 가장 못하는 일이다. Luna의 긴 컨텍스트 절벽(MRCR 41.3%) 때문에 같은 이유로 탈락한다 — Codex 에이전트 역할에도, `dev-loop` 컨트롤러 세션에도 쓰지 않는다(컨트롤러는 LOOP·플랜·단계 반환을 쌓아 들고, Luna는 루프를 일찍 끊거나 서브에이전트 결과를 잘못 읽었다). **Cursor와 Grok Build는 `grok-4.7`만 쓴다.** `grok-4.5`는 4.7 대비 가격 메리트가 없어 쓰지 않는다. Composer 2.5도 쓰지 않는다. 티어는 모델이 아니라 effort다. 진짜 기계적인 일은 셸로 내린다(위 Runtime Scripts). 과금은 SuperGrok **구독 쿼터**다.
@@ -279,16 +279,16 @@ Claude는 `model`·`effort` 두 필드를 쓴다. **Codex**는 TOML `model` + `m
 | `security-reviewer` | `opus` / `medium` | Sol / medium | `grok-4.7[effort=high]` | `grok-4.7` / high (plan) | miss 비용 최대 |
 | `reliability-reviewer` | `opus` / `medium` | Sol / medium | `grok-4.7[effort=high]` | `grok-4.7` / high (plan) | 반사실 시뮬레이션 |
 | `implementer` | **`opus` / `medium`** | **Sol / medium** | `grok-4.7[effort=medium]` | `grok-4.7` / **medium** | 장문맥; T1 모델 + T2 effort |
-| `tester` | `sonnet` / `medium` | Terra / medium | `grok-4.7[effort=medium]` | `grok-4.7` / medium | 기계 목표; Cursor·Grok noreview 품질 게이트 |
+| `tester` | `sonnet` / `medium` | Sol / medium | `grok-4.7[effort=medium]` | `grok-4.7` / medium | 기계 목표; Cursor·Grok noreview 품질 게이트 |
 | `fixer` | **`opus` / `medium`** | **Sol / medium** | **`grok-4.7[effort=medium]`** | `grok-4.7` / medium | finding = 명세; 단 전 플랫폼에서 `implementer`와 동급 |
-| `maintainability-reviewer` | `sonnet` / `medium` | Terra / medium | `grok-4.7[effort=medium]` | `grok-4.7` / medium (plan) | 패턴 매칭 |
-| `senior-generalist-reviewer` | `sonnet` / `medium` | Terra / medium | `grok-4.7[effort=medium]` | `grok-4.7` / medium (plan) | catch-all |
+| `maintainability-reviewer` | `sonnet` / `medium` | Sol / medium | `grok-4.7[effort=medium]` | `grok-4.7` / medium (plan) | 패턴 매칭 |
+| `senior-generalist-reviewer` | `sonnet` / `medium` | Sol / medium | `grok-4.7[effort=medium]` | `grok-4.7` / medium (plan) | catch-all |
 
 **effort: 최상단은 사지 않는다.** 기본 effort에서 `max`까지 올려도 티어 전반에서 몇 점 차이라, `xhigh`는 되돌릴 수 없는 결정에만 쓴다. T2 행은 모든 플랫폼에서 `medium`이다.
 
 **`fixer`는 전 플랫폼에서 T2 bulk가 아니라 `implementer`를 따라간다.** 수정을 쓰는 일은 변경을 쓰는 일과 입력 모양이 같다(브리프 · 리포트 · 주변 코드), 그리고 싼 모델은 그 가격 이점을 턴 수로 반납했다. 그래서 Codex는 Sol, Cursor는 Grok 4.7, Claude는 Opus에 둔다. Cursor와 Grok Build의 `tester`도 4.7 medium이다 — 기본 루프 모드는 `light`이라 tester가 T2 리뷰어 2종 옆에 있고, Composer는 지시를 자주 무시했다. `maintainability-reviewer`와 `senior-generalist-reviewer`도 4.7 medium이다 — `grok-4.5`는 가격 메리트가 없다.
 
-**Claude의 쓰기 역할 둘은 T1 모델을 T2 effort로 돌린다.** `implementer`·`fixer`는 `sonnet`이 아니라 `opus` / `medium`이다 — 이 하네스에서 재보니 Sonnet은 같은 작업에 턴을 더 써서 1.67배 가격 차를 그대로(그 이상) 반납했고, 그 턴마다 플랜과 repo slice를 다시 읽었다. 티어는 여전히 T2이고 그걸 표현하는 건 effort다. T2의 나머지(`tester`·`maintainability-reviewer`·`senior-generalist-reviewer`)는 출력이 한정되고 재검증되므로 `sonnet`에 남는다. Codex도 똑같이 쓰기 역할 둘은 Sol / `medium`, 나머지는 Terra / `medium`이다. Terra에는 긴 컨텍스트 절벽이 없으므로(MRCR 89.6%, Sol 91.5%) 컨텍스트 때문이 아니다 — 모든 플랫폼에서 그 두 행에 T1 모델을 두기 위해서이고, 가격은 Terra의 약 2–2.5배다.
+**Claude의 쓰기 역할 둘은 T1 모델을 T2 effort로 돌린다.** `implementer`·`fixer`는 `sonnet`이 아니라 `opus` / `medium`이다 — 이 하네스에서 재보니 Sonnet은 같은 작업에 턴을 더 써서 1.67배 가격 차를 그대로(그 이상) 반납했고, 그 턴마다 플랜과 repo slice를 다시 읽었다. 티어는 여전히 T2이고 그걸 표현하는 건 effort다. T2의 나머지(`tester`·`maintainability-reviewer`·`senior-generalist-reviewer`)는 출력이 한정되고 재검증되므로 `sonnet`에 남는다. Codex는 T2를 모델로 나누지 않는다 — T2 역할은 모두 Sol / `medium`이고, T1/T2는 effort로만 구분된다.
 
 **Codex 전용.** `model_reasoning_effort = "ultra"`는 쓰지 않는다 — 자동 태스크 위임이 이 하네스의 dispatch와 충돌한다. Luna는 어떤 에이전트 역할에도, `dev-loop` 컨트롤러 세션에도 두지 않는다 — 리뷰어·`tester`의 diff+주변 코드와, 컨트롤러가 쌓는 LOOP·단계 반환이 모두 긴 컨텍스트 절벽에 걸린다. 공유 기본 루프 모드는 **`light`**다.
 
@@ -307,7 +307,7 @@ Claude는 `model`·`effort` 두 필드를 쓴다. **Codex**는 TOML `model` + `m
 | 세션 | Claude | Codex | Cursor | Grok Build | 근거 |
 | --- | --- | --- | --- | --- | --- |
 | `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.7** xhigh | **Grok 4.7 / xhigh** | 방향·경계·AC는 되돌릴 수 없음 |
-| **모든 `dev-loop` 실행** | **Sonnet** | **Terra / medium** | **Grok 4.7 / medium** | **Grok 4.7 / medium** | 컨트롤러는 LOOP + 단계 반환을 든다. T1은 역할 핀 |
+| **모든 `dev-loop` 실행** | **Sonnet** | **Sol / low** | **Grok 4.7 / medium** | **Grok 4.7 / medium** | 컨트롤러는 LOOP + 단계 반환을 든다. T1은 역할 핀 |
 
 `full`(4축)도 예외가 아니다 — 리뷰어 4종의 모델이 전부 파일에 명시돼 있으므로 세션 모델이 어떤 에이전트의 티어도 바꾸지 못한다.
 

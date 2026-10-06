@@ -114,8 +114,8 @@ The tier of a role is a property of the work, not of the model generation. Each 
 
 | Tier | Definition | Claude | Codex | Cursor | Grok Build |
 | --- | --- | --- | --- | --- | --- |
-| **T1 judgment** | Irreversible decisions that cannot be machine-verified | `opus` | `gpt-6-sol` | `grok-4.7` | `grok-4.7` |
-| **T2 execution** | Specified work whose result is machine-checkable | `sonnet`, except the two write-heavy roles (`opus` / `medium`) | `gpt-5.6-terra`, except the two write-heavy roles (`gpt-6-sol` / `medium`) | `grok-4.7` (effort distinguishes T1 vs T2) | `grok-4.7` (effort distinguishes T1 vs T2) |
+| **T1 judgment** | Irreversible decisions that cannot be machine-verified | `opus` | `gpt-6.1-sol` | `grok-4.7` | `grok-4.7` |
+| **T2 execution** | Specified work whose result is machine-checkable | `sonnet`, except the two write-heavy roles (`opus` / `medium`) | `gpt-6.1-sol` (effort distinguishes T1 vs T2) | `grok-4.7` (effort distinguishes T1 vs T2) | `grok-4.7` (effort distinguishes T1 vs T2) |
 | **T3 mechanical** | Transformation and aggregation with no real judgement | *(unused — see below)* | *(unused)* | *(unused)* | *(unused)* |
 
 **T3 is empty on purpose.** Haiku's 200K context, 4096-token minimum cache prefix, and lack of model-level effort make it a poor fit for this harness, whose T2 work is mostly repo-slice reasoning — the thing the smallest tier is worst at. `gpt-6-luna`'s long-context cliff (MRCR 41.3%) puts it out for the same reason — no Codex agent role uses it, and the `dev-loop` controller session does not either (it holds the LOOP, the plan, and stage returns; Luna dropped the loop early and misread subagent results). **Cursor and Grok Build use `grok-4.7` only.** `grok-4.5` is unused — it has no meaningful price advantage over 4.7. Composer 2.5 is unused. Tiers are effort, not model. Genuinely mechanical work goes to the shell (Runtime Scripts above), not to a smaller model.
@@ -133,7 +133,7 @@ A skill's `model:` frontmatter applies **only to the current turn** and reverts 
 | Session | Claude | Codex | Cursor | Grok Build | Why |
 | --- | --- | --- | --- | --- | --- |
 | `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.7** (effort xhigh) | **Grok 4.7 / xhigh** | Direction, boundaries, and ACs are irreversible |
-| **every `dev-loop` run** | **Sonnet** | **Terra / medium** | **Grok 4.7 / medium** | **Grok 4.7 / medium** | Controller holds LOOP + stage returns; T1 agents stay pinned |
+| **every `dev-loop` run** | **Sonnet** | **Sol / low** | **Grok 4.7 / medium** | **Grok 4.7 / medium** | Controller holds LOOP + stage returns; T1 agents stay pinned |
 
 This applies to `full` too, four axes and all — every reviewer's model is pinned on the agent file, so the session model no longer decides any agent's tier.
 

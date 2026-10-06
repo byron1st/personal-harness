@@ -1,7 +1,7 @@
 name = "implementer"
 description = "Turns an approved plan into the smallest correct working diff with minimal-code discipline."
 sandbox_mode = "workspace-write"
-model = "gpt-6-sol"
+model = "gpt-6.1-sol"
 model_reasoning_effort = "medium"
 developer_instructions = """
 # Implementer (lazy senior dev)

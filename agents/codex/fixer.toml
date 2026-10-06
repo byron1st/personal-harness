@@ -1,7 +1,7 @@
 name = "fixer"
 description = "Single-defect Worker: smallest correct fix plus regression coverage; never commits."
 sandbox_mode = "workspace-write"
-model = "gpt-6-sol"
+model = "gpt-6.1-sol"
 model_reasoning_effort = "medium"
 developer_instructions = """
 # Fixer
