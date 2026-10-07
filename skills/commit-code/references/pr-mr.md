@@ -16,6 +16,8 @@ If this is a work repository, try to extract a Jira ticket number (`[A-Z]+-[0-9]
 
 `{title}` should be a concise, one-line title that explains ALL the commits submitted in this branch well. DO NOT just pick one of commit messages for `{title}`. Also, it should start with a lowercase.
 
+If this is a work repository, ALWAYS write `{title}` in Korean, regardless of the language of the prompt or the commit messages. Keep `{PREFIX}` and the Jira ticket number as is.
+
 Do not reuse this run's commit title as the PR/MR title when the branch contains other commits.
 
 ## Description and execute

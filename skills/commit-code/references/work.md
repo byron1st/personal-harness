@@ -1,6 +1,6 @@
 ## Description template
 
-- Content except the section titles should be written in Korean.
+- ALWAYS write the content in Korean, regardless of the language of the prompt or the commit messages. Only the section titles stay in English.
 
 ```markdown
 ## Summary
