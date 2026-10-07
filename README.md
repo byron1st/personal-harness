@@ -68,7 +68,7 @@ These CLI tools must be on PATH for this harness's skills, hooks, and install sc
 | `fd` | all `enforce-fd` hook + AGENTS.md | force `fd` instead of `find` for file/path search | `brew install fd` |
 | `ctx7` | AGENTS.md context7 rule + `scripts/setup-ctx7.sh` | fetch official library/framework docs | `npm install -g ctx7` then `ctx7 login` (or set `CONTEXT7_API_KEY`) |
 | `gh` | `commit-code` (personal PR path), `setup-initial-repo` (personal remote create) | create/update GitHub PRs, auto-create personal private repos | `brew install gh` then `gh auth login` |
-| `glab` | `commit-code` (work MR path) | create/update GitLab MRs | `brew install glab` then `glab auth login` |
+| `glab` | `commit-code` (work MR path), `notion-daily-briefing` | create/update GitLab MRs; read-only MR/commit search for the yesterday recap | `brew install glab` then `glab auth login` |
 | `gcx` | `loki-log-search` | Grafana Loki log lookup via `gcx api` passthrough | install a `gcx` distribution, then configure context with `gcx config current-context` |
 | `acli` | `notion-daily-briefing`, `notion-daily-wrapup` | Atlassian CLI for read-only Jira ticket search/view/comment list | `brew tap atlassian/homebrew-acli && brew install acli` then `acli jira auth login --web` |
 | `ntn` | `notion-daily-briefing`, `notion-daily-wrapup`, `notion-cli` | Notion CLI for the Daily Note query/create/markdown update | `curl -fsSL https://ntn.dev \| bash` then `ntn login` |
@@ -123,9 +123,11 @@ Environment variables the skills need. They must be registered in each agent's e
 - `PERSONAL_GIT_NAME`: Git name for personal-repo commits
 - `WORK_GIT_EMAIL`: Git email for work-repo commits
 - `WORK_GIT_NAME`: Git name for work-repo commits
-- `WORK_GITLAB_HOST`: work GitLab host (used to classify repos)
+- `WORK_GITLAB_HOST`: work GitLab host (used to classify repos; `notion-daily-briefing` derives its `glab --hostname` from it)
 - `WORK_GITLAB_USERNAME`: work GitLab username (`--assignee` when creating MRs)
 - `WORK_GITLAB_DEFAULT_REVIEWERS`: default work GitLab reviewers (`--reviewer` when creating MRs)
+- `NOTION_DAILY_NOTES_DS_ID`: Notion Daily Notes data source ID (`notion-daily-briefing`, `notion-daily-wrapup`)
+- `NOTION_DAILY_NOTE_TEMPLATE_ID`: Notion Daily Note template ID (`notion-daily-briefing`, `notion-daily-wrapup`)
 
 ## Development
 
@@ -199,7 +201,7 @@ Each skill lives once under `skills/<name>/` and installs to `~/.agents/skills`.
 | `learn-from-manual-edits` | Infers general preferences from the user's manual edits on top of agent-written code and records them as conventions | CLAUDE.md/AGENTS.md convention sections |
 | `chat-summary` | Turns a conversation into a self-contained Obsidian note using the vault's existing category/tag vocabulary (YAML frontmatter + body) | Obsidian note (.md) |
 | `loki-log-search` | Queries Grafana Loki logs via `gcx api` | None (chat report) |
-| `notion-daily-briefing` | Ensures today's Notion Daily Note (from template), summarizes my not-Done Jira tickets via `acli` (read-only), and writes them into its "아침 브리핑" section | Today's Notion Daily Note |
+| `notion-daily-briefing` | Ensures today's Notion Daily Note (from template), summarizes my not-Done Jira tickets via `acli` (read-only), and writes them into its "아침 브리핑" section, plus a blue callout recapping yesterday's Jira comments and GitLab MRs/commits (`glab`, read-only) | Today's Notion Daily Note |
 | `notion-daily-wrapup` | Ensures today's Notion Daily Note, summarizes today's activity (created / commented / status-changed today) on my Jira tickets via `acli` (read-only), and writes it into its "하루 마무리" section | Today's Notion Daily Note |
 
 **External (official, not vendored in `skills/`):** installed by `apply-to.sh` from [`EXTERNAL_SKILLS`](scripts/install-shared.sh) via `npx skills add`.

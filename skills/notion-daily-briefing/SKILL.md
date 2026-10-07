@@ -1,11 +1,11 @@
 ---
 name: notion-daily-briefing
-description: Ensure today's Notion Daily Note, then summarize my not-Done Jira tickets into its "아침 브리핑" section.
+description: Ensure today's Notion Daily Note, then summarize my not-Done Jira tickets into its "아침 브리핑" section and add a recap of yesterday's Jira comments and GitLab MRs/commits right after it.
 ---
 
 # Notion Daily Briefing
 
-Ensure today's Daily Note, summarize my open Jira tickets, and fill the note's morning-briefing section. Jira is read-only; Notion is written only in today's Daily Note.
+Ensure today's Daily Note, summarize my open Jira tickets, fill the note's morning-briefing section, and add a recap of what I did yesterday. Jira and GitLab are read-only; Notion is written only in today's Daily Note.
 
 - Jira collection (acli commands, JQL, ADF → text, troubleshooting): [references/jira-acli.md](references/jira-acli.md). Read it before step 2.
 - Notion calls go through `ntn` (the `notion-cli` skill). Run `ntn api <path> --help` / `--spec` instead of guessing request shapes.
@@ -18,6 +18,8 @@ Ensure today's Daily Note, summarize my open Jira tickets, and fill the note's m
 | Template `YYYY-MM-DD (요일)` | `$NOTION_DAILY_NOTE_TEMPLATE_ID` |
 | Properties written | `Name` (title, e.g. `2026-10-06 (화)`), `Date` (date, `YYYY-MM-DD`) |
 | Section | `## 🤖 아침 브리핑 …` → `### 진행 중`, `### 백로그` (followed by `## 🌙 하루 마무리 …`) |
+| Yesterday recap | Blue callout `**어제 한 일 — …**` between `### 백로그` and `## 🌙 하루 마무리 …` |
+| GitLab | `glab --hostname ${WORK_GITLAB_HOST#git@}` |
 
 If an ID returns 404, re-resolve it: `ntn api v1/search -d '{"query":"Daily Notes","filter":{"property":"object","value":"data_source"}}'` and `ntn api v1/data_sources/<id>/templates`. Tell the user the new IDs so they can update the env vars.
 
@@ -115,6 +117,64 @@ If `OLD` is empty (the user renamed or removed the headings), do not write anywh
 
 After writing, re-read the markdown and check that both subsections contain the expected keys.
 
-## 5. Report
+## 5. Recap yesterday
 
-Reply with the page URL, whether the note was created or already existed, and the ticket count per section. Do not repeat the full summaries in chat unless asked.
+"Yesterday" is the previous local calendar day (KST). GitLab timestamps are UTC, so the window is KST midnight to midnight expressed in UTC (for 2026-10-07: `2026-10-06T15:00:00Z` ≤ t < `2026-10-07T15:00:00Z`):
+
+```bash
+YESTERDAY=$(date -v-1d +%F)
+YLABEL=$(LC_ALL=ko_KR.UTF-8 date -v-1d +'%F (%a)')   # for the callout title
+S=$(date -v-2d +%F)T15:00:00Z
+E=${YESTERDAY}T15:00:00Z
+```
+
+Tickets: `assignee = currentUser() AND updated >= startOfDay(-1) ORDER BY key ASC` (with `--paginate`). Updates made today also match; that is fine, because tickets with no activity yesterday drop out below.
+
+For each key:
+
+```bash
+H=${WORK_GITLAB_HOST#git@}   # git@host → host
+# Jira comments created yesterday. `comment list` has no timestamps; `view` does (KST, +0900).
+acli jira workitem view "$KEY" --fields comment --json \
+  | jq -r --arg d "$YESTERDAY" '.fields.comment.comments[] | select(.created | startswith($d))
+      | [.created, .author.displayName, ([.body | .. | objects | select(.type=="text") | .text] | join(" "))] | @tsv'
+
+# MRs mentioning the key, kept if created, merged, or updated in the window
+glab api --hostname $H "search?scope=merge_requests&search=$KEY&per_page=100" \
+  | jq -r --arg s "$S" --arg e "$E" '.[] | select([.created_at, .merged_at, .updated_at] | map(select(. != null and . >= $s and . < $e)) | length > 0)
+      | [.references.full, .state, .web_url, .title] | @tsv'
+
+# Commits mentioning the key (catches direct pushes, e.g. deployment config repos)
+glab api --hostname $H "search?scope=commits&search=$KEY&per_page=100" \
+  | jq -r --arg s "$S" --arg e "$E" '.[] | select(.committed_date >= $s and .committed_date < $e) | [.project_id, .short_id, .title] | @tsv'
+```
+
+- Do not add `--paginate` to the `search` calls. It walks every page and can take minutes; one page of 100 covers a day.
+- Commit search only indexes default branches. Commits pushed to an unmerged branch with no MR are not found; that is acceptable.
+- Resolve a `project_id` to a name with `glab api --hostname $H projects/<id> | jq -r .path_with_namespace`.
+- Commits that belong to an MR listed above are already covered by that MR. Do not list them again; fold any new information into the MR bullet.
+
+Write the recap in Korean, short and factual. One parent bullet per ticket that had activity yesterday, with 1–3 child bullets: merged/opened MRs (link `!<iid>` to `web_url`, plus a few words on what it does), direct-push work grouped by theme (e.g. STAGE 설정 추가), and the gist of any comment I wrote or that needs my reply. Skip merge commits and doc-sync chores. If nothing happened yesterday, write a single bullet `- 기록된 활동 없음`.
+
+```markdown
+<callout icon="🗓️" color="blue_bg">
+	**어제 한 일 — 2026-10-07 (수)**
+	- [PROJ-101](https://example.atlassian.net/browse/PROJ-101) <summary>
+		- MR 머지: service-a [!12](<web_url>) <what it does>
+		- service-a STAGE 설정 추가
+</callout>
+```
+
+Insert it just before the `## 🌙 하루 마무리` heading:
+
+```bash
+jq -n --arg new "$CALLOUT"$'\n## 🌙 하루 마무리' \
+  '{type: "update_content", update_content: {content_updates: [{old_str: "## 🌙 하루 마무리", new_str: $new}]}}' \
+  | ntn api v1/pages/$PAGE_ID/markdown -X PATCH -d @-
+```
+
+On a re-run, if the page already has a callout containing `어제 한 일`, replace that callout (`<callout` … `</callout>`, as read back from the page) instead of inserting a second one. After writing, re-read the markdown and check that the callout sits between `### 백로그` and `## 🌙 하루 마무리`.
+
+## 6. Report
+
+Reply with the page URL, whether the note was created or already existed, the ticket count per section, and the number of tickets in the yesterday recap. Do not repeat the full summaries in chat unless asked.
