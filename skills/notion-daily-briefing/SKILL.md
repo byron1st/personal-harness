@@ -1,11 +1,11 @@
 ---
 name: notion-daily-briefing
-description: Ensure today's Notion Daily Note, then summarize my not-Done Jira tickets into its "아침 브리핑" section and add a recap of yesterday's Jira comments and GitLab MRs/commits right after it.
+description: Ensure today's Notion Daily Note, then summarize my not-Done Jira tickets into its "아침 브리핑" section, add a recap of yesterday's Jira comments and GitLab MRs/commits right after it, and copy the previous note's "할 일" section into today's.
 ---
 
 # Notion Daily Briefing
 
-Ensure today's Daily Note, summarize my open Jira tickets, fill the note's morning-briefing section, and add a recap of what I did yesterday. Jira and GitLab are read-only; Notion is written only in today's Daily Note.
+Ensure today's Daily Note, summarize my open Jira tickets, fill the note's morning-briefing section, add a recap of what I did yesterday, and carry over the previous note's 할 일. Jira and GitLab are read-only; Notion is written only in today's Daily Note.
 
 - Jira collection (acli commands, JQL, ADF → text, troubleshooting): [references/jira-acli.md](references/jira-acli.md). Read it before step 2.
 - Notion calls go through `ntn` (the `notion-cli` skill). Run `ntn api <path> --help` / `--spec` instead of guessing request shapes.
@@ -19,6 +19,7 @@ Ensure today's Daily Note, summarize my open Jira tickets, fill the note's morni
 | Properties written | `Name` (title, e.g. `2026-10-06 (화)`), `Date` (date, `YYYY-MM-DD`) |
 | Section | `## 🤖 아침 브리핑 …` → `### 진행 중`, `### 백로그` (followed by `## 🌙 하루 마무리 …`) |
 | Yesterday recap | Blue callout `**어제 한 일 — …**` between `### 백로그` and `## 🌙 하루 마무리 …` |
+| 할 일 carry-over | Body of `## ✅ 할 일` (up to the next `## `), copied from the previous note (Friday's on a Monday) |
 | GitLab | `glab --hostname ${WORK_GITLAB_HOST#git@}` |
 
 If an ID returns 404, re-resolve it: `ntn api v1/search -d '{"query":"Daily Notes","filter":{"property":"object","value":"data_source"}}'` and `ntn api v1/data_sources/<id>/templates`. Tell the user the new IDs so they can update the env vars.
@@ -175,6 +176,30 @@ jq -n --arg new "$CALLOUT"$'\n## 🌙 하루 마무리' \
 
 On a re-run, if the page already has a callout containing `어제 한 일`, replace that callout (`<callout` … `</callout>`, as read back from the page) instead of inserting a second one. After writing, re-read the markdown and check that the callout sits between `### 백로그` and `## 🌙 하루 마무리`.
 
-## 6. Report
+## 6. Carry over 할 일
 
-Reply with the page URL, whether the note was created or already existed, the ticket count per section, and the number of tickets in the yesterday recap. Do not repeat the full summaries in chat unless asked.
+The previous note is yesterday's, except on a Monday, when it is last Friday's:
+
+```bash
+[ "$(date +%u)" = 1 ] && BACK=3 || BACK=1
+PREV=$(date -v-${BACK}d +%F)
+```
+
+Find its page with the same `Date` query as step 1, using `$PREV`. If there is none, skip this step and say so in the report.
+
+Take the body of `## ✅ 할 일` (everything after the heading, up to the next `## `) from both notes:
+
+```bash
+todo() { ntn api v1/pages/$1/markdown | jq -r .markdown | awk '/^## .*할 일/{f=1; next} f && /^## /{exit} f'; }
+OLD=$(todo $PAGE_ID)
+NEW=$(todo $PREV_PAGE_ID)
+```
+
+Replace today's body with the previous body as is — unchecked and checked items alike, no edits — using the same `update_content` PATCH as step 4 (`old_str: $OLD`, `new_str: $NEW`). The heading stays.
+
+- If today's body already has a checklist item with text (not just `- [ ]`), the user has started filling it in, or this is a re-run. Do not overwrite it; skip and say so in the report.
+- If either body is empty (heading renamed or removed), skip and say so in the report.
+
+## 7. Report
+
+Reply with the page URL, whether the note was created or already existed, the ticket count per section, the number of tickets in the yesterday recap, and the date the 할 일 was copied from (or why it was skipped). Do not repeat the full summaries in chat unless asked.

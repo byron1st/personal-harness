@@ -1,6 +1,6 @@
 # Reading my Jira tickets with acli (read-only)
 
-How `notion-daily-briefing` and `notion-daily-wrapup` collect their input: use Atlassian's official CLI, `acli`, to read only my tickets with their descriptions and comments. The examples use the briefing's JQL; the wrap-up skill swaps in its own.
+How `notion-daily-briefing` collects its input: use Atlassian's official CLI, `acli`, to read only my tickets with their descriptions and comments.
 
 ## Principles
 

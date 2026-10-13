@@ -160,4 +160,4 @@ Skills and hooks read these from the host agent's env configuration (Claude Code
 | `WORK_GITLAB_HOST` | Work GitLab host; drives work/personal repo classification; `notion-daily-briefing` derives its `glab --hostname` from it |
 | `WORK_GITLAB_USERNAME` | `--assignee` when creating MRs |
 | `WORK_GITLAB_DEFAULT_REVIEWERS` | `--reviewer` when creating MRs |
-| `NOTION_DAILY_NOTES_DS_ID` / `NOTION_DAILY_NOTE_TEMPLATE_ID` | Daily Notes data source and Daily Note template used by `notion-daily-briefing` / `notion-daily-wrapup` |
+| `NOTION_DAILY_NOTES_DS_ID` / `NOTION_DAILY_NOTE_TEMPLATE_ID` | Daily Notes data source and Daily Note template used by `notion-daily-briefing` |

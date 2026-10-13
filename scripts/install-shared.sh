@@ -13,7 +13,6 @@ HARNESS_SKILLS=(
   learn-from-manual-edits
   loki-log-search
   notion-daily-briefing
-  notion-daily-wrapup
   plan-dev
   review-code
   setup-initial-repo
