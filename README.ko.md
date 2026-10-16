@@ -67,6 +67,7 @@ personal-harness/
 | `rg` (ripgrep) | 전체 `enforce-rg` hook + AGENTS.md | 재귀 `grep` 대신 코드 검색 강제 | `brew install ripgrep` |
 | `fd` | 전체 `enforce-fd` hook + AGENTS.md | 파일명/경로 검색용 `find` 대체 강제 | `brew install fd` |
 | `ctx7` | AGENTS.md context7 룰 + `scripts/setup-ctx7.sh` | 라이브러리/프레임워크 공식 문서 fetch | `npm install -g ctx7` 후 `ctx7 login`(또는 `CONTEXT7_API_KEY` 설정) |
+| `codegraph` | AGENTS.md CodeGraph 룰 + `setup-initial-repo` | 코드 인텔리전스 인덱스, `setup-initial-repo`가 새 저장소에서 `codegraph init` 실행 | `npm install -g @colbymchenry/codegraph` |
 | `gh` | `commit-code`(personal PR 경로), `setup-initial-repo`(personal 원격 생성) | GitHub PR 생성/업데이트, 개인 private repo 자동 생성 | `brew install gh` 후 `gh auth login` |
 | `glab` | `commit-code`(work MR 경로), `notion-daily-briefing` | GitLab MR 생성/업데이트, 어제 요약용 MR·커밋 읽기 전용 검색 | `brew install glab` 후 `glab auth login` |
 | `gcx` | `loki-log-search` | Grafana Loki 로그 조회용 `gcx api` passthrough | `gcx` 배포본 설치 후 `gcx config current-context`로 컨텍스트 구성 |

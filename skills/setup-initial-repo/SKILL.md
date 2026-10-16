@@ -154,6 +154,14 @@ Do not skip this step silently on a Swift / macOS project. Do not copy skills ou
 
 ### Step 11: Review, confirm, and commit
 
+Index the repo with CodeGraph so agents can use it from the first session. Run it after the files above exist:
+
+```bash
+codegraph init -y
+```
+
+`.codegraph/` ignores its own data files, so `.gitignore` needs no entry. If `codegraph` is not on PATH, skip it and tell the user to install it (see README Prerequisites).
+
 Before the first commit, present a summary to the user:
 
 ```
@@ -162,6 +170,7 @@ Before the first commit, present a summary to the user:
 ✓ Remote origin: <URL>
 ✓ Created: ${AGENT_FILE}, .gitignore, <Makefile or package.json scripts>
 ✓ Copied Swift project skills: <names, or n/a>
+✓ CodeGraph index: <built, or skipped (not installed)>
 ✓ Updated: <list any other modifications>
 ```
 

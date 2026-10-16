@@ -67,6 +67,7 @@ These CLI tools must be on PATH for this harness's skills, hooks, and install sc
 | `rg` (ripgrep) | all `enforce-rg` hook + AGENTS.md | force `rg` instead of recursive `grep` | `brew install ripgrep` |
 | `fd` | all `enforce-fd` hook + AGENTS.md | force `fd` instead of `find` for file/path search | `brew install fd` |
 | `ctx7` | AGENTS.md context7 rule + `scripts/setup-ctx7.sh` | fetch official library/framework docs | `npm install -g ctx7` then `ctx7 login` (or set `CONTEXT7_API_KEY`) |
+| `codegraph` | AGENTS.md CodeGraph rule + `setup-initial-repo` | code-intelligence index; `setup-initial-repo` runs `codegraph init` on new repos | `npx @colbymchenry/codegraph` |
 | `gh` | `commit-code` (personal PR path), `setup-initial-repo` (personal remote create) | create/update GitHub PRs, auto-create personal private repos | `brew install gh` then `gh auth login` |
 | `glab` | `commit-code` (work MR path), `notion-daily-briefing` | create/update GitLab MRs; read-only MR/commit search for the yesterday recap | `brew install glab` then `glab auth login` |
 | `gcx` | `loki-log-search` | Grafana Loki log lookup via `gcx api` passthrough | install a `gcx` distribution, then configure context with `gcx config current-context` |
