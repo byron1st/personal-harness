@@ -9,13 +9,17 @@ These are the choices a model will not guess: arbitrary picks between equally go
 ## Go
 
 - Layering is one-way: `cmd/<binary>/main.go` only wires, `route` → `service` → `adapter`. Layer-neutral shared code goes in `internal/pkg/<topic>` (module-private) or `pkg/<topic>` (public contract). No catch-all `types` or `util` package.
-- Expected failures are exported `Err...` sentinels in the package that owns the failing operation, with **exactly one origin return site each** — so the sentinel alone identifies where it came from. If a condition arises in two places, define two sentinels.
-- Wrap errors from stdlib/third-party calls as `errors.Join(ErrLocal, err)`. Return errors from project code unchanged unless translating at a boundary or adding local context via `fmt.Errorf("%w: field=%s", ErrSentinel, value)`.
-- Compare errors with `errors.Is` / `errors.As` / `require.ErrorIs`, never by string.
 - `context.Context` is the first parameter of anything that does I/O, calls an adapter, or can block.
 - Tests live in the external `<package>_test` package and exercise exported behavior only.
 - `testify/require` for preconditions and expected outcomes; `assert` only where continuing after a failed comparison adds information.
 - Mocks are generated with `mockery` through the command surface's `gen` target. Never hand-edit a generated mock.
+
+### Errors
+
+- Expected failures are exported `Err...` sentinels in the package that owns the failing operation, with **exactly one origin return site each** — so the sentinel alone identifies where it came from. If a condition arises in two places, define two sentinels.
+- Sentinel messages start with the owning package name and a colon (`"tool: failed to execute cmd"`), following Effective Go, so joined error chains show which layer each line came from. Context added with `fmt.Errorf` does not repeat the prefix.
+- Wrap only stdlib/third-party errors, as `errors.Join(ErrLocal, err)`; return errors from this module's packages as-is so chains don't grow with every layer, unless the caller holds context the error lacks (`fmt.Errorf("%w: key=%s", err, key)`). At the origin return site, attach values with `fmt.Errorf("%w: field=%s", ErrSentinel, value)`.
+- Compare errors with `errors.Is` / `errors.As` / `require.ErrorIs`, never by string.
 
 ## Swift / macOS
 
