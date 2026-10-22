@@ -118,6 +118,8 @@ Include the applicable common operations and omit impossible placeholders:
 - Go-only `outdated` for direct dependency update checks
 - `build` and `run`
 
+For Go, also write the default `.golangci.yml` from [references/golangci-yml.md](references/golangci-yml.md) when the project has no golangci-lint config yet; `lint` and `format` depend on it.
+
 Decide variables to lift to the top (binary name, scheme, package manager, main package path, generated output dirs, etc.) so future edits stay in one place. Add project-specific targets only when they earn their place — never as filler.
 
 ### Step 9: Generate `${AGENT_FILE}`
@@ -168,7 +170,7 @@ Before the first commit, present a summary to the user:
 ✓ Initialized git repo (or detected existing)
 ✓ Set local user.email = <email>, user.name = <name>
 ✓ Remote origin: <URL>
-✓ Created: ${AGENT_FILE}, .gitignore, <Makefile or package.json scripts>
+✓ Created: ${AGENT_FILE}, .gitignore, <Makefile or package.json scripts>, <.golangci.yml for Go>
 ✓ Copied Swift project skills: <names, or n/a>
 ✓ CodeGraph index: <built, or skipped (not installed)>
 ✓ Updated: <list any other modifications>

@@ -7,7 +7,7 @@ Use this as the baseline Makefile shape for new Go projects. The common targets 
 - Keep project workflows behind Make targets so agents and developers run the same commands.
 - Use `mockery` for interface mocks. Generated mocks should live under `internal/pkg/mocks` by default and should not be edited by hand.
 - Use `go fmt ./...` and `go fix ./...` for formatting and modernization.
-- Use `go mod tidy` plus `golangci-lint run` for linting.
+- Use `go mod tidy` plus `golangci-lint run` for linting, configured by the default `.golangci.yml` in [golangci-yml.md](golangci-yml.md).
 - Keep `format` and `lint` as separate targets, and group them behind `check`.
 - Clean the Go test cache before normal, race, and e2e test runs.
 - Use `gremlins` for mutation testing through Make targets, not ad hoc command lines.
