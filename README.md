@@ -79,7 +79,7 @@ These CLI tools must be on PATH for this harness's skills, hooks, and install sc
 Notes:
 - `rg`/`fd` are required: as the layout section's `hooks` item already says, hooks enforce their use.
 - `gh` and `glab` are only called on personal and work repos respectively, so you can omit the tool for a repo type you never use.
-- Project templates (`skills/*/setup-initial-repo/references/{go-makefile.md,swift-makefile.md,ts-nextjs-packagejson.md}`) pull along `go`, `golangci-lint`, `mockery`, `gremlins`, `swag`, `swiftlint`, `swiftformat`, `eslint`, `vitest`, `playwright`, `stryker`, and so on when `setup-initial-repo` references them. Those are build tools of the generated project, not prerequisites of this harness.
+- Project templates (`skills/*/setup-initial-repo/references/{go-makefile.md,golangci-yml.md,swift-makefile.md,ts-nextjs-packagejson.md}`) pull along `go`, `golangci-lint`, `mockery`, `gremlins`, `swag`, `swiftlint`, `swiftformat`, `eslint`, `vitest`, `playwright`, `stryker`, and so on when `setup-initial-repo` references them. Those are build tools of the generated project, not prerequisites of this harness.
 
 ### One-time required setup (Cursor · Grok Build)
 
