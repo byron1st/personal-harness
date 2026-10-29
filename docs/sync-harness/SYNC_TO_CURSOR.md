@@ -1,40 +1,20 @@
 # Migrating Claude Code to Cursor
 
-이 문서는 **Claude Code → Cursor** 마이그레이션 점검표다. 특정 스킬에 묶이지 않도록 작성하며, 새 스킬·서브에이전트·훅이 추가될 때도 같은 기준으로 검사한다.
+이 문서는 **Claude Code → Cursor** 마이그레이션 점검표다. 특정 스킬에 묶이지 않도록 작성하며, 새 스킬·훅이 추가될 때도 같은 기준으로 검사한다.
 
-마이그레이션 토폴로지는 **Claude → Cursor 단방향**(에이전트·훅)이다. Cursor 변형의 소스는 항상 Claude 에이전트·훅(`agents/claude/`, `hooks/claude/`)이고, 대상은 `agents/cursor/`, `hooks/cursor/`이다. 제품 스킬은 공유 트리 `skills/<name>/`이며 변환하지 않는다. Cursor에서 시작한 에이전트·훅 변경은 먼저 Claude 변형에 반영한 뒤 여기로 다시 내려보낸다.
+마이그레이션 토폴로지는 **Claude → Cursor 단방향**(훅)이다. Cursor 변형의 소스는 항상 Claude 훅(`hooks/claude/`)이고, 대상은 `hooks/cursor/`이다. 제품 스킬은 공유 트리 `skills/<name>/`이며 변환하지 않는다. Cursor에서 시작한 훅 변경은 먼저 Claude 변형에 반영한 뒤 여기로 다시 내려보낸다.
 
-옮기는 대상은 서브에이전트와 훅이다. 스킬 불변식은 아래 Shared skills 절.
+옮기는 대상은 훅이다. 스킬 불변식은 아래 Shared skills 절.
 
 ## Install prerequisite (설치 전제)
 
 **Cursor의 `~/.claude/`·`~/.codex/` 호환 경로를 설정에서 꺼야 한다.** Cursor는 네이티브로 `~/.agents/skills`를 읽고, 호환이 켜지면 Claude 스킬 단위 심링크까지 더 읽는다. 같은 이름이 두 번 로드된다.
 
-`~/.cursor/`가 우선하므로 정상 상태에서는 문제가 없지만, **호환 경로 끄기는 UI 설정이라 설치 스크립트가 보장할 수 없다.** 새 머신·재설치·설정 초기화 때 되살아나고, 되살아나도 에러가 나지 않는다. Claude 판이 채택되면:
-
-- `tools:`는 Cursor 필드가 아니므로 무시된다 → **리뷰어 4종이 쓰기 권한을 얻는다.**
-- `effort:`도 무시된다.
-- `model: sonnet`을 Cursor가 어떻게 해석하는지 불명이다.
-
-셋 다 조용히 일어난다. 감지 장치는 `hooks/cursor/hooks/model-pin-guard.sh` 하나뿐이며, T1 에이전트의 해석된 모델이 `grok-4.7` 계열이 아니게 되는 것으로 첫 라운드에 잡는다.
-
-## Platform invariants (do not translate)
-
-플랫폼 간 파싱·매칭 호환성을 위해 아래 항목은 마이그레이션 시 이름·값을 그대로 보존한다. 도구명·실행모델 변환 규칙이 이 목록보다 우선하지 않는다. **[SYNC_TO_CODEX.md](SYNC_TO_CODEX.md)의 Platform invariants 목록과 동일하며, 한쪽만 고치지 않는다.**
-
-- **공통 반환 섹션명**: `## Stage Status`, `## Evidence`, `## Findings`, `## Decision Needed` — Worker/단계 반환 맨 앞의 공통 블록. 그 아래의 스킬별 헤딩(`## TODO Fulfillment`, `## Suspected` 계열 등 현행 이름)도 개명하지 않는다.
-- **플랜 섹션명**: `## Acceptance Contract`, `## Authority Boundaries`, `## TODOs`, `## Non-goals`, `## Key decisions`.
-- **리뷰 섹션명**: `## Accepted Review Exceptions`, `## Applied Exceptions`.
-- **상태 어휘**: `pass | blocked | failed | needs-confirmation | needs-decision | changes-required | needs-design-decision` (+ test-dev 전용 `pass-with-suspected-defects`). 번역·동의어 치환 금지. `needs-design-decision`은 공통 어휘다.
-- **ID 규칙**: `AC-N`, `AR-NNN`, `TEST-NNN`(test Worker가 부여), `REVIEW-NNN`(aggregate 시 메인 세션이 부여 — reviewer 부여 금지).
-- **스킬·에이전트 이름**: `plan-dev`, `implement-dev`, `fix-dev`, `test-dev`, `review-code`, `commit-code` (optional PR/MR; `request-merge` is a routing alias), `dev-loop` (modes `light`/`full`/`noreview`); persona `planner`, `plan-consultant`, `implementer`, `tester`, `fixer`, `security-reviewer`, `reliability-reviewer`, `maintainability-reviewer`, `senior-generalist-reviewer`.
-- **파일명 규칙**: `{timestamp}_{Jira}_PLAN|IMPL|LOOP_{title}.md`와 `-STEP-N` 접미 규칙.
-- **AR 불변식**: AR 엔트리는 사용자의 명시적 Accept 응답이 있을 때만 기록한다. 어떤 플랫폼 변형에서도 이 규칙을 완화하거나 자동화하는 번역을 하지 않는다.
-- **루프 상태 기계**: `dev-loop` 세 모드(`light`/`full`/`noreview`)의 전이표·종료 술어·휴먼 게이트(TESTING Fix/Accept, READY_TO_COMMIT)는 플랫폼 무관이다. 그대로 옮긴다.
+**호환 경로 끄기는 UI 설정이라 설치 스크립트가 보장할 수 없다.** 새 머신·재설치·설정 초기화 때 되살아나고, 되살아나도 에러가 나지 않는다.
 
 ## Shared skills
 
-제품 스킬은 `skills/<name>/` 한 트리만 쓴다. `skills/{claude,codex,cursor,grok}/`를 만들지 않는다. 스킬은 플랫폼 변환 대상이 아니다. 에이전트·훅만 이 문서의 나머지 절을 따른다.
+제품 스킬은 `skills/<name>/` 한 트리만 쓴다. `skills/{claude,codex,cursor,grok}/`를 만들지 않는다. 스킬은 플랫폼 변환 대상이 아니다. 훅만 이 문서의 나머지 절을 따른다.
 
 불변식 (스킬 본문·references):
 
@@ -42,58 +22,9 @@
 - description은 한두 문장, 대략 300자, 첫 문장에 trigger. Dispatcher/Worker 절차를 description에 넣지 않는다.
 - 호스트 툴 이름 금지: `Agent`, `Task`, `spawn_subagent`, `AskUserQuestion`, `AskQuestion`, `ask_user_question`, `ExitPlanMode`, `fork_turns`, `subagent_type`.
 - 질문은 "사용자에게 물어라". 객관식이면 선택지와 미응답=미분류만 적는다.
-- 런타임 스크립트는 `$HOME/.agents/scripts/detect-commands.sh` 와 `$HOME/.agents/scripts/resolve-scope.sh`만.
-- `agents/<platform>/` 경로를 스킬에 넣지 않는다. Reporting contract는 persona 본문의 `## Reporting contract`로 지칭한다.
-- 스테이지 스킬은 persona를 띄우지 않는다. `dev-loop`가 단계 persona를 띄운다. standalone implement/test/fix는 현재 세션 in-place.
-- `(design-bearing)` TODO는 `## Stage Status: needs-design-decision`을 반환한다. 실행자가 `plan-consultant`를 띄우지 않는다. `needs-design-decision`은 공통 상태 어휘이며 `blocked`와 섞지 않는다.
-- `failed` 재시도는 루프가 같은 persona를 한 번 더 띄운다. 스킬에 호스트 모델명을 적지 않는다.
 
 설치: `~/.agents/skills`가 유일 설치본. Claude만 스킬 단위 심링크 `~/.claude/skills/<name> → ~/.agents/skills/<name>`. Cursor/Codex/Grok 플랫폼 스킬 디렉터리에서 harness 이름은 제거한다.
 Cursor/Grok Claude-compat 스킬 스캔은 끈 채로 `~/.agents/skills`를 쓴다.
-
-## Sub-agent migration
-
-`agents/claude/*.md`를 `agents/cursor/*.md`로 옮길 때의 규칙이다. **본문은 플랫폼 무관한 산문이므로 그대로 간다.** 리뷰어 4종의 `## Reporting contract`, `implementer`의 3-bucket + 4번째 밴드, `tester`의 test-code-only 규칙 전부 해당한다.
-
-### Fold model + effort into a single model string
-
-Cursor 서브에이전트 프론트매터는 `name` · `description` · `model` · `readonly` · `is_background` **다섯 개가 전부**다. `tools:`도 `effort:`도 없다.
-
-```yaml
----
-name: security-reviewer
-description: "…(Claude 판 그대로)"
-model: grok-4.7[effort=high]
-readonly: true
----
-```
-
-`model` 문자열의 파라미터 문법: `grok-4.7[effort=high]` · `grok-4.7[effort=medium]` · `composer-2.5[fast=false]` · `claude-opus-5[effort=high,context=300k]`.
-
-**Composer와 `grok-4.5`는 현행 배치에서 쓰지 않는다.** Cursor T2는 Grok Build와 같다 — 전 역할 `grok-4.7`, T2는 `[effort=medium]`. `[fast=false]`는 Composer를 다시 쓸 때만 붙인다. 빠뜨리면 조용히 Fast로 돌아간다 — 지능은 같은데 약 6배 비싸고, **T1인 Grok보다도 비싸서 티어가 역전되며**, first-party 풀을 3.6배 빨리 태운다.
-
-**`[context=300k]`는 쓰지 않는다.** Grok은 200K 프롬프트 토큰을 넘기면 요청 **전체**가 2배 요금이 되므로, 컨텍스트를 키우는 파라미터는 정확히 반대 방향이다.
-
-**effort 값을 Claude에서 그대로 옮기지 않는다.** Grok 4.7은 `low/medium/high/xhigh`이고 기본값이 `high`다. T1 리뷰어는 `high`(예약된 `xhigh` 바로 아래). T2는 `medium`.
-
-현행 배치는 `agents/AGENTS.md`가 source of truth다 (티어 정의 자체는 루트 `AGENTS.md`의 `## Model Tier`). 표를 고치면 `hooks/cursor/hooks/model-pin-guard.sh`의 `case` 문도 함께 고친다 — **두 곳이 갈라지면 가드가 정상 dispatch를 거부한다.**
-
-### Convert `tools:` to `readonly:` and record the loss
-
-Claude의 `tools: Read, Grep, Glob, Bash`는 Cursor에서 `readonly: true` 하나로 축약된다. Cursor 서브에이전트는 **MCP 툴을 포함해 부모의 모든 툴을 상속**하고, 제한 수단은 이 불리언뿐이다.
-
-- **읽기 전용 6개 에이전트(리뷰어 4종 · `planner` · `plan-consultant`)에 `readonly: true`를 빠짐없이 넣는다.** 아무것도 안 쓰면 모든 에이전트가 모든 툴을 갖는다 — Claude와 반대 방향의 위험이다.
-- **정보 손실을 본문에 주석으로 남긴다**: read-only가 `readonly` 불리언으로만 강제되며 툴 화이트리스트는 존재하지 않는다는 한 줄.
-- `readonly`는 **파일시스템 write/edit만 막고 읽기 셸은 통과시킨다.** `git diff`·`rg`는 정상이므로 리뷰어의 조사 능력은 손상되지 않는다.
-- 반대로 **명시적 허용은 불필요해진다.** Claude에서 `implementer.md`의 `tools:`에 `Agent`를 추가해야 했던 문제가 Cursor에는 없다.
-
-### Leave `is_background` at its default
-
-전부 `false`(기본값)로 둔다. Dispatcher/Worker 패턴은 Worker의 반환을 기다려야 성립한다. 명시적 선언은 불필요하지만, `implementer`·`tester`처럼 오래 도는 에이전트에는 **나중에 누군가 `true`를 붙이지 않도록 본문에 이유를 한 줄 남긴다.**
-
-### Keep the reporting contract in the agent body
-
-리뷰어 4종의 `## Reporting contract`는 dispatch 프롬프트가 아니라 에이전트 본문에 있다. **Cursor에서 이득이 더 크다** — 서브에이전트가 부모 툴을 전부 상속해 dispatch 프롬프트가 길어지기 쉽기 때문이다. 되돌리지 않는다.
 
 ## Hook migration
 
@@ -115,7 +46,7 @@ Claude의 `tools: Read, Grep, Glob, Bash`는 Cursor에서 `readonly: true` 하�
 
 > **`hooks/codex/hooks.json`을 본뜨지 말 것.** 그 파일은 Claude의 중첩 스키마를 경로만 바꿔 복사한 형태다. Codex 판의 정확성은 이 문서의 범위가 아니지만, 참고 대상으로 삼으면 안 된다.
 
-이벤트 이름은 lowerCamelCase다: `sessionStart` · `preToolUse` · `afterFileEdit` · `subagentStart`. Claude의 `SessionStart` · `PreToolUse` · `PostToolUse`와 대소문자부터 다르다.
+이벤트 이름은 lowerCamelCase다: `sessionStart` · `preToolUse` · `afterFileEdit`. Claude의 `SessionStart` · `PreToolUse` · `PostToolUse`와 대소문자부터 다르다.
 
 ### Port the three blocking hooks with a tool_name guard
 
@@ -142,20 +73,9 @@ Claude의 `tools: Read, Grep, Glob, Bash`는 Cursor에서 `readonly: true` 하�
 
 프로젝트별 `.cursor/rules/*.mdc` 생성은 **하지 않는다** — 전역이 아니고 남의 저장소를 오염시킨다.
 
-### Keep model-pin-guard.sh in sync with the tier table
-
-`model-pin-guard.sh`는 **Claude 변형에 대응물이 없는 Cursor 전용 훅**이다. Cursor의 모델 핀은 보장이 아니라서(관리자 제한·플랜 제약·알 수 없는 모델 ID 셋 중 하나면 조용히 폴백) `subagentStart`가 해석된 모델을 볼 수 있는 유일한 지점이다.
-
-- **T1은 거부, T2는 로그 후 허용.** `subagentStart`의 출력은 `allow`/`deny` 둘뿐이라 "경고"가 없다. 전부 거부하면 폴백 한 번에 루프가 멈춘다.
-- **비교는 base 모델 ID로 한다.** `subagent_model`은 해석된 모델(`grok-4.7`)을 주고 `[effort=…]` 파라미터는 돌아오지 않는다. 전체 문자열을 비교하면 매 dispatch마다 발화한다.
-- **모르는 `subagent_type`은 항상 허용한다.** Cursor 빌트인(`generalPurpose`·`explore`·`shell`)과 하네스 소유가 아닌 에이전트를 막지 않기 위해서다.
-- 에이전트 배치를 바꾸면 이 스크립트의 `case` 문과 `agents/AGENTS.md`의 배치표를 **함께** 고친다.
-
-**이 훅은 단계 전이를 결정하지 않는다.** *"Hooks are guardrails; they take no part in `dev-loop` stage transitions or completion decisions"* 불변식과 충돌하지 않으며, 잘못된 모델로의 실행을 거부할 뿐이다.
-
 ### Hooks remain guardrails
 
-Codex 판과 같은 원칙이다. 루프 불변식(커밋·푸시·PR 금지, AR은 명시적 Accept 시에만, 테스트 약화 금지, 예산 초과 금지)은 **SKILL 본문 규칙으로만 보장한다.** 훅으로 강제한다고 가정하지 않는다.
+Codex 판과 같은 원칙이다. 테스트 약화 금지 같은 작업 규칙은 **전역 지침으로만 보장한다.** 훅으로 강제한다고 가정하지 않는다.
 
 ## Out of scope
 
@@ -165,5 +85,3 @@ Codex 판과 같은 원칙이다. 루프 불변식(커밋·푸시·PR 금지, AR
 | `disable-model-invocation` 도입 | 이번 범위 밖. Claude 판과 차이를 만드는 결정이라 별도로 다룬다 |
 | `paths` 프론트매터로 스킬 스코핑 | 하지 않는다. Claude 판에 대응물이 없어 두 변형이 갈라진다 |
 | Cursor CLI(`cursor-agent`) 대응 | 범위 밖. 이 문서는 IDE Agent 채팅을 전제한다 |
-| `context=300k` 파라미터 | 하지 않는다. 200K 임계를 넘기면 요청 전체가 2배다 |
-| `is_background: true` | 하지 않는다. Dispatcher/Worker가 반환을 기다려야 한다 |

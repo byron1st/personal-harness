@@ -11,9 +11,6 @@
     ],
     "afterFileEdit": [
       { "command": "$HOME/.cursor/hooks/auto-format.sh" }
-    ],
-    "subagentStart": [
-      { "command": "$HOME/.cursor/hooks/model-pin-guard.sh" }
     ]
   }
 }

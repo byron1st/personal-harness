@@ -31,6 +31,12 @@ When your changes create orphans:
 
 The test: Every changed line should trace directly to the user's request.
 
+### Finishing Work
+
+- Report completion with evidence: for each agreed completion criterion, point to the command output or check that shows it holds, and say plainly what is not verified.
+- Never weaken, skip, or delete an existing test to make a run pass.
+- Make routine implementation decisions yourself; stop and ask when a decision would change the agreed goal, scope, or something marked do-not-touch.
+
 ## Common Development Rules
 
 - Always use Context7 for code generation, setup/configuration steps, or library/API documentation.

@@ -1,84 +1,48 @@
 # personal-harness
 
-A harness of Agent Skills, global instructions, and install scripts for personal use. It supports four platforms — Claude Code, Codex, Cursor, and Grok Build. Product skills are shared (`skills/<name>/` → `~/.agents/skills`). Agents and hooks still migrate using the topology below.
+A harness of Agent Skills, global instructions, hooks, and install scripts for personal use. It supports four platforms — Claude Code, Codex, Cursor, and Grok Build. Skills are shared (`skills/<name>/` → `~/.agents/skills`). Hooks migrate using the topology below.
 
-- Claude ↔ Codex (bidirectional; agents and hooks)
+- Claude ↔ Codex (bidirectional)
 - Claude → Cursor (one-way; a change that starts in Cursor lands in the Claude variant first)
 - Claude → Grok Build (one-way; pure Grok paths only — do not rely on Grok's Claude/Cursor compat scanners)
 
-Per-stage conversion rules are defined in `docs/sync-harness/` (`SYNC_TO_CODEX.md`, `SYNC_TO_CLAUDE.md`, `SYNC_TO_CURSOR.md`, and `SYNC_TO_GROK.md`). There is no sync skill — read the relevant checklist and apply it directly.
+Per-platform conversion rules are defined in `docs/sync-harness/` (`SYNC_TO_CODEX.md`, `SYNC_TO_CLAUDE.md`, `SYNC_TO_CURSOR.md`, and `SYNC_TO_GROK.md`). There is no sync skill — read the relevant checklist and apply it directly.
+
+## Design
+
+The harness supplies what a current model cannot work out for itself: environment and tool knowledge (Jira, Notion, GitLab, Loki, Context7, git identity), deterministic guardrails (hooks), and a few habits that make "done" checkable. It does not prescribe a development workflow — planning, implementing, and verifying are left to the model.
+
+Before adding a skill or instruction, run the task once without it and confirm the model actually gets it wrong. Process instructions a stronger model no longer needs are removed, not kept as insurance. The previous loop-based harness (a plan → implement → test → review state machine with persona sub-agents) is preserved at the `pre-lean-harness` tag.
 
 ## Development
 
-The default flow can run in two modes. Both share the same skill set and artifact formats, so you can switch between them mid-flow.
-
-### Loop Engineering
-
 ```
-plan-dev → dev-loop( implement-dev → test-dev → [review-code] → (fix-dev → test-dev → [review-code])* ) → commit-code
+plan-dev → implement in the same session → /goal <done-when condition> → test-dev (fresh context) → review → commit-code
 ```
 
-A loop drives one approved single-step plan (its `Acceptance Contract` / `Authority Boundaries` are required at preflight) through the cycle until every termination predicate holds, then stops at READY_TO_COMMIT. State is checkpointed append-only to a LOOP file under `docs/agents/dev` (one shared format across all platform variants); triage (Fix/Accept), AR approval, and commits stay human-owned.
+Every step is optional and scales with the work; a one-sentence change needs none of them.
 
-**One skill, three modes.** Pass `light` (default), `full`, or `noreview`. Mode is frozen in the LOOP file at preflight; the loop does not switch mid-run.
-
-| Mode | Review | Mutation | Use for |
-| --- | --- | --- | --- |
-| `light` (default) | `maintainability` + `senior-generalist` | no | Everyday work that wants a review without four axes |
-| `full` | all four axes | yes | Genuinely serious or large work, or anything touching security-/reliability-sensitive paths |
-| `noreview` | none | no | Cheapest path; no reviewer reads the change |
-
-`light` deliberately omits the two axes whose misses are unrecoverable. A change touching authn/authz, secrets, concurrency, or partial-failure paths belongs in `full`.
-
-**No mode is gate-free.** All three keep the same two human gates: the TESTING suspected-defect gate (**Fix / Accept**, with an Accept recorded as an AR entry) and READY_TO_COMMIT. Dropping review drops the reviewers, not the human's judgement.
-
-**`noreview` has no reviewer reading the change**, so the IMPL report is the only record of what the implementer did. Read its `## TODO Fulfillment` and AC evidence yourself at READY_TO_COMMIT — instruction drift is exactly what the four-axis review used to catch.
-
-### Manual Development
-
-```
-plan-dev → implement-dev → (fix-dev loop on issues) → test-dev → review-code → (fix-dev loop on issues) → commit-code
-```
-
-Each skill can be used standalone; typically the output of the previous skill (plan / implementation report / review findings) becomes the input for the next.
+- **`plan-dev`** settles what "done" means (observable state + evidence), what is out of scope, and what must not change, then hands the "done when" items back as one completion condition.
+- **`/goal`** (Claude Code) keeps the session working until a small evaluator judges the condition met. The evaluator only reads the conversation, so the condition must ask for command output (`make test exits 0`), not a claim, and should carry a turn cap. Use it for long or unattended work.
+- **`test-dev`** fills test gaps from the diff in a context that did not write the code, and reports suspected defects instead of fixing production code.
+- **Review** uses the host's built-in review (Claude Code: `/code-review`, plus `/security-review` for changes touching authn/authz, secrets, concurrency, or partial-failure paths).
+- Commits stay human-owned (`commit-code`).
 
 ## Harness
 
 ### Skills
 
-Each skill under `skills/<name>/` is shared across hosts. See each skill's `SKILL.md` for the full contract. Install lives in `~/.agents/skills`; Claude uses per-skill symlinks from `~/.claude/skills`. Third-party skills are not vendored: `EXTERNAL_SKILLS` in `scripts/install-shared.sh` lists them and `apply-to.sh` installs them into `~/.agents/skills` via `npx skills add` — currently the official Notion `notion-cli` (`makenotion/skills`).
+Each skill under `skills/<name>/` is shared across hosts. See each skill's `SKILL.md` for the full contract. Install lives in `~/.agents/skills`; Claude uses per-skill symlinks from `~/.claude/skills`. Third-party skills are not vendored: `EXTERNAL_SKILLS` in `scripts/install-shared.sh` lists them and `apply-to.sh` installs them into `~/.agents/skills` via `npx skills add` — currently the official Notion `notion-cli` (`makenotion/skills`). `RETIRED_SKILLS`, `RETIRED_AGENTS`, and `RETIRED_SCRIPTS` in the same file list what the harness used to install, so the installer deletes old copies.
 
-**Core Development Process:**
+**Development:**
 
-| Skill | Description | Execution | Artifacts |
-| --- | --- | --- | --- |
-| `plan-dev` | Drafts an implementation plan via Plan-mode interview; locks `Acceptance Contract` / `Authority Boundaries`; splits into multi-step when needed | Main session (conditionally delegates to `planner`) | PLAN·RESEARCH under `docs/agents/` |
-| `implement-dev` | Executes the approved plan and collects per-AC evidence; returns `blocked` on direction conflicts; returns `needs-design-decision` on `(design-bearing)` TODOs | Loop starts `implementer`; standalone runs in-place | Code + IMPL report |
-| `fix-dev` | Fixes one reviewed defect at a time (root cause → fix → verify); never commits | Loop starts `fixer`; standalone runs in-place | `## Fix` entries appended to the IMPL report |
-| `test-dev` | Fills unit/e2e gaps and removes LIVED mutants over a git scope (default: diff vs `main`); never modifies production code; the caller may put mutation out of scope | Loop starts `tester`; standalone runs in-place | Test code (no file artifact) |
-| `review-code` | Caller starts reviewer personas in parallel (4 by default, or a caller-named subset) and aggregates findings; reviewers report everything with a `Confidence` tag and **this skill filters**; HIGH/CRITICAL go through user Fix/Accept triage, accepted items recorded as AR and waived in later reviews | Loop or standalone is the caller | Findings, `Accepted Review Exceptions` |
-| `dev-loop` | Thin controller repeating implement→test→[review]→fix until termination predicates hold; stops at READY_TO_COMMIT. Modes: `light` (default, 2 axes, no mutation), `full` (4 axes + mutation), `noreview` (no review, no mutation). Starts each stage's persona. Triage, AR approval, and commits stay human-owned | Main session | LOOP file (append-only) |
-| `commit-code` | Creates a commit; runs a read-only documentation-drift check afterward. Opens a PR (`gh`, personal) or MR (`glab`, work) only when the prompt asks (`request-merge` is a routing alias). Dirty tree + PR request: commit first | Main session | Commit · (optional) PR/MR |
+| Skill | Description | Artifacts |
+| --- | --- | --- |
+| `plan-dev` | Investigates the repo and settles done-when / out-of-scope / do-not-touch with the user; offers the done-when items as a goal condition | Plan in the conversation; a file under `docs/agents/dev` only for multi-session or hand-off work |
+| `test-dev` | Fresh-context test hardening over a git scope (default: diff vs `main`); test code only; suspected defects are reported, never fixed | Test code (no file artifact) |
+| `commit-code` | Creates a commit; runs a read-only documentation-drift check afterward. Opens a PR (`gh`, personal) or MR (`glab`, work) only when the prompt asks (`request-merge` is a routing alias). Dirty tree + PR request: commit first | Commit · (optional) PR/MR |
 
-### Custom Agents
-
-Persona sub-agent definitions under `agents/<platform>/`. Formats differ by platform (Claude / Cursor / Grok: `.md`, Codex: `.toml`). `dev-loop` starts them; standalone stage skills run in-place. Direct user invocation is not the norm.
-
-Every agent pins its own `model` and `effort` — see [Model Tier](#model-tier). `inherit` appears nowhere in this harness by design.
-
-| Agent | Persona · Scope | Dispatched by | Access |
-| --- | --- | --- | --- |
-| `planner` | Software architect — direction, boundaries, interfaces, risks; returns user-facing question lists; reviews plan drafts | `plan-dev` (conditional) | Read-only |
-| `plan-consultant` | Escalation hatch — decides a fork where two approaches both fit the plan but the wrong one is expensive to reverse; returns a short decision, never code | `dev-loop` on `needs-design-decision` | Read-only |
-| `implementer` | Minimal-code implementation Worker; does not relitigate scope | `dev-loop` (IMPLEMENTING) | Write |
-| `tester` | Test-hardening Worker — unit/e2e gaps, LIVED mutants; test code only, records suspected defects as `TEST-NNN` findings | `dev-loop` (TESTING) | Write |
-| `fixer` | Single-defect executor — smallest correct fix + regression coverage; `needs-confirmation` when the fix needs its own plan | `dev-loop` (FIXING) | Write |
-| `security-reviewer` | Security axis — authn/authz, secrets, injection, crypto misuse, TOCTOU | `review-code` (parallel) | Read-only |
-| `reliability-reviewer` | Reliability axis — error handling, lifecycle, concurrency, timeouts, partial failure | `review-code` (parallel) | Read-only |
-| `maintainability-reviewer` | Maintainability axis — style consistency, abstractions, naming, module boundaries, dead code | `review-code` (parallel) | Read-only |
-| `senior-generalist-reviewer` | Remaining ISO 25010 axes — performance, compatibility, interaction capability / UX, functional suitability, operational safety, flexibility | `review-code` (parallel) | Read-only |
-
-The four reviewers share an identical `## Reporting contract` section in their bodies (bug bar, priority + confidence scales, per-finding block, specificity rules). It lives there rather than in `review-code`'s dispatch prompt so it is cached once per reviewer instead of re-sent four times per round — do not move it back.
+The remaining skills (`spec-creator`, `setup-initial-repo`, `learn-from-manual-edits`, `chat-summary`, `notion-daily-briefing`, `loki-log-search`) carry project-bootstrap, note-taking, and work-tool knowledge.
 
 ### Hooks
 
@@ -91,63 +55,8 @@ Hook definitions and scripts under `hooks/<platform>/`. Common shell hooks (`hoo
 | `enforce-rg.sh` | Before Bash | Enforces `rg` over recursive `grep` |
 | `enforce-fd.sh` | Before Bash | Enforces `fd` over `find` |
 | `auto-format.sh` | After file edits | Runs the project Makefile's `fmt`/`format` target |
-| `model-pin-guard.sh` | Before a subagent spawns | **Cursor only.** Rejects a T1 agent whose resolved model is not the one its frontmatter pins; logs the same for T2 |
 
-Platform-specific config files: Claude Code uses the `hooks` block in `settings.json`; Codex, Cursor, and Grok use `hooks.json` (schemas differ — Cursor's is flat, see `SYNC_TO_CURSOR.md`; Grok installs as `~/.grok/hooks/harness.json` and merges all `~/.grok/hooks/*.json`). Hooks are guardrails; they take no part in `dev-loop` stage transitions or completion decisions. `model-pin-guard.sh` is the first hook here that can block, and it stays inside that invariant: it refuses a spawn on the wrong model, it does not decide a stage transition. `jq`·`git`·`make`·`rg`·`fd` are required (see README.md Prerequisites for details).
-
-### Runtime Scripts
-
-`scripts/runtime/*.sh` is installed to `~/.agents/scripts/` by every `apply-to-*.sh` (distinct from the repo's top-level `scripts/`, which is installer-only and never copied). The source is platform-neutral — it reads `Makefile`, `package.json`, and git, nothing else. Skills call these instead of re-deriving the same facts with an LLM on every cold executor:
-
-| Script | Consumers | Returns |
-| --- | --- | --- |
-| `detect-commands.sh` | `implement-dev` · `test-dev` · `fix-dev` | lint/format/test/build/mutation/e2e commands from `Makefile` targets and `package.json` scripts, as JSON. `null` for anything only named in prose — the caller reads that itself |
-| `resolve-scope.sh` | `test-dev` · `review-code` | diff range, changed-file absolute paths, and languages involved, as JSON |
-
-Consumers call them by literal `$HOME/.agents/scripts/…`. `${CLAUDE_SKILL_DIR}` is unavailable here because the scripts live outside any skill folder; `$HOME` stays literal and the shell expands it at run time. Claude's installer appends the two Bash allows to `~/.claude/settings.json` `permissions.allow` without replacing the array. `hooks/claude/settings.json` has no `permissions` key.
-
-## Model Tier
-
-Every agent's model and effort is pinned in its own frontmatter. `inherit` is not used anywhere: it is not a tier, it is whatever the session happened to hold, and it would silently demote `security-reviewer` and `reliability-reviewer` to T2 the moment a loop runs in a Sonnet session.
-
-The tier of a role is a property of the work, not of the model generation. Each agent body carries a one-line `Tier:` rationale so the reasoning survives when the model names change.
-
-| Tier | Definition | Claude | Codex | Cursor | Grok Build |
-| --- | --- | --- | --- | --- | --- |
-| **T1 judgment** | Irreversible decisions that cannot be machine-verified | `opus` | `gpt-6.1-sol` | `grok-4.7` | `grok-4.7` |
-| **T2 execution** | Specified work whose result is machine-checkable | `sonnet`, except the two write-heavy roles (`opus` / `medium`) | `gpt-6.1-sol` (effort distinguishes T1 vs T2) | `grok-4.7` (effort distinguishes T1 vs T2) | `grok-4.7` (effort distinguishes T1 vs T2) |
-| **T3 mechanical** | Transformation and aggregation with no real judgement | *(unused — see below)* | *(unused)* | *(unused)* | *(unused)* |
-
-**T3 is empty on purpose.** Haiku's 200K context, 4096-token minimum cache prefix, and lack of model-level effort make it a poor fit for this harness, whose T2 work is mostly repo-slice reasoning — the thing the smallest tier is worst at. `gpt-6-luna`'s long-context cliff (MRCR 41.3%) puts it out for the same reason — no Codex agent role uses it, and the `dev-loop` controller session does not either (it holds the LOOP, the plan, and stage returns; Luna dropped the loop early and misread subagent results). **Cursor and Grok Build use `grok-4.7` only.** `grok-4.5` is unused — it has no meaningful price advantage over 4.7. Composer 2.5 is unused. Tiers are effort, not model. Genuinely mechanical work goes to the shell (Runtime Scripts above), not to a smaller model.
-
-### Agent placement
-
-Which `model` / `effort` each role gets on each platform, and why, lives in [`agents/AGENTS.md`](agents/AGENTS.md) — it loads automatically when working with files under `agents/`, so it is not resident in every session. Read it before adding an agent, changing a pin, or syncing agent definitions to another platform.
-
-**The Cursor table rows and `hooks/cursor/hooks/model-pin-guard.sh` are one fact in two files.** Change a Cursor row and change the guard's `case` statement with it, or the guard starts rejecting healthy dispatches. That coupling is repeated here because editing the guard does not load `agents/AGENTS.md`.
-
-### Session operating rules
-
-A skill's `model:` frontmatter applies **only to the current turn** and reverts to the session model at the next prompt. `plan-dev` is a multi-turn interview and every loop breaks turns at its human gates, so neither can be pinned that way. The invocation boundary is therefore the **session** boundary:
-
-| Session | Claude | Codex | Cursor | Grok Build | Why |
-| --- | --- | --- | --- | --- | --- |
-| `plan-dev` | **Opus** | **Sol / xhigh** | **Grok 4.7** (effort xhigh) | **Grok 4.7 / xhigh** | Direction, boundaries, and ACs are irreversible |
-| **every `dev-loop` run** | **Sonnet** | **Sol / low** | **Grok 4.7 / medium** | **Grok 4.7 / medium** | Controller holds LOOP + stage returns; T1 agents stay pinned |
-
-This applies to `full` too, four axes and all — every reviewer's model is pinned on the agent file, so the session model no longer decides any agent's tier.
-
-**This part is a habit, not a file.** It takes effect when you start the session, and nothing in the repo enforces it.
-
-### Operating switch — leave it unset
-
-`CLAUDE_CODE_SUBAGENT_MODEL` overrides **both** frontmatter and per-invocation arguments, so setting it neutralises every tier pin in this table at once. There is deliberately no `env` block for it in `hooks/claude/settings.json`; unset is the correct state. Use it only as a deliberate, temporary A/B lever, and unset it afterwards. (Since v2.1.196 the value `inherit` is treated as unset, so resolution falls through normally.)
-
-**Codex's `[agents] default_subagent_model` / `default_subagent_reasoning_effort` are fallbacks only** — they apply when neither the spawn call nor the role file sets a value, so they do not destroy role pins. Safer than Claude's env override.
-
-**Cursor has no such switch — and that is worse, not better.** What takes its place is an *unintended* override: an admin model restriction, a plan limitation, or a model ID Cursor does not recognise all make it fall back to a "compatible model" without erroring. Nobody turns that on, so nobody remembers to turn it off. `hooks/cursor/hooks/model-pin-guard.sh` exists for exactly this: it reads the resolved model at `subagentStart`, refuses the spawn for T1 agents, and logs it for T2. The same guard is what catches a wrong model ID in `agents/cursor/*.md` and Cursor quietly reading `~/.claude/agents/` again.
-
-**Grok Build has no env-wide subagent model override like Claude's.** Agent frontmatter `model` + `effort` is the pin; `[subagents.models]` is optional and this harness does not use it as a second source of truth. `SubagentStart` is non-blocking, so there is no Cursor-style pin guard in the default hook set.
+Platform-specific config files: Claude Code uses the `hooks` block in `settings.json`; Codex, Cursor, and Grok use `hooks.json` (schemas differ — Cursor's is flat, see `SYNC_TO_CURSOR.md`; Grok installs as `~/.grok/hooks/harness.json` and merges all `~/.grok/hooks/*.json`). Hooks are guardrails, not workflow. `jq`·`git`·`make`·`rg`·`fd` are required (see README.md Prerequisites for details).
 
 ## Environment Variables
 

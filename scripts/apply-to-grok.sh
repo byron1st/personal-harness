@@ -5,10 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=install-shared.sh
 source "${SCRIPT_DIR}/install-shared.sh"
 
-AGENTS_SOURCE_DIR="${SCRIPT_DIR}/../agents/grok"
 HOOKS_SOURCE_DIR="${SCRIPT_DIR}/../hooks/grok"
 INSTRUCTIONS_SOURCE_DIR="${SCRIPT_DIR}/../instructions"
-RUNTIME_SCRIPTS_SOURCE_DIR="${SCRIPT_DIR}/runtime"
 
 GROK_HOME="${HOME}/.grok"
 AGENTS_DIR="${GROK_HOME}/agents"
@@ -17,7 +15,7 @@ RULES_DIR="${GROK_HOME}/rules"
 INSTRUCTIONS_FILE="${RULES_DIR}/AGENTS.md"
 GROK_CONFIG="${GROK_HOME}/config.toml"
 
-mkdir -p "${AGENTS_DIR}" "${HOOKS_DIR}" "${RULES_DIR}" "${HOME}/.grok/skills"
+mkdir -p "${HOOKS_DIR}" "${RULES_DIR}" "${HOME}/.grok/skills"
 
 instructions_md="✗ not found"
 if [[ -f "${INSTRUCTIONS_SOURCE_DIR}/AGENTS.md" ]]; then
@@ -25,23 +23,13 @@ if [[ -f "${INSTRUCTIONS_SOURCE_DIR}/AGENTS.md" ]]; then
   instructions_md="✓ installed"
 fi
 
-install_shared_scripts "${RUNTIME_SCRIPTS_SOURCE_DIR}"
 remove_platform_harness_skills "${HOME}/.grok/skills"
+remove_retired_agents "${AGENTS_DIR}" md
 skills_count=$(count_shared_skills)
-scripts_count=$(count_shared_scripts)
 
-agents_status="✗ source not found"
 hooks_status="✗ source not found"
 hooks_json_status="✗ source not found"
-agents_count=0
 hooks_count=0
-
-if [[ -d "${AGENTS_SOURCE_DIR}" ]]; then
-  find "${AGENTS_DIR}" -maxdepth 1 -mindepth 1 -exec rm -rf {} +
-  find "${AGENTS_SOURCE_DIR}" -maxdepth 1 -mindepth 1 -name "*.md" -exec cp -f {} "${AGENTS_DIR}/" \;
-  agents_count=$(find "${AGENTS_DIR}" -maxdepth 1 -mindepth 1 -name "*.md" | wc -l | tr -d ' ')
-  agents_status="✓ installed"
-fi
 
 if [[ -d "${HOOKS_SOURCE_DIR}/hooks" ]]; then
   find "${HOOKS_DIR}" -maxdepth 1 -mindepth 1 \( -type f -o -type d \) ! -name '*.json' -exec rm -rf {} + 2>/dev/null || true
@@ -84,9 +72,8 @@ fi
 echo "Grok Build harness applied:"
 echo "  Shared skills:            ${skills_count} directories in ${HOME}/.agents/skills"
 echo "  Grok skills dir:          harness names removed from ${HOME}/.grok/skills (native ~/.agents/skills)"
-echo "  Shared runtime scripts:   ${scripts_count} files in ${HOME}/.agents/scripts"
 echo "  Grok instructions:      ${instructions_md} to ${INSTRUCTIONS_FILE}"
-echo "  Grok agents:            ${agents_count} files installed to ${AGENTS_DIR} (${agents_status})"
+echo "  Retired harness agents: removed from ${AGENTS_DIR}"
 echo "  Grok hook scripts:      ${hooks_count} files installed to ${HOOKS_DIR} (${hooks_status})"
 echo "  Grok hooks harness.json:${hooks_json_status}"
 echo "  Grok [skills] paths:    ${skills_paths_status}"
@@ -94,5 +81,4 @@ echo ""
 echo "Required one-time config (installer cannot set this for you):"
 echo "  In ~/.grok/config.toml set [compat.claude] and [compat.cursor] cells to false"
 echo "  (skills, rules, agents, mcps, hooks, sessions) so pure Grok paths are used."
-echo "  Session habits: plan-dev → grok-4.7 / xhigh; dev-loop → grok-4.7 / medium."
 echo ""

@@ -64,6 +64,7 @@ done
 
 echo "Installing shared skills to ~/.agents/skills..."
 install_shared_skills "${SKILLS_SOURCE_DIR}"
+remove_retired_scripts
 skills_count=$(count_shared_skills)
 echo "Shared skills: ${skills_count} directories in ${HOME}/.agents/skills"
 echo "Installing external skills to ~/.agents/skills..."

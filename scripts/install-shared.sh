@@ -1,20 +1,15 @@
 #!/usr/bin/env bash
-# Shared skill/script install helpers sourced by apply-to.sh and apply-to-{claude,codex,cursor,grok}.sh.
+# Shared skill install helpers sourced by apply-to.sh and apply-to-{claude,codex,cursor,grok}.sh.
 # Harness-owned skill names only — never wipe ~/.agents/skills or a platform skills dir.
 # install_shared_skills is called only from apply-to.sh (once per invocation).
 
 HARNESS_SKILLS=(
-  application-research-sync
   chat-summary
   commit-code
-  dev-loop
-  fix-dev
-  implement-dev
   learn-from-manual-edits
   loki-log-search
   notion-daily-briefing
   plan-dev
-  review-code
   setup-initial-repo
   spec-creator
   test-dev
@@ -25,9 +20,30 @@ EXTERNAL_SKILLS=(
   'makenotion/skills|notion-cli'
 )
 
-CLAUDE_SCRIPT_ALLOWS=(
-  'Bash($HOME/.agents/scripts/detect-commands.sh *)'
-  'Bash($HOME/.agents/scripts/resolve-scope.sh *)'
+# Removed from the harness. Deleted from install targets so old copies stop loading.
+RETIRED_SKILLS=(
+  application-research-sync
+  dev-loop
+  fix-dev
+  implement-dev
+  review-code
+)
+
+RETIRED_AGENTS=(
+  fixer
+  implementer
+  maintainability-reviewer
+  plan-consultant
+  planner
+  reliability-reviewer
+  security-reviewer
+  senior-generalist-reviewer
+  tester
+)
+
+RETIRED_SCRIPTS=(
+  detect-commands.sh
+  resolve-scope.sh
 )
 
 install_shared_skills() {
@@ -39,6 +55,9 @@ install_shared_skills() {
     return 1
   fi
   local name
+  for name in "${RETIRED_SKILLS[@]}"; do
+    rm -rf "${dest}/${name}"
+  done
   for name in "${HARNESS_SKILLS[@]}"; do
     rm -rf "${dest}/${name}"
     if [[ -d "${repo_skills}/${name}" ]]; then
@@ -58,33 +77,39 @@ install_external_skills() {
   done
 }
 
-install_shared_scripts() {
-  local src="$1"
-  local dest="${HOME}/.agents/scripts"
-  mkdir -p "${dest}"
-  if [[ ! -d "${src}" ]]; then
-    echo "Error: runtime scripts directory not found at ${src}" >&2
-    return 1
-  fi
-  find "${dest}" -maxdepth 1 -mindepth 1 -exec rm -rf {} +
-  find "${src}" -maxdepth 1 -mindepth 1 -exec cp -rp {} "${dest}/" \;
+remove_retired_scripts() {
+  local name
+  for name in "${RETIRED_SCRIPTS[@]}"; do
+    rm -f "${HOME}/.agents/scripts/${name}"
+  done
+}
+
+# $1 = platform agents dir, $2 = agent file extension (md | toml)
+remove_retired_agents() {
+  local dir="$1" ext="$2"
+  [[ -d "${dir}" ]] || return 0
+  local name
+  for name in "${RETIRED_AGENTS[@]}"; do
+    rm -f "${dir}/${name}.${ext}"
+  done
 }
 
 remove_platform_harness_skills() {
   local dir="$1"
   [[ -d "${dir}" ]] || return 0
   local name
-  for name in "${HARNESS_SKILLS[@]}"; do
+  for name in "${HARNESS_SKILLS[@]}" "${RETIRED_SKILLS[@]}"; do
     rm -rf "${dir}/${name}"
   done
 }
 
+# Retired names have no target left, so their links are removed and not recreated.
 link_claude_harness_skills() {
   local claude_skills="${HOME}/.claude/skills"
   local agents_skills="${HOME}/.agents/skills"
   mkdir -p "${claude_skills}"
   local name
-  for name in "${HARNESS_SKILLS[@]}" "${EXTERNAL_SKILLS[@]##*|}"; do
+  for name in "${HARNESS_SKILLS[@]}" "${EXTERNAL_SKILLS[@]##*|}" "${RETIRED_SKILLS[@]}"; do
     local link="${claude_skills}/${name}"
     local target="${agents_skills}/${name}"
     rm -rf "${link}"
@@ -92,25 +117,6 @@ link_claude_harness_skills() {
       ln -s "${target}" "${link}"
     fi
   done
-}
-
-append_claude_script_allows() {
-  local settings="${HOME}/.claude/settings.json"
-  if [[ ! -f "${settings}" ]]; then
-    echo "Error: ${settings} missing; cannot append script allows" >&2
-    return 1
-  fi
-  local tmp
-  tmp=$(mktemp)
-  # Append missing entries. Do not replace the allow array (jq * does).
-  jq --argjson entries "$(printf '%s\n' "${CLAUDE_SCRIPT_ALLOWS[@]}" | jq -R . | jq -s .)" '
-    .permissions = (.permissions // {})
-    | .permissions.allow = (
-        (.permissions.allow // []) as $a
-        | $a + ($entries - $a)
-      )
-  ' "${settings}" > "${tmp}"
-  mv "${tmp}" "${settings}"
 }
 
 count_shared_skills() {
@@ -122,13 +128,4 @@ count_shared_skills() {
     fi
   done
   printf '%s' "${n}"
-}
-
-count_shared_scripts() {
-  local dest="${HOME}/.agents/scripts"
-  if [[ ! -d "${dest}" ]]; then
-    printf '0'
-    return
-  fi
-  find "${dest}" -maxdepth 1 -mindepth 1 -type f | wc -l | tr -d ' '
 }
