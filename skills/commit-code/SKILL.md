@@ -16,7 +16,7 @@ An utterance both asking for and forbidding a PR/MR → ask. Pushing without a P
 
 ## Repository type
 
-Take it from the SessionStart hook's context: `repo_type: work` or `repo_type: personal`. **Do not reclassify from the origin URL inside this skill.** If the session context is missing, unclear, or contradictory, ask the user before continuing.
+Use `repo_type` from the session context when it is there. Otherwise classify the repository the same way the session hook does: **work** when `git remote get-url origin` contains `$WORK_GITLAB_HOST`, **personal** otherwise (including no origin or an unset `$WORK_GITLAB_HOST`). Hosts that ignore SessionStart output, and subagents, never receive the session context, so its absence is not an error.
 
 ## Flow
 
@@ -38,7 +38,7 @@ Title format: `{PREFIX}: {title}`, where `{PREFIX}` is one of `feat`, `fix`, `re
 
 ## Documentation drift check
 
-After a successful commit and before any push or PR/MR, run a **read-only** check of the commit (e.g. `git show HEAD^..HEAD`) against the repository's documentation — `AGENTS.md`, legacy `CLAUDE.md` when present, `README.md`, and affected documents under `docs/`. Compare the committed code, configuration, commands, interfaces, and behavior with what those documents claim.
+After a successful commit and before any push or PR/MR, run a **read-only** check of the commit (e.g. `git show HEAD^..HEAD`) against the repository's documentation — `AGENTS.md`, legacy `CLAUDE.md` when present, `README.md`, and affected documents under `docs/`. Skip `docs/agents/`: its plans, reports, and research files are working records of past tasks, not documentation to keep in sync. Compare the committed code, configuration, commands, interfaces, and behavior with what those documents claim.
 
 **Change nothing.** Do not modify, stage, amend, or create documentation as part of this check.
 

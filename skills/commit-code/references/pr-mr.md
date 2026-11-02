@@ -26,7 +26,3 @@ Do not reuse this run's commit title as the PR/MR title when the branch contains
 - See [the personal guide](personal.md) for a **personal repository**
 
 Load only the matching guide. Do not load both.
-
-## Afterward
-
-If user has requested, run a code review process to ensure the MR/PR is ready for merge.

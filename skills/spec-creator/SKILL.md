@@ -135,7 +135,7 @@ Write the draft directly to `./SPEC.md`. If it already exists, ask whether to ov
 - **Concrete, not generic** — "PostgreSQL 15 with pgx driver", not "relational database".
 - **Examples over descriptions** — show the JSON for an error response format.
 - **Mark unknowns honestly** — `[ASSUMED] ...` inline, or an entry in Open Questions. `plan-dev` reads both, so an honest marker becomes a question asked at the right moment instead of a wrong assumption baked into a plan.
-- **Each FR implementable as one feature** — that is also what makes it a decomposition unit for a multi-steps plan.
+- **Each FR implementable as one feature** — that also makes it a natural unit to plan and implement on its own.
 - **Conventions prescriptive** — "Use `fmt.Errorf(\"context: %w\", err)`", not "wrap errors appropriately".
 - **Architecture visual** — ASCII diagrams for Context and Runtime where they help.
 - **Never fabricate a requirement.** If the developer has not mentioned a feature, do not invent one; that is what Open Questions is for.
