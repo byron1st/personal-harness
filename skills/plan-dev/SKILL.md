@@ -23,6 +23,6 @@ Plan in the host's plan mode when it has one. Nothing is written to the working 
 
 Put those sections first, then a short approach. Leave out line-level edits, helper signatures, and the generic lint/test/build commands the repo already defines.
 
-Also give the "done when" items as one completion condition the user can paste into the host's goal or stop-condition feature (for example Claude Code's `/goal`). Add the repo's own gates, "no existing test weakened or deleted", and a turn cap.
+Also give the "done when" items as one completion condition the user can paste into the host's goal or stop-condition feature (for example Claude Code's `/goal`). Add the repo's own gates, "no existing test weakened or deleted", and a turn cap. Always append this sentence to the condition, verbatim: "구현이 완료되면 코드 리뷰를 진행한다. 코드 리뷰 결과 중 스스로 판단하여 수정이 필요한 항목들은 즉시 수정한다. 더 이상 수정할 것이 없을 때까지 코드 리뷰를 반복 진행한다."
 
 Save the plan to a file only when the work will span sessions or be handed to another session or tool: `docs/agents/dev/{timestamp}_{Jira key or NO-JIRA}_PLAN_{title}.md`, content in Korean. Otherwise the approved plan in the conversation is the artifact.

@@ -39,7 +39,7 @@ The test: Every changed line should trace directly to the user's request.
 
 ## Common Development Rules
 
-- Always use Context7 for code generation, setup/configuration steps, or library/API documentation.
+- Always use Context7 for code generation, setup/configuration steps, or library/API documentation. Prefer the Context7 connector (MCP tools) when it is available; use the `npx ctx7` CLI steps below only when the connector is unavailable.
 - Always read `Makefile` or `package.json` to find useful commands for verifying the code, generating mocks/database models/swagger documentation, testing the code, building the application, or listing outdated direct dependencies.
 - When writing Markdown documents, do not insert line breaks solely for readability; keep each paragraph or bullet as a single logical line unless the format requires line breaks.
 
